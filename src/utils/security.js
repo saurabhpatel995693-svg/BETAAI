@@ -4,7 +4,7 @@
  * Built for SAURABH
  */
 
-export const ADMIN_EMAIL = "khanshahidkhanshahid96@gmail.com";
+export const ADMIN_EMAIL = "admin@betaai.local";
 
 // CSRF Token Generation (24 random bytes -> 48 hex chars)
 export function generateCSRFToken() {
