@@ -6,7 +6,7 @@ export const config = {
   },
 };
 
-async function fetchWithTimeout(url, options, timeoutMs = 10000) {
+async function fetchWithTimeout(url, options, timeoutMs = 12000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -49,12 +49,10 @@ export default async function handler(req, res) {
 
   const targets = [];
 
-  // 1. Custom User Provided Key / Base URL (from Settings modal)
+  // 1. User Custom API Key / Base URL (from Settings)
   if (customKey || customBase) {
     let baseUrl = (customBase || 'https://openrouter.ai/api/v1').replace(/\/$/, '');
-    if (!baseUrl.endsWith('/chat/completions')) {
-      baseUrl = `${baseUrl}/chat/completions`;
-    }
+    if (!baseUrl.endsWith('/chat/completions')) baseUrl = `${baseUrl}/chat/completions`;
     targets.push({
       name: 'User-Custom-API',
       url: baseUrl,
@@ -63,17 +61,17 @@ export default async function handler(req, res) {
     });
   }
 
-  // 2. Gemini Direct (Environment Key)
+  // 2. Gemini API Key (if provided in process.env)
   if (process.env.GEMINI_KEY) {
     targets.push({
       name: 'Gemini-API',
-      url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+      url: `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`,
       key: process.env.GEMINI_KEY,
       model: 'gemini-2.5-flash'
     });
   }
 
-  // 3. Grok / Groq (Environment Key)
+  // 3. Grok / Groq API Key (if provided in process.env)
   if (process.env.GROQ_KEY || process.env.GROK_KEY) {
     const k = process.env.GROQ_KEY || process.env.GROK_KEY;
     targets.push({
@@ -84,7 +82,7 @@ export default async function handler(req, res) {
     });
   }
 
-  // 4. OpenRouter (Environment Key)
+  // 4. OpenRouter API Key (if provided in process.env)
   if (process.env.OPENROUTER_KEY) {
     targets.push({
       name: 'OpenRouter-Key-API',
@@ -95,11 +93,11 @@ export default async function handler(req, res) {
     });
   }
 
-  // 5. Pollinations AI (100% Free Public AI Engine - Zero Auth Key Required!)
+  // 5. Pollinations AI (100% Free Public AI Engine - Plain Text / OpenAI Compatible, No Auth Required!)
   targets.push({
     name: 'Pollinations-Public-AI',
-    url: 'https://text.pollinations.ai/openai',
-    key: '',
+    url: 'https://text.pollinations.ai/',
+    isPlainText: true,
     model: isCodingMode ? 'qwen-coder' : 'openai'
   });
 
@@ -114,11 +112,11 @@ export default async function handler(req, res) {
       }
 
       const requestBody = {
-        model: target.model,
         messages,
+        model: target.model || 'openai',
         temperature: payload.temperature || 0.3,
         max_tokens: payload.max_tokens || 4096,
-        stream: wantsStream
+        stream: target.isPlainText ? false : wantsStream
       };
 
       const apiRes = await fetchWithTimeout(target.url, {
@@ -133,6 +131,37 @@ export default async function handler(req, res) {
         continue;
       }
 
+      // Handle Plain Text Response (e.g. Pollinations AI)
+      if (target.isPlainText) {
+        const textContent = await apiRes.text();
+        if (!textContent || textContent.includes('Internal Server Error')) {
+          lastErr = `${target.name}: invalid response`;
+          continue;
+        }
+
+        if (wantsStream) {
+          res.setHeader('Content-Type', 'text/event-stream');
+          res.setHeader('Cache-Control', 'no-cache, no-transform');
+          res.setHeader('Connection', 'keep-alive');
+          const chunk = JSON.stringify({ choices: [{ delta: { content: textContent } }] });
+          res.write(`data: ${chunk}\n\ndata: [DONE]\n\n`);
+          res.end();
+          return;
+        }
+
+        return res.status(200).json({
+          choices: [
+            {
+              message: {
+                role: 'assistant',
+                content: textContent
+              }
+            }
+          ]
+        });
+      }
+
+      // Handle Standard SSE Stream Response
       if (wantsStream && apiRes.body) {
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache, no-transform');
@@ -155,19 +184,28 @@ export default async function handler(req, res) {
         return;
       }
 
+      // Handle Standard JSON Response
       const data = await apiRes.json();
       return res.status(200).json(data);
+
     } catch (err) {
       lastErr = `${target.name}: ${err.message}`;
     }
   }
 
-  // Pollinations Direct Text Fallback
+  // Graceful Fallback if all external networks hit timeouts
+  const fallbackPrompt = messages[messages.length - 1]?.content || 'Hello';
   try {
-    const lastUserMsg = messages[messages.length - 1]?.content || 'Hello';
-    const pollRes = await fetchWithTimeout('https://text.pollinations.ai/' + encodeURIComponent(lastUserMsg), { method: 'GET' }, 8000);
-    if (pollRes.ok) {
-      const text = await pollRes.text();
+    const getRes = await fetchWithTimeout('https://text.pollinations.ai/' + encodeURIComponent(fallbackPrompt), { method: 'GET' }, 8000);
+    if (getRes.ok) {
+      const text = await getRes.text();
+      if (wantsStream) {
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\ndata: [DONE]\n\n`);
+        res.end();
+        return;
+      }
       return res.status(200).json({ choices: [{ message: { content: text } }] });
     }
   } catch (e) {}
@@ -176,7 +214,7 @@ export default async function handler(req, res) {
     choices: [
       {
         message: {
-          content: 'BETAAI Assistant is ready! Type your message to start.'
+          content: 'BETAAI Assistant is active! Please ask your question again.'
         }
       }
     ]
