@@ -1996,28 +1996,64 @@ document.querySelectorAll('.nb-action-btn').forEach(btn => {
 document.getElementById('search-go-btn').onclick = webSearch;
 document.getElementById('search-query').onkeydown = e => { if(e.key==='Enter') webSearch(); };
 
+async function performLiveWebSearch(query) {
+  let resultsText = '';
+  try {
+    const ddgUrl = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
+    const ddgRes = await fetch(ddgUrl);
+    if (ddgRes.ok) {
+      const ddgData = await ddgRes.json();
+      if (ddgData.AbstractText) {
+        resultsText += `[Live Search Result]\nHeading: ${ddgData.Heading}\nSummary: ${ddgData.AbstractText}\nURL: ${ddgData.AbstractURL}\n\n`;
+      }
+      if (ddgData.RelatedTopics && ddgData.RelatedTopics.length > 0) {
+        resultsText += `[Search References]\n`;
+        ddgData.RelatedTopics.slice(0, 4).forEach(t => {
+          if (t.Text && t.FirstURL) resultsText += `- ${t.Text} (URL: ${t.FirstURL})\n`;
+        });
+      }
+    }
+  } catch(e) {}
+
+  try {
+    const wikiUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`;
+    const wikiRes = await fetch(wikiUrl);
+    if (wikiRes.ok) {
+      const wikiData = await wikiRes.json();
+      if (wikiData.extract) {
+        resultsText += `\n[Wikipedia Knowledge]\nTitle: ${wikiData.title}\nExtract: ${wikiData.extract}\nURL: ${wikiData.content_urls?.desktop?.page || ''}\n`;
+      }
+    }
+  } catch(e) {}
+
+  return resultsText;
+}
+
 async function webSearch() {
   const query = document.getElementById('search-query').value.trim(); if(!query) return;
   const box = document.getElementById('search-results');
   const card = document.createElement('div');
   card.className = 'surface-card rounded-lg border border-themed shadow-level-3 p-6 animate-fade-up';
-  card.innerHTML = '<span class="text-sm text-themed-mute animate-pulse">Searching...</span>';
+  card.innerHTML = '<span class="text-sm text-themed-mute animate-pulse">Searching real-time web...</span>';
   box.prepend(card);
 
   try {
+    const liveSearchData = await performLiveWebSearch(query);
+    const systemPrompt = `You are a real-time web search assistant by SAURABH. Use the following real-time web search results to answer the query accurately. Include citations and markdown links where applicable.\n\n${liveSearchData}`;
+
     const res = await fetchWithFailover(async (config) => {
       return await fetchChatCompletion(config, {
         messages: [
-          {role:'system',content:'You are a web search assistant by SAURABH. The user is searching for information. Provide a comprehensive, well-formatted answer using markdown. Include relevant facts, explanations, and if applicable, cite sources. Format with headers, bullet points, and code blocks as needed.'},
-          {role:'user',content:'Search query: ' + query}
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: 'Search Query: ' + query }
         ]
       });
     });
     const data = await res.json();
-    const reply = data.choices?.[0]?.message?.content || 'No results';
-    card.innerHTML = `<div class="flex items-center gap-2 mb-3 pb-3 border-b border-themed"><svg class="w-4 h-4 text-link" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg><span class="text-xs font-mono text-themed-mute">${esc(query)}</span></div><div class="markdown-body text-sm text-themed-ink">${marked.parse(reply)}</div>`;
+    const reply = data.choices?.[0]?.message?.content || 'No search results found.';
+    card.innerHTML = `<div class="flex items-center gap-2 mb-3 pb-3 border-b border-themed"><svg class="w-4 h-4 text-link" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg><span class="text-xs font-mono text-themed-ink font-semibold">${esc(query)}</span><span class="ml-auto text-[10px] font-mono text-cyan">Live Results</span></div><div class="markdown-body text-sm text-themed-ink">${marked.parse(reply)}</div>`;
     card.querySelectorAll('pre code').forEach(block => hljs.highlightElement(block));
-  } catch(e) { card.innerHTML = `<span class="text-error text-sm">${esc(e.message)}</span>`; }
+  } catch(e) { card.innerHTML = `<span class="text-error text-sm">Search Error: ${esc(e.message)}</span>`; }
 }
 
 /* ═══════════════════════════════════════════════════
