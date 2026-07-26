@@ -18,13 +18,39 @@ const MIME_TYPES = {
   '.ico': 'image/x-icon'
 };
 
-const NVIDIA_KEY = process.env.NVIDIA_KEY || '';
-const OPENROUTER_KEYS = [
-  process.env.OPENROUTER_KEY || '',
-  process.env.OPENROUTER_ALT || ''
-].filter(Boolean);
+const PROVIDERS = [
+  {
+    name: 'nvidia',
+    url: 'https://integrate.api.nvidia.com/v1/chat/completions',
+    key: process.env.NVIDIA_KEY || '',
+    models: ['meta/llama-3.1-70b-instruct', 'meta/llama-3.1-8b-instruct'],
+    timeout: 12000
+  },
+  {
+    name: 'openrouter',
+    url: 'https://openrouter.ai/api/v1/chat/completions',
+    key: process.env.OPENROUTER_KEY || '',
+    models: ['google/gemini-2.5-flash:free', 'meta-llama/llama-3.3-70b-instruct:free', 'qwen/qwen-2.5-coder-32b-instruct:free'],
+    timeout: 12000,
+    extraHeaders: { 'X-Title': 'BETAAI' }
+  },
+  {
+    name: 'coding',
+    url: process.env.CODING_API_URL || 'https://api.siliconflow.cn/v1/chat/completions',
+    key: process.env.CODING_API_KEY || '',
+    models: ['Qwen/Qwen2.5-Coder-32B-Instruct', 'deepseek-ai/DeepSeek-V3', 'meta-llama/Llama-3.3-70B-Instruct-Instruct'],
+    timeout: 15000
+  },
+  {
+    name: 'search',
+    url: process.env.SEARCH_API_URL || 'https://api.siliconflow.cn/v1/chat/completions',
+    key: process.env.SEARCH_API_KEY || '',
+    models: ['Qwen/Qwen2.5-72B-Instruct', 'deepseek-ai/DeepSeek-V3', 'meta-llama/Llama-3.3-70B-Instruct-Instruct'],
+    timeout: 15000
+  }
+];
 
-async function fetchWithTimeout(url, options, timeoutMs = 8000) {
+async function fetchWithTimeout(url, options, timeoutMs = 12000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -37,99 +63,70 @@ async function fetchWithTimeout(url, options, timeoutMs = 8000) {
   }
 }
 
+async function tryProvider(provider, model, body, wantsStream) {
+  if (!provider.key) throw new Error(`${provider.name}: no API key`);
+  const headers = { 'Authorization': `Bearer ${provider.key}`, 'Content-Type': 'application/json', ...(provider.extraHeaders || {}) };
+  const reqBody = { ...body, model };
+  if (wantsStream) reqBody.stream = true;
+  const apiRes = await fetchWithTimeout(provider.url, { method: 'POST', headers, body: JSON.stringify(reqBody) }, provider.timeout);
+  if (!apiRes.ok) {
+    const errText = await apiRes.text().catch(() => '');
+    throw new Error(`${provider.name}/${model} ${apiRes.status}: ${errText.substring(0, 150)}`);
+  }
+  return apiRes;
+}
+
 const server = http.createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-  if (req.method === 'OPTIONS') {
-    res.writeHead(204);
-    res.end();
-    return;
-  }
+  if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
 
   if (req.url === '/api/chat' && req.method === 'POST') {
     let body = '';
     req.on('data', chunk => { body += chunk; });
     req.on('end', async () => {
+      let payload;
+      try { payload = JSON.parse(body || '{}'); } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: { message: 'Invalid JSON' } }));
+        return;
+      }
+
       try {
-        const payload = JSON.parse(body || '{}');
         const messages = payload.messages || [];
+        const clientModel = payload.model;
         const wantsStream = payload.stream === true;
         let lastErr = null;
 
-        // Helper to try a provider and return the response
-        async function tryProvider(name, url, apiKey, reqBody, timeoutMs) {
-          const headers = { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' };
-          if (name === 'openrouter') headers['X-Title'] = 'BETAAI';
-          const apiRes = await fetchWithTimeout(url, { method: 'POST', headers, body: JSON.stringify(reqBody) }, timeoutMs);
-          if (apiRes.ok) return apiRes;
-          const errText = await apiRes.text().catch(() => '');
-          throw new Error(`${name} ${apiRes.status}: ${errText.substring(0, 200)}`);
-        }
+        for (const provider of PROVIDERS) {
+          let modelsToTry = provider.models;
+          if (clientModel && !clientModel.includes(':free')) modelsToTry = [clientModel, ...provider.models];
 
-        // TIER 1: NVIDIA NIM
-        if (NVIDIA_KEY) {
-          const nvidiaModels = ['meta/llama-3.1-70b-instruct', 'meta/llama-3.1-8b-instruct'];
-          for (const model of nvidiaModels) {
+          for (const model of modelsToTry) {
             try {
-              const reqBody = { model, messages, temperature: payload.temperature || 0.3, max_tokens: payload.max_tokens || 4096 };
-              if (wantsStream) reqBody.stream = true;
-              const apiRes = await tryProvider('nvidia', 'https://integrate.api.nvidia.com/v1/chat/completions', NVIDIA_KEY, reqBody, 15000);
+              const body = { messages, temperature: payload.temperature || 0.3, max_tokens: payload.max_tokens || 4096 };
+              const apiRes = await tryProvider(provider, model, body, wantsStream);
+
               if (wantsStream && apiRes.body) {
                 res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' });
                 const reader = apiRes.body.getReader();
-                while (true) {
-                  const { done, value } = await reader.read();
-                  if (done) { res.end(); return; }
-                  res.write(value);
-                }
+                try { while (true) { const { done, value } = await reader.read(); if (done) break; res.write(value); } } catch (e) {}
+                res.end();
+                return;
               }
+
               const data = await apiRes.json();
               res.writeHead(200, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify(data));
               return;
-            } catch (e) {
-              lastErr = `NVIDIA ${model}: ${e.message}`;
-            }
+            } catch (e) { lastErr = `${provider.name}: ${e.message}`; }
           }
-        } else {
-          lastErr = 'NVIDIA_KEY not configured.';
-        }
-
-        // TIER 2: OpenRouter free models
-        if (OPENROUTER_KEYS.length > 0) {
-          const orModels = [payload.model || 'google/gemini-2.5-flash:free', 'meta-llama/llama-3.3-70b-instruct:free', 'qwen/qwen-2.5-coder-32b-instruct:free'];
-          for (const key of OPENROUTER_KEYS) {
-            for (const model of orModels) {
-              try {
-                const reqBody = { model, messages, temperature: payload.temperature || 0.3, max_tokens: payload.max_tokens || 4096 };
-                if (wantsStream) reqBody.stream = true;
-                const apiRes = await tryProvider('openrouter', 'https://openrouter.ai/api/v1/chat/completions', key, reqBody, 12000);
-                if (wantsStream && apiRes.body) {
-                  res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' });
-                  const reader = apiRes.body.getReader();
-                  while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) { res.end(); return; }
-                    res.write(value);
-                  }
-                }
-                const data = await apiRes.json();
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify(data));
-                return;
-              } catch (e) {
-                lastErr = `OpenRouter ${model}: ${e.message}`;
-              }
-            }
-          }
-        } else {
-          lastErr = 'OPENROUTER_KEY not configured.';
         }
 
         res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: { message: `All providers exhausted. ${lastErr}` } }));
+        res.end(JSON.stringify({ error: { message: `All providers failed. ${lastErr}` } }));
       } catch (e) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: { message: e.message } }));
@@ -141,33 +138,16 @@ const server = http.createServer(async (req, res) => {
   // Static file serving
   let reqPath = req.url === '/' ? '/index.html' : req.url;
   let filePath = path.join(__dirname, 'dist', reqPath);
-
   if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
     const htmlInDir = path.join(filePath, 'index.html');
-    if (fs.existsSync(htmlInDir)) {
-      filePath = htmlInDir;
-    } else {
-      filePath = path.join(__dirname, 'dist', 'index.html');
-    }
+    if (fs.existsSync(htmlInDir)) { filePath = htmlInDir; } else { filePath = path.join(__dirname, 'dist', 'index.html'); }
   }
-
   const ext = path.extname(filePath).toLowerCase();
   const contentType = MIME_TYPES[ext] || 'text/plain';
-
   fs.readFile(filePath, (err, content) => {
-    if (err) {
-      res.writeHead(404, { 'Content-Type': 'text/plain' });
-      res.end('404 Not Found');
-    } else {
-      res.writeHead(200, {
-        'Content-Type': contentType,
-        'Cache-Control': 'no-cache'
-      });
-      res.end(content, 'utf-8');
-    }
+    if (err) { res.writeHead(404, { 'Content-Type': 'text/plain' }); res.end('404 Not Found'); }
+    else { res.writeHead(200, { 'Content-Type': contentType, 'Cache-Control': 'no-cache' }); res.end(content, 'utf-8'); }
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`[BETAAI Server] Server running at http://localhost:${PORT}/`);
-});
+server.listen(PORT, () => { console.log(`[BETAAI] http://localhost:${PORT}/`); });

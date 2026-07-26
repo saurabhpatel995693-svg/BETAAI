@@ -1,12 +1,42 @@
 // BETAAI Vercel Serverless AI Proxy
-// Primary: NVIDIA NIM (free tier)  |  Fallback: OpenRouter free models
-// Supports both streaming (SSE) and non-streaming responses.
+// Multi-tier failover: NVIDIA NIM -> OpenRouter -> SiliconFlow/other
+// Supports streaming (SSE) and non-streaming responses.
 
-const NVIDIA_KEY = process.env.NVIDIA_KEY || '';
-const OPENROUTER_KEYS = [
-  process.env.OPENROUTER_KEY || '',
-  process.env.OPENROUTER_ALT || ''
-].filter(Boolean);
+const PROVIDERS = [
+  // Tier 1: NVIDIA NIM (fastest, free tier)
+  {
+    name: 'nvidia',
+    url: 'https://integrate.api.nvidia.com/v1/chat/completions',
+    key: process.env.NVIDIA_KEY || '',
+    models: ['meta/llama-3.1-70b-instruct', 'meta/llama-3.1-8b-instruct'],
+    timeout: 12000
+  },
+  // Tier 2: OpenRouter (wide model selection)
+  {
+    name: 'openrouter',
+    url: 'https://openrouter.ai/api/v1/chat/completions',
+    key: process.env.OPENROUTER_KEY || '',
+    models: ['google/gemini-2.5-flash:free', 'meta-llama/llama-3.3-70b-instruct:free', 'qwen/qwen-2.5-coder-32b-instruct:free'],
+    timeout: 12000,
+    extraHeaders: { 'X-Title': 'BETAAI' }
+  },
+  // Tier 3: Coding provider (SiliconFlow or similar)
+  {
+    name: 'coding',
+    url: process.env.CODING_API_URL || 'https://api.siliconflow.cn/v1/chat/completions',
+    key: process.env.CODING_API_KEY || '',
+    models: ['Qwen/Qwen2.5-Coder-32B-Instruct', 'deepseek-ai/DeepSeek-V3', 'meta-llama/Llama-3.3-70B-Instruct-Instruct'],
+    timeout: 15000
+  },
+  // Tier 4: Notebook/Search provider
+  {
+    name: 'search',
+    url: process.env.SEARCH_API_URL || 'https://api.siliconflow.cn/v1/chat/completions',
+    key: process.env.SEARCH_API_KEY || '',
+    models: ['Qwen/Qwen2.5-72B-Instruct', 'deepseek-ai/DeepSeek-V3', 'meta-llama/Llama-3.3-70B-Instruct-Instruct'],
+    timeout: 15000
+  }
+];
 
 async function fetchWithTimeout(url, options, timeoutMs = 12000) {
   const controller = new AbortController();
@@ -21,23 +51,30 @@ async function fetchWithTimeout(url, options, timeoutMs = 12000) {
   }
 }
 
-/** Try a single provider+model. Returns the Response if ok, else null. */
-async function tryProvider(name, url, apiKey, body, timeoutMs) {
-  const headers = {
-    'Authorization': `Bearer ${apiKey}`,
-    'Content-Type': 'application/json'
-  };
-  if (name === 'openrouter') headers['X-Title'] = 'BETAAI';
+async function tryProvider(provider, model, body, wantsStream) {
+  if (!provider.key) throw new Error(`${provider.name}: no API key`);
 
-  const apiRes = await fetchWithTimeout(url, {
+  const headers = {
+    'Authorization': `Bearer ${provider.key}`,
+    'Content-Type': 'application/json',
+    ...(provider.extraHeaders || {})
+  };
+
+  const reqBody = { ...body, model };
+  if (wantsStream) reqBody.stream = true;
+
+  const apiRes = await fetchWithTimeout(provider.url, {
     method: 'POST',
     headers,
-    body: JSON.stringify(body)
-  }, timeoutMs);
+    body: JSON.stringify(reqBody)
+  }, provider.timeout);
 
-  if (apiRes.ok) return apiRes;
-  const errText = await apiRes.text().catch(() => '');
-  throw new Error(`${name} ${apiRes.status}: ${errText.substring(0, 200)}`);
+  if (!apiRes.ok) {
+    const errText = await apiRes.text().catch(() => '');
+    throw new Error(`${provider.name}/${model} ${apiRes.status}: ${errText.substring(0, 150)}`);
+  }
+
+  return apiRes;
 }
 
 export default async function handler(req, res) {
@@ -48,7 +85,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: { message: 'Method not allowed' } });
 
-  // Parse the request body — Vercel auto-parses JSON for POST requests
+  // Parse body
   let payload;
   try {
     if (req.body) {
@@ -62,38 +99,43 @@ export default async function handler(req, res) {
 
   try {
     const messages = payload.messages || [];
+    const clientModel = payload.model;
     const wantsStream = payload.stream === true;
     let lastErr = null;
 
-    // ── Tier 1: NVIDIA NIM ──────────────────────────────
-    if (NVIDIA_KEY) {
-      const nvidiaModels = ['meta/llama-3.1-70b-instruct', 'meta/llama-3.1-8b-instruct'];
-      for (const model of nvidiaModels) {
+    // Try each provider tier
+    for (const provider of PROVIDERS) {
+      // Pick models to try
+      let modelsToTry = provider.models;
+      if (clientModel && !clientModel.includes(':free')) {
+        // Client requested a specific non-free model, try it first
+        modelsToTry = [clientModel, ...provider.models];
+      }
+
+      for (const model of modelsToTry) {
         try {
           const body = {
-            model,
             messages,
             temperature: payload.temperature || 0.3,
             max_tokens: payload.max_tokens || 4096
           };
-          if (wantsStream) body.stream = true;
 
-          const apiRes = await tryProvider('nvidia', 'https://integrate.api.nvidia.com/v1/chat/completions', NVIDIA_KEY, body, 15000);
+          const apiRes = await tryProvider(provider, model, body, wantsStream);
 
-          // Forward streaming response as-is
+          // Stream response back to client
           if (wantsStream && apiRes.body) {
             res.setHeader('Content-Type', 'text/event-stream');
             res.setHeader('Cache-Control', 'no-cache');
             res.setHeader('Connection', 'keep-alive');
             const reader = apiRes.body.getReader();
-            const pump = async () => {
+            try {
               while (true) {
                 const { done, value } = await reader.read();
-                if (done) { res.end(); return; }
+                if (done) break;
                 res.write(value);
               }
-            };
-            await pump().catch(() => res.end());
+            } catch (e) { /* stream ended */ }
+            res.end();
             return;
           }
 
@@ -101,63 +143,12 @@ export default async function handler(req, res) {
           const data = await apiRes.json();
           return res.status(200).json(data);
         } catch (e) {
-          lastErr = `NVIDIA ${model}: ${e.message}`;
+          lastErr = `${provider.name}: ${e.message}`;
         }
       }
-    } else {
-      lastErr = 'NVIDIA_KEY not configured.';
     }
 
-    // ── Tier 2: OpenRouter free models ──────────────────
-    if (OPENROUTER_KEYS.length > 0) {
-      const orModels = [
-        payload.model || 'google/gemini-2.5-flash:free',
-        'meta-llama/llama-3.3-70b-instruct:free',
-        'qwen/qwen-2.5-coder-32b-instruct:free'
-      ];
-      for (const key of OPENROUTER_KEYS) {
-        for (const model of orModels) {
-          try {
-            const body = {
-              model,
-              messages,
-              temperature: payload.temperature || 0.3,
-              max_tokens: payload.max_tokens || 4096
-            };
-            if (wantsStream) body.stream = true;
-
-            const apiRes = await tryProvider('openrouter', 'https://openrouter.ai/api/v1/chat/completions', key, body, 12000);
-
-            // Forward streaming response as-is
-            if (wantsStream && apiRes.body) {
-              res.setHeader('Content-Type', 'text/event-stream');
-              res.setHeader('Cache-Control', 'no-cache');
-              res.setHeader('Connection', 'keep-alive');
-              const reader = apiRes.body.getReader();
-              const pump = async () => {
-                while (true) {
-                  const { done, value } = await reader.read();
-                  if (done) { res.end(); return; }
-                  res.write(value);
-                }
-              };
-              await pump().catch(() => res.end());
-              return;
-            }
-
-            // Non-streaming: return full JSON
-            const data = await apiRes.json();
-            return res.status(200).json(data);
-          } catch (e) {
-            lastErr = `OpenRouter ${model}: ${e.message}`;
-          }
-        }
-      }
-    } else {
-      lastErr = 'OPENROUTER_KEY not configured. Add OPENROUTER_KEY to Vercel env vars.';
-    }
-
-    return res.status(500).json({ error: { message: `All providers exhausted. ${lastErr}` } });
+    return res.status(500).json({ error: { message: `All providers failed. ${lastErr}` } });
   } catch (e) {
     return res.status(400).json({ error: { message: e.message } });
   }
