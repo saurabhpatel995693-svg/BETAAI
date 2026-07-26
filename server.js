@@ -104,36 +104,41 @@ const server = http.createServer(async (req, res) => {
 
     if (customKey || customBase || customModel) {
       let baseUrl = customBase ? customBase.trim().replace(/\/$/, '') : '';
-      let targetModel = customModel || rawModel;
+      let targetModel = customModel ? customModel.trim() : '';
 
-      if (!baseUrl) {
-        if (customKey.startsWith('AIza')) {
-          baseUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
-          if (!targetModel) targetModel = 'gemini-2.5-flash';
-        } else if (customKey.startsWith('gsk_')) {
-          baseUrl = 'https://api.groq.com/openai/v1/chat/completions';
-          if (!targetModel) targetModel = 'llama-3.3-70b-versatile';
-        } else if (customKey.startsWith('xai-')) {
-          baseUrl = 'https://api.x.ai/v1/chat/completions';
-          if (!targetModel) targetModel = 'grok-3-mini';
-        } else if (customKey.startsWith('nvapi-')) {
-          baseUrl = 'https://integrate.api.nvidia.com/v1/chat/completions';
-          if (!targetModel) targetModel = 'meta/llama-3.1-70b-instruct';
-        } else {
-          baseUrl = 'https://openrouter.ai/api/v1/chat/completions';
-          if (!targetModel) targetModel = isCodingMode ? 'google/gemini-2.5-flash:free' : 'meta-llama/llama-3.3-70b-instruct:free';
+      if (customKey.startsWith('AIza')) {
+        if (!baseUrl) baseUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
+        if (!targetModel) targetModel = 'gemini-2.5-flash';
+      } else if (customKey.startsWith('gsk_')) {
+        if (!baseUrl) baseUrl = 'https://api.groq.com/openai/v1/chat/completions';
+        if (!targetModel) targetModel = 'llama-3.3-70b-versatile';
+      } else if (customKey.startsWith('xai-')) {
+        if (!baseUrl) baseUrl = 'https://api.x.ai/v1/chat/completions';
+        if (!targetModel) targetModel = 'grok-3-mini';
+      } else if (customKey.startsWith('nvapi-')) {
+        if (!baseUrl) baseUrl = 'https://integrate.api.nvidia.com/v1/chat/completions';
+        if (!targetModel) targetModel = 'meta/llama-3.1-70b-instruct';
+      } else if (customKey.startsWith('sk-proj-') || (baseUrl && baseUrl.includes('openai.com'))) {
+        if (!baseUrl) baseUrl = 'https://api.openai.com/v1/chat/completions';
+        if (!targetModel) {
+          targetModel = (rawModel && (rawModel.startsWith('gpt-') || rawModel.startsWith('o1') || rawModel.startsWith('o3'))) ? rawModel : 'gpt-4o-mini';
         }
       } else {
-        if (!baseUrl.endsWith('/chat/completions') && !baseUrl.includes('/generateContent')) {
-          baseUrl += '/chat/completions';
+        if (!baseUrl) baseUrl = 'https://openrouter.ai/api/v1/chat/completions';
+        if (!targetModel) {
+          targetModel = (rawModel && rawModel !== 'auto') ? rawModel : (isCodingMode ? 'google/gemini-2.5-flash:free' : 'meta-llama/llama-3.3-70b-instruct:free');
         }
+      }
+
+      if (baseUrl && !baseUrl.endsWith('/chat/completions') && !baseUrl.includes('/generateContent')) {
+        baseUrl += '/chat/completions';
       }
 
       targets.push({
         name: 'User-Custom',
         url: baseUrl,
         key: customKey,
-        model: targetModel || (isCodingMode ? 'google/gemini-2.5-flash:free' : 'meta-llama/llama-3.3-70b-instruct:free')
+        model: targetModel
       });
     }
 
