@@ -169,6 +169,37 @@ const server = http.createServer(async (req, res) => {
           }
         }
 
+        // Ultimate Failover Tier: OpenRouter Public Free Tier
+        try {
+          const fallbackRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Title': 'BETAAI' },
+            body: JSON.stringify({
+              model: isCodingMode ? 'google/gemini-2.5-flash:free' : 'meta-llama/llama-3.3-70b-instruct:free',
+              messages,
+              temperature: payload.temperature || 0.3,
+              max_tokens: payload.max_tokens || 4096,
+              stream: wantsStream
+            })
+          });
+
+          if (fallbackRes.ok) {
+            if (wantsStream && fallbackRes.body) {
+              res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' });
+              const reader = fallbackRes.body.getReader();
+              try { while (true) { const { done, value } = await reader.read(); if (done) break; res.write(value); } } catch (e) {}
+              res.end();
+              return;
+            }
+            const data = await fallbackRes.json();
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(data));
+            return;
+          }
+        } catch (e) {
+          console.warn('[Ultimate Failover] Failed:', e.message);
+        }
+
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: { message: `All providers failed. ${lastErr}` } }));
       } catch (e) {
