@@ -185,8 +185,29 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
+    const lastMsgObj = messages[messages.length - 1];
+    const userText = (lastMsgObj ? lastMsgObj.content : 'hello').trim();
+    const lowerText = userText.toLowerCase();
+
+    let replyContent = '';
+    if (lowerText.includes('who created you') || lowerText.includes('who made you') || lowerText.includes('who is your creator')) {
+      replyContent = "I am **BETAAI**, an advanced multi-modal AI platform created by **SAURABH**. I am designed for AI Chat, Image Generation, VibeCoding web apps, and Notebook study tools. How can I help you today?";
+    } else if (lowerText.includes('what is betaai') || lowerText.includes('who are you')) {
+      replyContent = "I am **BETAAI**, your high-performance AI workspace built by **SAURABH**. I integrate live code generation, interactive split canvas VibeCoding, image synthesis, and study notebooks!";
+    } else {
+      replyContent = `Hello! I am **BETAAI** created by **SAURABH**.\n\nYou asked: "${userText}"\n\nI am ready to assist you! For full API access, you can optionally configure your custom API Key in Settings (⚙).`;
+    }
+
+    if (wantsStream) {
+      res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' });
+      const chunk = JSON.stringify({ choices: [{ delta: { content: replyContent } }] });
+      res.write(`data: ${chunk}\n\ndata: [DONE]\n\n`);
+      res.end();
+      return;
+    }
+
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ choices: [{ message: { content: 'BETAAI Assistant is ready!' } }] }));
+    res.end(JSON.stringify({ choices: [{ message: { role: 'assistant', content: replyContent } }] }));
     return;
   }
 
