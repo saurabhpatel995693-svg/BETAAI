@@ -1452,6 +1452,34 @@ document.getElementById('export-btn').onclick = () => {
   toast('Exported as Markdown','success');
 };
 
+function getSvgImageFallback(promptText, seed = 123) {
+  const colors = [['#007cf0','#00dfd8'], ['#7928ca','#ff0080'], ['#ff4d4d','#f9cb28'], ['#00dfd8','#7928ca']];
+  const pair = colors[Math.abs(seed) % colors.length];
+  const cleanPrompt = String(promptText).replace(/["'<>]/g, '').substring(0, 45);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+    <defs>
+      <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="${pair[0]}"/>
+        <stop offset="100%" stop-color="${pair[1]}"/>
+      </linearGradient>
+      <filter id="b" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="60"/>
+      </filter>
+    </defs>
+    <rect width="1024" height="1024" fill="#09090b"/>
+    <circle cx="350" cy="350" r="300" fill="${pair[0]}" opacity="0.65" filter="url(#b)"/>
+    <circle cx="700" cy="700" r="350" fill="${pair[1]}" opacity="0.55" filter="url(#b)"/>
+    <rect width="1024" height="1024" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="4"/>
+    <g transform="translate(512, 512)" text-anchor="middle">
+      <circle r="56" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+      <text y="12" fill="#ffffff" font-family="system-ui, sans-serif" font-size="34">✨</text>
+      <text y="110" fill="#ffffff" font-family="system-ui, sans-serif" font-size="28" font-weight="700">${cleanPrompt}</text>
+      <text y="150" fill="rgba(255,255,255,0.65)" font-family="monospace" font-size="16">BETAAI Render Engine</text>
+    </g>
+  </svg>`;
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+}
+
 /* ═══════════════════════════════════════════════════
    Image Generation
    ═══════════════════════════════════════════════════ */
@@ -1479,8 +1507,7 @@ document.getElementById('generate-img-btn').onclick = async () => {
 
     const seed = Math.floor(Math.random() * 9000000) + Date.now() + (i * 1000);
     const url1 = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed}&nologo=true`;
-    const url2 = `https://pollinations.ai/p/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed}`;
-    const url3 = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed}&model=flux`;
+    const url2 = `/api/image?prompt=${encodeURIComponent(fullPrompt)}&width=${w}&height=${h}&seed=${seed}`;
 
     card.innerHTML = `
       <div class="relative min-h-[220px] flex items-center justify-center surface-card2">
@@ -1488,7 +1515,7 @@ document.getElementById('generate-img-btn').onclick = async () => {
              alt="${esc(prompt)}"
              class="w-full cursor-pointer block rounded-t-lg"
              onclick="document.getElementById('lightbox-img').src=this.src;document.getElementById('lightbox').classList.remove('hidden')"
-             onerror="if (!this.dataset.triedFallback1) { this.dataset.triedFallback1 = 'true'; this.src = '${url2}'; } else if (!this.dataset.triedFallback2) { this.dataset.triedFallback2 = 'true'; this.src = '${url3}'; }"/>
+             onerror="if (!this.dataset.tried1) { this.dataset.tried1 = 'true'; this.src = '${url2}'; } else if (!this.dataset.tried2) { this.dataset.tried2 = 'true'; this.src = getSvgImageFallback('${esc(prompt).replace(/'/g, "\\'")}', ${seed}); }"/>
       </div>
       <div class="p-3 surface-card border-t border-themed">
         <p class="text-[11px] text-themed-mute font-mono mb-2 truncate">${esc(prompt)}</p>
