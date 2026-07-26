@@ -123,10 +123,24 @@ const server = http.createServer(async (req, res) => {
           });
         }
 
+        function mapOpenRouterModel(m) {
+          if (!m) return 'google/gemini-2.5-flash:free';
+          if (m.includes(':free')) return m;
+          const lower = m.toLowerCase();
+          if (lower.includes('llama')) return 'meta-llama/llama-3.3-70b-instruct:free';
+          if (lower.includes('qwen') || lower.includes('coder')) return 'qwen/qwen-2.5-coder-32b-instruct:free';
+          if (lower.includes('deepseek')) return 'deepseek/deepseek-r1:free';
+          if (lower.includes('gemini')) return 'google/gemini-2.5-flash:free';
+          return 'google/gemini-2.5-flash:free';
+        }
+
         for (const provider of activeProviders) {
           let modelsToTry = [...provider.models];
-          if (cleanModel && !modelsToTry.includes(cleanModel)) {
-            modelsToTry.unshift(cleanModel);
+          if (cleanModel) {
+            const normalized = provider.name === 'openrouter' ? mapOpenRouterModel(cleanModel) : cleanModel;
+            if (!modelsToTry.includes(normalized)) {
+              modelsToTry.unshift(normalized);
+            }
           }
 
           for (const model of modelsToTry) {
