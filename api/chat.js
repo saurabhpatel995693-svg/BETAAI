@@ -102,11 +102,25 @@ export default async function handler(req, res) {
     // Clean model string (strip prefixes like search/ or coding/)
     const cleanModel = rawModel.replace(/^(search|coding|nvidia|openrouter)\//i, '').trim();
 
-    // Dynamically build provider list with user/env keys
+    // Check mode: Reserve Gemini API key specifically for coding requests!
+    const isCodingMode = payload.mode === 'code' || rawModel.includes('coder') || rawModel.includes('coding');
+    const geminiKey = process.env.GEMINI_KEY || '';
+    const openrouterKey = process.env.OPENROUTER_KEY || '';
+
+    // Dynamically build provider list with key separation
     const activeProviders = PROVIDERS.map(p => {
       let keyToUse = p.key;
-      if (p.name === 'openrouter' && clientKey && clientKey.startsWith('sk-or-v1-')) {
-        keyToUse = clientKey;
+      if (p.name === 'openrouter') {
+        if (isCodingMode && geminiKey) {
+          // Dedicated Gemini API key for Coding Mode
+          keyToUse = geminiKey;
+        } else if (openrouterKey) {
+          keyToUse = openrouterKey;
+        } else if (clientKey && clientKey.startsWith('sk-or-v1-')) {
+          keyToUse = clientKey;
+        } else {
+          keyToUse = openrouterKey || geminiKey;
+        }
       }
       return { ...p, key: keyToUse };
     }).filter(p => p.key && p.key.trim().length > 0);
@@ -116,8 +130,8 @@ export default async function handler(req, res) {
       activeProviders.push({
         name: 'openrouter',
         url: 'https://openrouter.ai/api/v1/chat/completions',
-        key: clientKey || process.env.OPENROUTER_KEY || process.env.GEMINI_KEY || '',
-        models: ['google/gemini-2.5-flash:free', 'meta-llama/llama-3.3-70b-instruct:free', 'deepseek/deepseek-r1:free', 'qwen/qwen-2.5-coder-32b-instruct:free'],
+        key: isCodingMode ? (geminiKey || openrouterKey || clientKey) : (openrouterKey || geminiKey || clientKey),
+        models: isCodingMode ? ['google/gemini-2.5-flash:free', 'qwen/qwen-2.5-coder-32b-instruct:free'] : ['meta-llama/llama-3.3-70b-instruct:free', 'google/gemini-2.5-flash:free', 'deepseek/deepseek-r1:free'],
         timeout: 12000,
         extraHeaders: { 'X-Title': 'BETAAI' }
       });
@@ -125,14 +139,14 @@ export default async function handler(req, res) {
 
     // Map client requested model names to valid OpenRouter free models
     function mapOpenRouterModel(m) {
-      if (!m) return 'google/gemini-2.5-flash:free';
+      if (!m) return isCodingMode ? 'google/gemini-2.5-flash:free' : 'meta-llama/llama-3.3-70b-instruct:free';
       if (m.includes(':free')) return m;
       const lower = m.toLowerCase();
       if (lower.includes('llama')) return 'meta-llama/llama-3.3-70b-instruct:free';
       if (lower.includes('qwen') || lower.includes('coder')) return 'qwen/qwen-2.5-coder-32b-instruct:free';
       if (lower.includes('deepseek')) return 'deepseek/deepseek-r1:free';
       if (lower.includes('gemini')) return 'google/gemini-2.5-flash:free';
-      return 'google/gemini-2.5-flash:free';
+      return isCodingMode ? 'google/gemini-2.5-flash:free' : 'meta-llama/llama-3.3-70b-instruct:free';
     }
 
     for (const provider of activeProviders) {

@@ -97,10 +97,22 @@ const server = http.createServer(async (req, res) => {
         const clientKey = authHeader.replace(/^Bearer\s+/i, '').trim() || payload.key;
         const cleanModel = rawModel.replace(/^(search|coding|nvidia|openrouter)\//i, '').trim();
 
+        const isCodingMode = payload.mode === 'code' || rawModel.includes('coder') || rawModel.includes('coding');
+        const geminiKey = process.env.GEMINI_KEY || '';
+        const openrouterKey = process.env.OPENROUTER_KEY || '';
+
         const activeProviders = PROVIDERS.map(p => {
           let keyToUse = p.key;
-          if (p.name === 'openrouter' && clientKey && clientKey.startsWith('sk-or-v1-')) {
-            keyToUse = clientKey;
+          if (p.name === 'openrouter') {
+            if (isCodingMode && geminiKey) {
+              keyToUse = geminiKey;
+            } else if (openrouterKey) {
+              keyToUse = openrouterKey;
+            } else if (clientKey && clientKey.startsWith('sk-or-v1-')) {
+              keyToUse = clientKey;
+            } else {
+              keyToUse = openrouterKey || geminiKey;
+            }
           }
           return { ...p, key: keyToUse };
         }).filter(p => p.key && p.key.trim().length > 0);
@@ -109,22 +121,22 @@ const server = http.createServer(async (req, res) => {
           activeProviders.push({
             name: 'openrouter',
             url: 'https://openrouter.ai/api/v1/chat/completions',
-            key: clientKey || process.env.OPENROUTER_KEY || process.env.GEMINI_KEY || '',
-            models: ['google/gemini-2.5-flash:free', 'meta-llama/llama-3.3-70b-instruct:free', 'deepseek/deepseek-r1:free', 'qwen/qwen-2.5-coder-32b-instruct:free'],
+            key: isCodingMode ? (geminiKey || openrouterKey || clientKey) : (openrouterKey || geminiKey || clientKey),
+            models: isCodingMode ? ['google/gemini-2.5-flash:free', 'qwen/qwen-2.5-coder-32b-instruct:free'] : ['meta-llama/llama-3.3-70b-instruct:free', 'google/gemini-2.5-flash:free', 'deepseek/deepseek-r1:free'],
             timeout: 12000,
             extraHeaders: { 'X-Title': 'BETAAI' }
           });
         }
 
         function mapOpenRouterModel(m) {
-          if (!m) return 'google/gemini-2.5-flash:free';
+          if (!m) return isCodingMode ? 'google/gemini-2.5-flash:free' : 'meta-llama/llama-3.3-70b-instruct:free';
           if (m.includes(':free')) return m;
           const lower = m.toLowerCase();
           if (lower.includes('llama')) return 'meta-llama/llama-3.3-70b-instruct:free';
           if (lower.includes('qwen') || lower.includes('coder')) return 'qwen/qwen-2.5-coder-32b-instruct:free';
           if (lower.includes('deepseek')) return 'deepseek/deepseek-r1:free';
           if (lower.includes('gemini')) return 'google/gemini-2.5-flash:free';
-          return 'google/gemini-2.5-flash:free';
+          return isCodingMode ? 'google/gemini-2.5-flash:free' : 'meta-llama/llama-3.3-70b-instruct:free';
         }
 
         for (const provider of activeProviders) {
