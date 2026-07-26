@@ -1452,41 +1452,25 @@ document.getElementById('generate-img-btn').onclick = async () => {
     box.prepend(card);
 
     const seed = Math.floor(Math.random() * 9000000) + Date.now() + (i * 1000);
-    const candidateUrls = [
-      `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed}&nologo=true`,
-      `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed}&model=flux`,
-      `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed}&model=turbo`
-    ];
-    
-    const tryLoadImage = (src) => new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve(src);
-      img.onerror = () => reject();
-      img.src = src;
-    });
+    const url1 = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed}&nologo=true`;
+    const url2 = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed}&model=flux`;
+    const url3 = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed}&model=turbo`;
 
-    try {
-      let finalUrl = null;
-      for (const targetUrl of candidateUrls) {
-        try {
-          finalUrl = await tryLoadImage(targetUrl);
-          if (finalUrl) break;
-        } catch(e) {}
-      }
-      if (!finalUrl) throw new Error('All image generation models are currently busy. Please try again.');
-
-      card.innerHTML = `
-        <img src="${finalUrl}" class="w-full cursor-pointer" onclick="document.getElementById('lightbox-img').src='${finalUrl}';document.getElementById('lightbox').classList.remove('hidden')"/>
-        <div class="p-3">
-          <p class="text-[11px] text-themed-mute font-mono mb-2 truncate">${esc(prompt)}</p>
-          <div class="flex gap-2">
-            <a href="${finalUrl}" target="_blank" download class="h-7 px-3 btn-ink rounded-pill text-[11px] font-medium flex items-center">↓ Download</a>
-            <button class="h-7 px-3 border border-themed rounded-pill text-[11px] font-medium text-themed-body hover-card2" onclick="navigator.clipboard.writeText('${finalUrl}');toast('Copied!','success')">Copy URL</button>
-          </div>
-        </div>`;
-    } catch(err) {
-      card.innerHTML = `<div class="p-6 text-center text-sm text-error">${esc(err.message)} <button class="ml-2 text-xs text-link underline" onclick="this.closest('.surface-card').remove()">Remove</button></div>`;
-    }
+    card.innerHTML = `
+      <div class="relative min-h-[200px] flex items-center justify-center surface-card2">
+        <img src="${url1}" 
+             alt="${esc(prompt)}"
+             class="w-full cursor-pointer block"
+             onclick="document.getElementById('lightbox-img').src=this.src;document.getElementById('lightbox').classList.remove('hidden')"
+             onerror="if (!this.dataset.triedFlux) { this.dataset.triedFlux = 'true'; this.src = '${url2}'; } else if (!this.dataset.triedTurbo) { this.dataset.triedTurbo = 'true'; this.src = '${url3}'; }"/>
+      </div>
+      <div class="p-3 surface-card">
+        <p class="text-[11px] text-themed-mute font-mono mb-2 truncate">${esc(prompt)}</p>
+        <div class="flex gap-2">
+          <button class="h-7 px-3 btn-ink rounded-pill text-[11px] font-medium flex items-center" onclick="window.open(this.closest('.surface-card border').querySelector('img').src, '_blank')">↓ Download</button>
+          <button class="h-7 px-3 border border-themed rounded-pill text-[11px] font-medium text-themed-body hover-card2" onclick="navigator.clipboard.writeText(this.closest('.surface-card border').querySelector('img').src);toast('Copied!','success')">Copy URL</button>
+        </div>
+      </div>`;
   }
 
   btn.disabled = false;
