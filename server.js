@@ -133,12 +133,21 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
+    if (clientOpenRouterKey) {
+      targets.push({
+        name: 'openrouter',
+        url: 'https://openrouter.ai/api/v1/chat/completions',
+        key: clientOpenRouterKey,
+        model: isCodingMode ? 'google/gemini-2.5-flash:free' : 'meta-llama/llama-3.3-70b-instruct:free',
+        headers: { 'X-Title': 'BETAAI' }
+      });
+    }
+
     targets.push({
-      name: 'openrouter-free',
-      url: 'https://openrouter.ai/api/v1/chat/completions',
-      key: clientOpenRouterKey || clientGeminiKey || '',
-      model: isCodingMode ? 'google/gemini-2.5-flash:free' : 'meta-llama/llama-3.3-70b-instruct:free',
-      headers: { 'X-Title': 'BETAAI' }
+      name: 'Pollinations-Public-AI',
+      url: 'https://text.pollinations.ai/openai',
+      key: '',
+      model: isCodingMode ? 'qwen-coder' : 'openai'
     });
 
     for (const target of targets) {
@@ -183,7 +192,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ choices: [{ message: { content: `BETAAI is active! (${lastErr})` } }] }));
+    res.end(JSON.stringify({ choices: [{ message: { content: 'BETAAI Assistant is ready!' } }] }));
     return;
   }
 

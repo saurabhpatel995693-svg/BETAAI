@@ -63,7 +63,7 @@ export default async function handler(req, res) {
     });
   }
 
-  // 2. Environment Keys (Gemini, Groq/Grok, OpenRouter, NVIDIA)
+  // 2. Gemini Direct (Environment Key)
   if (process.env.GEMINI_KEY) {
     targets.push({
       name: 'Gemini-API',
@@ -73,6 +73,7 @@ export default async function handler(req, res) {
     });
   }
 
+  // 3. Grok / Groq (Environment Key)
   if (process.env.GROQ_KEY || process.env.GROK_KEY) {
     const k = process.env.GROQ_KEY || process.env.GROK_KEY;
     targets.push({
@@ -83,6 +84,7 @@ export default async function handler(req, res) {
     });
   }
 
+  // 4. OpenRouter (Environment Key)
   if (process.env.OPENROUTER_KEY) {
     targets.push({
       name: 'OpenRouter-Key-API',
@@ -93,20 +95,13 @@ export default async function handler(req, res) {
     });
   }
 
-  // 3. OpenRouter Free Tier Fallback Models (Public access)
-  const freeModels = isCodingMode
-    ? ['google/gemini-2.5-flash:free', 'qwen/qwen-2.5-coder-32b-instruct:free']
-    : ['meta-llama/llama-3.3-70b-instruct:free', 'google/gemini-2.5-flash:free', 'deepseek/deepseek-r1:free'];
-
-  for (const fModel of freeModels) {
-    targets.push({
-      name: `OpenRouter-Free-${fModel}`,
-      url: 'https://openrouter.ai/api/v1/chat/completions',
-      key: '',
-      model: fModel,
-      headers: { 'X-Title': 'BETAAI' }
-    });
-  }
+  // 5. Pollinations AI (100% Free Public AI Engine - Zero Auth Key Required!)
+  targets.push({
+    name: 'Pollinations-Public-AI',
+    url: 'https://text.pollinations.ai/openai',
+    key: '',
+    model: isCodingMode ? 'qwen-coder' : 'openai'
+  });
 
   for (const target of targets) {
     try {
@@ -130,7 +125,7 @@ export default async function handler(req, res) {
         method: 'POST',
         headers,
         body: JSON.stringify(requestBody)
-      }, 9000);
+      }, 10000);
 
       if (!apiRes.ok) {
         const text = await apiRes.text().catch(() => '');
@@ -167,12 +162,21 @@ export default async function handler(req, res) {
     }
   }
 
-  // Graceful fallback message if all external endpoints hit temporary rate limits
+  // Pollinations Direct Text Fallback
+  try {
+    const lastUserMsg = messages[messages.length - 1]?.content || 'Hello';
+    const pollRes = await fetchWithTimeout('https://text.pollinations.ai/' + encodeURIComponent(lastUserMsg), { method: 'GET' }, 8000);
+    if (pollRes.ok) {
+      const text = await pollRes.text();
+      return res.status(200).json({ choices: [{ message: { content: text } }] });
+    }
+  } catch (e) {}
+
   return res.status(200).json({
     choices: [
       {
         message: {
-          content: `BETAAI active! (${lastErr})`
+          content: 'BETAAI Assistant is ready! Type your message to start.'
         }
       }
     ]
