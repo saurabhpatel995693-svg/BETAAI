@@ -424,11 +424,11 @@ import '../styles/global.css';
               <label class="block text-xs font-medium mb-1 text-themed-ink">Describe the code</label>
               <textarea id="code-prompt" rows="4" placeholder="Build a responsive landing page with hero section, pricing cards, and footer..." class="w-full px-3 py-2 surface-card2 border border-themed rounded-sm text-sm text-themed-ink placeholder:text-themed-mute focus:outline-none transition"></textarea>
               <div class="mt-2 flex flex-wrap gap-1.5">
-                <button class="vibe-preset-btn text-[11px] font-mono px-2 py-1 rounded surface-card2 border border-themed text-themed-body hover:text-themed-ink transition" data-preset="Build a modern SaaS landing page with hero section, feature grid, pricing toggle, and animated CTA button using Tailwind CDN.">🚀 SaaS Landing</button>
-                <button class="vibe-preset-btn text-[11px] font-mono px-2 py-1 rounded surface-card2 border border-themed text-themed-body hover:text-themed-ink transition" data-preset="Create an interactive dark-mode Analytics Dashboard with chart cards, stats counters, user table, and activity feed using HTML/CSS/JS.">📊 Dashboard</button>
-                <button class="vibe-preset-btn text-[11px] font-mono px-2 py-1 rounded surface-card2 border border-themed text-themed-body hover:text-themed-ink transition" data-preset="Build an 80s Cyberpunk 2D Canvas space shooter game with high score system, particle explosion effects, and sound synth effects.">🎮 Canvas Game</button>
-                <button class="vibe-preset-btn text-[11px] font-mono px-2 py-1 rounded surface-card2 border border-themed text-themed-body hover:text-themed-ink transition" data-preset="Build an AI Chat assistant UI with dark mode, typing indicators, syntax highlighting code blocks, and message export button.">🤖 AI Chat UI</button>
-                <button class="vibe-preset-btn text-[11px] font-mono px-2 py-1 rounded surface-card2 border border-themed text-themed-body hover:text-themed-ink transition" data-preset="Build a drag-and-drop Kanban Task Board with columns for To Do, In Progress, and Done with local storage persistence.">📝 Kanban Board</button>
+                <button class="vibe-preset-btn text-[11px] font-mono px-2 py-1 rounded surface-card2 border border-themed text-themed-body hover:text-themed-ink transition" data-preset="Build an ultra-modern SaaS Landing Page for an AI Developer Platform with responsive hero section, gradient text headline, glassmorphic feature grid, monthly/yearly interactive pricing toggle cards, testimonial slider, and animated dark footer using Tailwind CDN.">🚀 SaaS Landing</button>
+                <button class="vibe-preset-btn text-[11px] font-mono px-2 py-1 rounded surface-card2 border border-themed text-themed-body hover:text-themed-ink transition" data-preset="Build an interactive dark-mode Analytics Dashboard with sidebar, chart visualizers, live KPI counter metrics, filter tabs, searchable user table, and activity feed using HTML/CSS/JS with Tailwind CDN.">📊 Dashboard</button>
+                <button class="vibe-preset-btn text-[11px] font-mono px-2 py-1 rounded surface-card2 border border-themed text-themed-body hover:text-themed-ink transition" data-preset="Build an 80s Cyberpunk Arcade 2D Canvas Space Shooter Game with score system, particle explosions, power-ups, retro neon UI overlay, and sound synth audio effects.">🎮 Canvas Game</button>
+                <button class="vibe-preset-btn text-[11px] font-mono px-2 py-1 rounded surface-card2 border border-themed text-themed-body hover:text-themed-ink transition" data-preset="Build a sleek AI Chat assistant UI with model selector dropdown, message streaming simulation, dark mode, syntax-highlighted code blocks, copy buttons, and export session modal.">🤖 AI Chat UI</button>
+                <button class="vibe-preset-btn text-[11px] font-mono px-2 py-1 rounded surface-card2 border border-themed text-themed-body hover:text-themed-ink transition" data-preset="Build a full drag-and-drop Kanban Task Management app with custom columns, task modal dialog, search filter, color tags, and local storage persistence.">📝 Kanban Board</button>
               </div>
             </div>
             <div class="flex gap-3">
@@ -1501,12 +1501,24 @@ document.getElementById('generate-code-btn').onclick = async () => {
   box.prepend(card);
 
   try {
-    const systemPrompt = `You are an elite principal software architect and UI designer by SAURABH. Generate production-ready, ultra-high-quality, fully responsive, and completely functional code for: "${prompt}".
-CRITICAL DIRECTIVES FOR HTML/CSS/JS AND APPLICATIONS:
-1. Output ONLY a SINGLE self-contained HTML file with embedded <style> and <script> tags.
-2. Design with rich aesthetics: modern Google Fonts, harmonious color palettes (deep dark mode or vibrant glassmorphism), subtle smooth micro-animations, flexbox/grid layouts, clean typography, hover effects, and interactive UI controls.
-3. Include COMPLETE, fully working JavaScript logic (all game loops, state variables, event listeners, dice rolls, player scoreboards, and buttons). NEVER leave placeholders, truncated logic, or '// TODO' comments.
-4. Output NOTHING before or after the code block. Wrap the entire single HTML file inside a single code block tagged with html (\`\`\`html).`;
+    const systemPrompt = `You are VibeCoding AI — an elite Senior Principal Software Architect, Frontend Lead & UI/UX Designer by SAURABH.
+Generate production-ready, ultra-high-quality, fully responsive, and breathtaking web applications for: "${prompt}".
+
+MANDATORY DESIGN SYSTEM & TECHNICAL SPECIFICATIONS:
+1. DESIGN & AESTHETICS:
+   - Output MUST look like a $100k Vercel / Apple product page — modern dark mode palette (#09090b / #121215), dynamic mesh gradient background, glassmorphic cards (backdrop-blur-md, border border-white/10), clean typography with negative tracking, subtle micro-animations (hover:scale-[1.02] transition-all duration-300).
+   - NEVER generate plain, unstyled, misaligned, or basic HTML layouts.
+2. TECHNICAL DEPENDENCIES INCLUDED IN HEAD:
+   - ALWAYS include Tailwind CSS CDN: <script src="https://cdn.tailwindcss.com"></script>
+   - ALWAYS include Google Fonts: <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+   - Set up Tailwind config script for custom colors, font families, and animations.
+3. LAYOUT & INTERACTION:
+   - Include a clean Navigation bar with logo badge + CTA, Hero Section with animated gradient headline span, Subtitle, CTA buttons, Feature grid with hover glow, Interactive elements (pricing monthly/yearly toggle, counter animations, working JS modals/tabs/games/forms).
+4. COMPLETENESS:
+   - Output 100% COMPLETE, self-contained single HTML file with embedded <style> and <script> tags.
+   - NO missing code, NO placeholders, NO truncated JS loops.
+5. FORMATTING:
+   - Output ONLY the single HTML file inside a single code block tagged with html (\`\`\`html). Output ZERO conversational text before or after the code block.`;
 
     const res = await fetchWithFailover(async (config) => {
       return await fetchChatCompletion(config, {
