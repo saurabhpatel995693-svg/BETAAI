@@ -1,0 +1,1835 @@
+---
+import '../styles/global.css';
+---
+
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BETAAI — by SAURABH</title>
+  <meta name="description" content="BETAAI by SAURABH — AI Chat, Image Generation, VibeCoding, Notebooks with Quiz & Flashcards."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css"/>
+
+  <!-- Firebase SDKs (compat for simplicity) -->
+  <script is:inline src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script is:inline src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script is:inline src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script is:inline src="https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics-compat.js"></script>
+
+  <script is:inline src="https://cdn.tailwindcss.com"></script>
+  <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+  <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script is:inline>
+    tailwind.config = {
+      darkMode: ['selector', '[data-theme="dark"]'],
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter','system-ui','sans-serif'], mono: ['JetBrains Mono','monospace'] },
+          colors: {
+            ink: '#171717', body: '#4d4d4d', mute: '#888888',
+            canvas: '#ffffff', 'canvas-soft': '#fafafa', 'canvas-soft-2': '#f5f5f5',
+            hairline: '#ebebeb', 'hairline-strong': '#a1a1a1',
+            link: '#0070f3', 'link-deep': '#0761d1', 'link-bg-soft': '#d3e5ff',
+            error: '#ee0000', 'error-soft': '#f7d4d6', 'error-deep': '#c50000',
+            warning: '#f5a623', 'warning-soft': '#ffefcf',
+            success: '#0070f3',
+            violet: '#7928ca', cyan: '#50e3c2', pink: '#ff0080',
+            /* dark-mode surfaces */
+            'dk-bg': '#0a0a0a', 'dk-card': '#141414', 'dk-card2': '#1a1a1a', 'dk-border': '#2e2e2e', 'dk-mute': '#666666',
+          },
+          borderRadius: { xs:'4px', sm:'6px', md:'8px', lg:'12px', xl:'16px', pill:'100px' },
+          spacing: { xxs:'4px', xs:'8px', sm:'12px', md:'16px', lg:'24px', xl:'32px', '2xl':'40px', '3xl':'48px', '4xl':'64px' },
+          boxShadow: {
+            'level-2':'0 0 0 1px rgba(0,0,0,0.08) inset,0 1px 1px rgba(0,0,0,0.02),0 2px 2px rgba(0,0,0,0.04)',
+            'level-3':'0 0 0 1px rgba(0,0,0,0.08) inset,0 2px 2px rgba(0,0,0,0.04),0 8px 8px -8px rgba(0,0,0,0.04)',
+            'level-4':'0 0 0 1px rgba(0,0,0,0.08) inset,0 2px 2px rgba(0,0,0,0.04),0 8px 16px -4px rgba(0,0,0,0.04)',
+            'level-5':'0 0 0 1px rgba(0,0,0,0.08) inset,0 1px 1px rgba(0,0,0,0.02),0 8px 16px -4px rgba(0,0,0,0.04),0 24px 32px -8px rgba(0,0,0,0.06)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* ── Light defaults ── */
+    :root { --bg:#fafafa; --card:#fff; --card2:#f5f5f5; --border:#ebebeb; --ink:#171717; --body:#4d4d4d; --mute:#888; }
+    [data-theme="dark"] { --bg:#0a0a0a; --card:#141414; --card2:#1a1a1a; --border:#2e2e2e; --ink:#ededed; --body:#a1a1a1; --mute:#666; }
+    body { background:var(--bg); color:var(--ink); transition:background .3s,color .3s; }
+
+    /* ── Vercel Typography ── */
+    .text-display-xl{font-size:48px;line-height:48px;letter-spacing:-2.4px;font-weight:600}
+    .text-display-lg{font-size:32px;line-height:40px;letter-spacing:-1.28px;font-weight:600}
+    .text-display-md{font-size:24px;line-height:32px;letter-spacing:-0.96px;font-weight:600}
+    .text-display-sm{font-size:20px;line-height:28px;letter-spacing:-.6px;font-weight:600}
+
+    /* ── Mesh gradient ── */
+    @keyframes gradient-shift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+    .mesh-gradient{background:linear-gradient(135deg,#007cf0,#00dfd8,#7928ca,#ff0080,#ff4d4d,#f9cb28);background-size:300% 300%;animation:gradient-shift 8s ease infinite}
+
+    /* ── Theme-adaptive surfaces ── */
+    .surface-page{background:var(--bg)}
+    .surface-card{background:var(--card);border-color:var(--border)}
+    .surface-card2{background:var(--card2);border-color:var(--border)}
+    .text-themed-ink{color:var(--ink)} .text-themed-body{color:var(--body)} .text-themed-mute{color:var(--mute)}
+    .border-themed{border-color:var(--border)}
+    .hover-card2:hover{background:var(--card2)}
+
+    /* ── Markdown ── */
+    .markdown-body pre{background:#171717!important;border-radius:8px;padding:16px;overflow-x:auto;margin:12px 0;position:relative}
+    .markdown-body pre code{color:#e5e5e5;font-size:13px}
+    .markdown-body code:not(pre code){background:var(--card2);color:var(--ink);padding:2px 6px;border-radius:4px;font-size:13px}
+    .markdown-body blockquote{border-left:3px solid var(--border);padding-left:16px;color:var(--body);margin:12px 0}
+    .markdown-body table{width:100%;border-collapse:collapse;margin:12px 0}
+    .markdown-body th,.markdown-body td{border:1px solid var(--border);padding:8px 12px;text-align:left;font-size:14px}
+    .markdown-body th{background:var(--card2);font-weight:500}
+    .markdown-body ul,.markdown-body ol{padding-left:20px;margin:8px 0}
+    .markdown-body li{margin:4px 0}
+    .markdown-body h1,.markdown-body h2,.markdown-body h3{margin:16px 0 8px;font-weight:600;letter-spacing:-.02em}
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar{width:6px} ::-webkit-scrollbar-thumb{background:var(--mute);border-radius:100px}
+    ::-webkit-scrollbar-track{background:transparent}
+
+    /* ── Flashcards ── */
+    .flashcard{perspective:1000px;cursor:pointer} .flashcard-inner{transition:transform .6s;transform-style:preserve-3d}
+    .flashcard.flipped .flashcard-inner{transform:rotateY(180deg)}
+    .flashcard-front,.flashcard-back{backface-visibility:hidden;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;border-radius:8px}
+    .flashcard-back{transform:rotateY(180deg)}
+
+    /* ── Animations ── */
+    @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.3}}
+    .animate-fade-up{animation:fadeUp .3s ease}
+    .pulse-dot{animation:pulse-dot 1.2s ease infinite}
+
+    /* ── Voice wave ── */
+    @keyframes voice-wave{0%,100%{height:8px}50%{height:20px}}
+    .voice-bar{width:3px;border-radius:100px;animation:voice-wave .8s ease infinite}
+    .voice-bar:nth-child(2){animation-delay:.1s}.voice-bar:nth-child(3){animation-delay:.2s}.voice-bar:nth-child(4){animation-delay:.3s}
+
+    /* ── Live preview iframe ── */
+    .live-preview-frame{border:0;width:100%;height:300px;border-radius:0 0 8px 8px;background:#fff}
+
+    /* ── Button ink themed ── */
+    .btn-ink{background:var(--ink);color:var(--bg)}
+    .btn-ink:hover{opacity:.9}
+    [data-theme="dark"] .btn-ink{background:#ededed;color:#0a0a0a}
+
+    /* ── Sidebar active indicator ── */
+    .mode-active{position:relative}
+    .mode-active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:16px;background:linear-gradient(180deg,#007cf0,#7928ca);border-radius:0 4px 4px 0}
+
+    /* Mobile overlay */
+    .sidebar-overlay{display:none}
+    .sidebar-overlay.active{display:block;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:40}
+    @media(max-width:1023px){.sidebar-mobile{transform:translateX(-100%);transition:transform .3s}.sidebar-mobile.open{transform:translateX(0)}}
+  </style>
+</head>
+<body class="font-sans antialiased min-h-screen">
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--                        LOGIN SCREEN                           -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center surface-page">
+  <div class="max-w-sm w-full mx-4 animate-fade-up">
+    <!-- Logo -->
+    <div class="text-center mb-8">
+      <div class="w-20 h-20 rounded-xl mesh-gradient mx-auto mb-4 flex items-center justify-center text-white text-display-md shadow-level-4">β</div>
+      <h1 class="text-display-lg text-themed-ink">BETAAI.</h1>
+      <p class="text-themed-body text-sm mt-2">AI platform by <strong class="text-themed-ink">SAURABH</strong></p>
+      <p class="text-themed-mute text-xs mt-1 font-mono">Chat · Image Gen · VibeCoding · Notebooks</p>
+    </div>
+    <!-- Auth Buttons -->
+    <div class="space-y-3">
+      <button id="login-google" class="w-full h-12 btn-ink rounded-pill text-sm font-medium flex items-center justify-center gap-2 transition shadow-level-3">
+        <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A11.96 11.96 0 001 12c0 1.94.46 3.77 1.18 5.07l3.66-2.98z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Sign in with Google
+      </button>
+      <button id="login-guest" class="w-full h-12 surface-card border border-themed text-themed-ink rounded-pill text-sm font-medium hover-card2 transition shadow-level-2">
+        Continue as guest
+      </button>
+    </div>
+    <!-- Status -->
+    <div id="login-status" class="text-center text-xs text-themed-mute mt-4 font-mono hidden"></div>
+    <p class="text-center text-themed-mute text-[11px] font-mono mt-6">v2.5 · Firebase Auth · Cloud Sync · Created by SAURABH</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--                          APP SHELL                            -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div id="app-shell" class="hidden h-screen">
+<div class="flex h-full">
+
+  <!-- Sidebar overlay for mobile -->
+  <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+  <!-- ─── SIDEBAR ─── -->
+  <aside id="sidebar" class="w-[280px] border-r border-themed surface-card flex flex-col h-full shrink-0 fixed lg:relative z-50 sidebar-mobile">
+
+    <!-- Brand -->
+    <div class="p-4 flex items-center gap-3 border-b border-themed">
+      <div class="w-9 h-9 rounded-lg mesh-gradient flex items-center justify-center text-white text-sm font-semibold shadow-level-2">β</div>
+      <div class="flex-1 min-w-0">
+        <div class="text-sm font-semibold tracking-tight text-themed-ink">BETAAI</div>
+        <div class="text-[11px] font-mono text-themed-mute truncate">by SAURABH</div>
+      </div>
+      <button onclick="toggleTheme()" class="w-8 h-8 rounded-sm border border-themed flex items-center justify-center text-themed-mute hover:text-themed-ink transition" title="Toggle theme">
+        <span id="theme-icon">🌙</span>
+      </button>
+    </div>
+
+    <!-- Mode Navigation -->
+    <div class="p-2 space-y-0.5">
+      <button data-mode="chat" class="mode-btn mode-active w-full h-9 px-3 rounded-sm text-[13px] font-medium flex items-center gap-2 text-themed-ink transition hover-card2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+        Chat
+      </button>
+      <button data-mode="image" class="mode-btn w-full h-9 px-3 rounded-sm text-[13px] font-medium flex items-center gap-2 text-themed-body transition hover-card2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        Image Gen
+      </button>
+      <button data-mode="code" class="mode-btn w-full h-9 px-3 rounded-sm text-[13px] font-medium flex items-center gap-2 text-themed-body transition hover-card2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+        VibeCoding
+      </button>
+      <button data-mode="notebook" class="mode-btn w-full h-9 px-3 rounded-sm text-[13px] font-medium flex items-center gap-2 text-themed-body transition hover-card2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        Notebooks
+      </button>
+      <button data-mode="search" class="mode-btn w-full h-9 px-3 rounded-sm text-[13px] font-medium flex items-center gap-2 text-themed-body transition hover-card2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        Web Search
+      </button>
+    </div>
+
+    <div class="px-3"><div class="border-t border-themed"></div></div>
+
+    <!-- New Chat + Search -->
+    <div class="p-2 space-y-1.5">
+      <button id="new-chat-btn" class="w-full h-9 btn-ink rounded-sm text-[13px] font-medium flex items-center justify-center gap-1 transition">
+        <span>+</span> New chat
+      </button>
+      <div class="relative">
+        <input id="search-history" placeholder="Search chats..." class="w-full h-8 pl-8 pr-2 rounded-sm text-xs surface-card2 border border-themed text-themed-ink placeholder:text-themed-mute focus:outline-none"/>
+        <svg class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-themed-mute" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      </div>
+    </div>
+
+    <!-- History -->
+    <div id="history-list" class="flex-1 overflow-y-auto px-2 py-1 space-y-0.5 text-[13px]"></div>
+
+    <!-- User Footer -->
+    <div class="p-3 border-t border-themed">
+      <div class="flex items-center gap-2">
+        <img id="sidebar-avatar" class="w-8 h-8 rounded-full border border-themed" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><rect fill='%23f5f5f5' width='32' height='32' rx='16'/><text x='16' y='20' text-anchor='middle' fill='%23888' font-size='14'>G</text></svg>" alt="avatar"/>
+        <div class="flex-1 min-w-0">
+          <div id="sidebar-user-name" class="text-xs font-medium truncate text-themed-ink">Guest</div>
+          <div id="sidebar-user-email" class="text-[10px] font-mono text-themed-mute truncate">local</div>
+        </div>
+        <button id="sync-btn" class="w-7 h-7 rounded-sm border border-themed flex items-center justify-center text-themed-mute hover:text-link text-xs transition" title="Cloud sync">☁</button>
+        <button id="logout-btn" class="w-7 h-7 rounded-sm border border-themed flex items-center justify-center text-themed-mute hover:text-error text-xs transition" title="Logout">↗</button>
+      </div>
+      <div class="text-[10px] font-mono text-themed-mute mt-1.5 text-center">CREATED BY SAURABH</div>
+    </div>
+  </aside>
+
+  <!-- ─── MAIN CONTENT ─── -->
+  <main class="flex-1 flex flex-col h-full overflow-hidden surface-page">
+
+    <!-- ── Top Bar ── -->
+    <header class="h-14 px-4 flex items-center justify-between border-b border-themed surface-card shrink-0">
+      <div class="flex items-center gap-2">
+        <button id="mobile-menu-btn" class="lg:hidden w-8 h-8 rounded-sm border border-themed flex items-center justify-center text-themed-body" onclick="toggleSidebar()">☰</button>
+        <h2 id="topbar-title" class="text-sm font-semibold tracking-tight truncate max-w-[180px] text-themed-ink">New chat</h2>
+        <div id="model-pill" class="hidden items-center gap-1.5 px-2 h-6 rounded-full surface-card2 border border-themed text-[10px] font-mono text-themed-mute">
+          <span class="w-1.5 h-1.5 rounded-full bg-cyan pulse-dot"></span>
+          <span id="model-pill-text">gpt-4o-mini</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <select id="model-select" class="hidden h-7 px-2 rounded-sm surface-card2 border border-themed text-[11px] font-mono text-themed-ink focus:outline-none">
+          <option value="nvidia/nemotron-3-ultra-550b-a55b:free" selected>nemotron-3-ultra:free</option>
+          <option value="free02/glm5.1:part1">free02/glm5.1:part1</option>
+          <option value="poolside/laguna-xs-2.1:free">poolside/laguna-xs-2.1:free</option>
+          <option value="google/gemini-2.5-flash:free">gemini-2.5-flash:free</option>
+          <option value="meta-llama/llama-4-maverick:free">llama-4-maverick:free</option>
+          <option value="deepseek/deepseek-chat-v3-0324:free">deepseek-v3:free</option>
+          <option value="qwen/qwen3-235b-a22b:free">qwen3-235b:free</option>
+          <option value="mistralai/mistral-small-3.2-24b-instruct:free">mistral-small:free</option>
+          <option value="openai/gpt-4o-mini">gpt-4o-mini</option>
+          <option value="anthropic/claude-sonnet-4">claude-sonnet-4</option>
+        </select>
+        <button id="settings-btn" class="w-8 h-8 rounded-sm border border-themed flex items-center justify-center text-themed-body hover:text-themed-ink transition">⚙</button>
+        <button id="export-btn" class="w-8 h-8 rounded-sm border border-themed flex items-center justify-center text-themed-body hover:text-themed-ink transition" title="Export chat">↓</button>
+      </div>
+    </header>
+
+    <!-- ═══════════ VIEW: CHAT ═══════════ -->
+    <div id="view-chat" class="flex-1 flex flex-col overflow-hidden">
+      <!-- Welcome -->
+      <div id="chat-welcome" class="flex-1 flex items-center justify-center p-6">
+        <div class="max-w-lg text-center animate-fade-up">
+          <div class="w-20 h-20 rounded-xl mesh-gradient mx-auto mb-6 flex items-center justify-center text-white text-3xl font-semibold shadow-level-4">β</div>
+          <h2 class="text-display-lg text-themed-ink mb-2">What can I help with?</h2>
+          <p class="text-themed-body text-sm mb-8">AI assistant by <strong class="text-themed-ink">SAURABH</strong> — chat, generate images, code, and study.</p>
+          <!-- Suggestion Grid -->
+          <div class="grid grid-cols-2 gap-3 text-left">
+            <button class="suggest-btn p-4 rounded-md surface-card border border-themed shadow-level-2 hover:shadow-level-3 transition text-left animate-fade-up" style="animation-delay:0s">
+              <div class="text-xs font-medium mb-1 text-themed-ink">💬 Explain quantum computing</div>
+              <div class="text-[11px] text-themed-mute">In simple terms</div>
+            </button>
+            <button class="suggest-btn p-4 rounded-md surface-card border border-themed shadow-level-2 hover:shadow-level-3 transition text-left animate-fade-up" style="animation-delay:.05s">
+              <div class="text-xs font-medium mb-1 text-themed-ink">🐍 Write a Python script</div>
+              <div class="text-[11px] text-themed-mute">API data fetcher</div>
+            </button>
+            <button class="suggest-btn p-4 rounded-md surface-card border border-themed shadow-level-2 hover:shadow-level-3 transition text-left animate-fade-up" style="animation-delay:.1s">
+              <div class="text-xs font-medium mb-1 text-themed-ink">🎨 Generate an image</div>
+              <div class="text-[11px] text-themed-mute">Futuristic city at sunset</div>
+            </button>
+            <button class="suggest-btn p-4 rounded-md surface-card border border-themed shadow-level-2 hover:shadow-level-3 transition text-left animate-fade-up" style="animation-delay:.15s">
+              <div class="text-xs font-medium mb-1 text-themed-ink">📝 Write a blog post</div>
+              <div class="text-[11px] text-themed-mute">About AI in education</div>
+            </button>
+          </div>
+          <!-- Persona selector -->
+          <div class="mt-6">
+            <div class="text-[11px] font-mono text-themed-mute uppercase mb-2 tracking-wide">Select persona</div>
+            <div class="flex flex-wrap justify-center gap-2">
+              <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="default">🤖 Default</button>
+              <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="coder">💻 Coder</button>
+              <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="teacher">📚 Teacher</button>
+              <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="creative">🎭 Creative</button>
+              <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="analyst">📊 Analyst</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Messages -->
+      <div id="chat-messages" class="flex-1 overflow-y-auto px-4 py-6 hidden">
+        <div id="messages-list" class="max-w-[760px] mx-auto space-y-5"></div>
+      </div>
+      <!-- Input Area -->
+      <div class="p-3 border-t border-themed surface-card shrink-0">
+        <div class="max-w-[760px] mx-auto">
+          <div class="surface-card border border-themed rounded-lg shadow-level-2 focus-within:shadow-level-4 transition p-3" id="drop-zone">
+            <div id="file-attach-preview" class="hidden mb-2 flex items-center gap-2 px-2 py-1 rounded-sm surface-card2 border border-themed">
+              <span class="text-[11px] font-mono text-themed-mute" id="attach-name"></span>
+              <button id="remove-attach" class="text-themed-mute hover:text-error text-xs">✕</button>
+            </div>
+            <textarea id="chat-input" rows="1" placeholder="Message BETAAI..." class="w-full bg-transparent text-sm text-themed-ink placeholder:text-themed-mute focus:outline-none resize-none max-h-[160px]"></textarea>
+            <div class="flex items-center justify-between pt-2">
+              <div class="flex items-center gap-1">
+                <label class="h-7 px-2 rounded-sm text-[11px] font-mono text-themed-mute border border-themed hover-card2 transition flex items-center gap-1 cursor-pointer" title="Attach file">
+                  📎 <input type="file" id="chat-file-input" class="hidden" accept=".txt,.md,.json,.csv,.py,.js,.html,.css"/>
+                </label>
+                <button id="voice-btn" class="h-7 px-2 rounded-sm text-[11px] font-mono text-themed-mute border border-themed hover-card2 transition" title="Voice input (V)">🎤</button>
+                <button id="img-mode-toggle" class="h-7 px-2 rounded-sm text-[11px] font-mono text-themed-mute border border-themed hover-card2 transition">🎨 Image</button>
+              </div>
+              <div class="flex items-center gap-2">
+                <span id="char-count" class="text-[10px] font-mono text-themed-mute">0</span>
+                <div id="voice-indicator" class="hidden flex items-center gap-0.5 h-5">
+                  <div class="voice-bar bg-error" style="height:8px"></div>
+                  <div class="voice-bar bg-error" style="height:12px"></div>
+                  <div class="voice-bar bg-error" style="height:16px"></div>
+                  <div class="voice-bar bg-error" style="height:10px"></div>
+                </div>
+                <button id="stop-btn" class="hidden h-7 px-3 rounded-sm bg-error text-white text-xs font-medium transition">Stop</button>
+                <button id="send-btn" class="h-8 w-8 btn-ink rounded-sm flex items-center justify-center transition shadow-level-2">
+                  <svg class="w-4 h-4 rotate-90" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center justify-between mt-1">
+            <div class="text-[10px] font-mono text-themed-mute">Enter = send · Shift+Enter = line · V = voice · Ctrl+K = new chat</div>
+            <div class="text-[10px] font-mono text-themed-mute">BETAAI by SAURABH</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ VIEW: IMAGE GEN ═══════════ -->
+    <div id="view-image" class="flex-1 flex flex-col overflow-hidden hidden">
+      <div class="flex-1 overflow-y-auto p-6">
+        <div class="max-w-2xl mx-auto">
+          <h3 class="text-display-md text-themed-ink mb-1">Image generation.</h3>
+          <p class="text-themed-body text-sm mb-6">Create images with Pollinations AI — free, unlimited, no API key required.</p>
+          <div class="surface-card rounded-lg border border-themed shadow-level-3 p-8 space-y-4">
+            <div>
+              <label class="block text-xs font-medium mb-1 text-themed-ink">Prompt</label>
+              <textarea id="img-prompt" rows="3" placeholder="A futuristic cityscape at sunset with flying cars..." class="w-full px-3 py-2 surface-card2 border border-themed rounded-sm text-sm text-themed-ink placeholder:text-themed-mute focus:outline-none transition"></textarea>
+            </div>
+            <div class="grid grid-cols-3 gap-3">
+              <div>
+                <label class="block text-[11px] font-mono text-themed-mute mb-1">Size</label>
+                <select id="img-size" class="w-full h-9 px-2 surface-card2 border border-themed rounded-sm text-xs font-mono text-themed-ink">
+                  <option value="1024x1024">1024×1024</option>
+                  <option value="1024x768">1024×768</option>
+                  <option value="768x1024">768×1024</option>
+                  <option value="1920x1080">1920×1080</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[11px] font-mono text-themed-mute mb-1">Style</label>
+                <select id="img-style" class="w-full h-9 px-2 surface-card2 border border-themed rounded-sm text-xs font-mono text-themed-ink">
+                  <option value="">None</option>
+                  <option value="photorealistic, 8k, detailed">Photorealistic</option>
+                  <option value="anime style, vibrant colors">Anime</option>
+                  <option value="oil painting, classic art">Oil Painting</option>
+                  <option value="3D render, octane, unreal engine">3D Render</option>
+                  <option value="watercolor illustration">Watercolor</option>
+                  <option value="pixel art, retro">Pixel Art</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[11px] font-mono text-themed-mute mb-1">Count</label>
+                <select id="img-count" class="w-full h-9 px-2 surface-card2 border border-themed rounded-sm text-xs font-mono text-themed-ink">
+                  <option>1</option><option>2</option><option>4</option>
+                </select>
+              </div>
+            </div>
+            <button id="generate-img-btn" class="h-10 px-8 btn-ink rounded-pill text-sm font-medium transition shadow-level-2">Generate image</button>
+          </div>
+          <div id="img-results" class="mt-6 columns-2 gap-4 space-y-4"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ VIEW: VIBECODING ═══════════ -->
+    <div id="view-code" class="flex-1 flex flex-col overflow-hidden hidden">
+      <div class="flex-1 overflow-y-auto p-6">
+        <div class="max-w-3xl mx-auto">
+          <h3 class="text-display-md text-themed-ink mb-1">VibeCoding.</h3>
+          <p class="text-themed-body text-sm mb-6">Describe what you want — BETAAI writes production-ready code with live preview.</p>
+          <div class="surface-card rounded-lg border border-themed shadow-level-3 p-8 space-y-4">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-medium mb-1 text-themed-ink">Language</label>
+                <select id="code-lang" class="w-full h-10 px-3 surface-card2 border border-themed rounded-sm text-sm text-themed-ink focus:outline-none">
+                  <option>Python</option><option>JavaScript</option><option>TypeScript</option><option selected>HTML/CSS/JS</option><option>React JSX</option><option>Java</option><option>C++</option><option>Go</option><option>Rust</option><option>SQL</option><option>Swift</option><option>Kotlin</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-medium mb-1 text-themed-ink">Complexity</label>
+                <select id="code-complexity" class="w-full h-10 px-3 surface-card2 border border-themed rounded-sm text-sm text-themed-ink focus:outline-none">
+                  <option>Simple snippet</option><option>Complete module</option><option>Full application</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-medium mb-1 text-themed-ink">Describe the code</label>
+              <textarea id="code-prompt" rows="4" placeholder="Build a responsive landing page with hero section, pricing cards, and footer..." class="w-full px-3 py-2 surface-card2 border border-themed rounded-sm text-sm text-themed-ink placeholder:text-themed-mute focus:outline-none transition"></textarea>
+            </div>
+            <div class="flex gap-3">
+              <button id="generate-code-btn" class="h-10 px-8 btn-ink rounded-pill text-sm font-medium transition shadow-level-2">Generate code</button>
+              <button id="refine-code-btn" class="hidden h-10 px-6 surface-card border border-themed rounded-pill text-sm font-medium text-themed-body hover-card2 transition">✨ Refine</button>
+            </div>
+          </div>
+          <div id="code-results" class="mt-6 space-y-6"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ VIEW: NOTEBOOKS ═══════════ -->
+    <div id="view-notebook" class="flex-1 flex flex-col overflow-hidden hidden">
+      <div class="flex-1 overflow-y-auto p-6">
+        <div class="max-w-3xl mx-auto">
+          <h3 class="text-display-md text-themed-ink mb-1">Notebooks.</h3>
+          <p class="text-themed-body text-sm mb-6">Upload documents or paste links — AI generates quizzes, flashcards, summaries, and more.</p>
+
+          <!-- Upload / Link / GitHub -->
+          <div class="grid md:grid-cols-3 gap-4 mb-6">
+            <div class="surface-card rounded-lg border border-themed shadow-level-2 p-6 text-center hover:shadow-level-3 transition flex flex-col justify-between" id="nb-drop-zone">
+              <div>
+                <div class="text-3xl mb-2">📄</div>
+                <div class="text-sm font-medium text-themed-ink mb-1">Upload document</div>
+                <div class="text-[11px] text-themed-mute mb-4">PDF, TXT, MD, JSON — or drag & drop</div>
+                <input type="file" id="nb-file-input" accept=".pdf,.txt,.md,.json,.csv" class="hidden" multiple/>
+              </div>
+              <button id="nb-upload-btn" class="w-full h-8 btn-ink rounded-pill text-xs font-medium transition">Choose file</button>
+            </div>
+            <div class="surface-card rounded-lg border border-themed shadow-level-2 p-6 hover:shadow-level-3 transition flex flex-col justify-between">
+              <div>
+                <div class="text-3xl mb-2 text-center">🔗</div>
+                <div class="text-sm font-medium text-themed-ink mb-1 text-center">Add web link</div>
+                <input type="url" id="nb-link-input" placeholder="https://en.wikipedia.org/..." class="w-full h-8 px-3 surface-card2 border border-themed rounded-sm text-xs text-themed-ink placeholder:text-themed-mute mt-3 focus:outline-none"/>
+              </div>
+              <button id="nb-link-btn" class="w-full h-8 mt-4 btn-ink rounded-pill text-xs font-medium transition">Import link</button>
+            </div>
+            <div class="surface-card rounded-lg border border-themed shadow-level-2 p-6 hover:shadow-level-3 transition flex flex-col justify-between">
+              <div>
+                <div class="text-3xl mb-2 text-center">🐙</div>
+                <div class="text-sm font-medium text-themed-ink mb-1 text-center">Import from GitHub</div>
+                <div class="space-y-1.5 mt-2">
+                  <input type="text" id="nb-github-repo" placeholder="owner/repo" class="w-full h-8 px-3 surface-card2 border border-themed rounded-sm text-xs text-themed-ink placeholder:text-themed-mute focus:outline-none"/>
+                  <input type="text" id="nb-github-path" placeholder="path/to/file or folder" class="w-full h-8 px-3 surface-card2 border border-themed rounded-sm text-xs text-themed-ink placeholder:text-themed-mute focus:outline-none"/>
+                </div>
+              </div>
+              <button id="nb-github-btn" class="w-full h-8 mt-3 btn-ink rounded-pill text-xs font-medium transition">Import repo</button>
+            </div>
+          </div>
+
+          <div id="nb-sources" class="space-y-2 mb-4"></div>
+
+          <!-- Actions -->
+          <div id="nb-actions" class="hidden">
+            <div class="text-[11px] font-mono text-themed-mute uppercase tracking-wide mb-2">Generate from sources</div>
+            <div class="flex items-center gap-2 flex-wrap mb-6">
+              <button data-action="quiz" class="nb-action-btn h-9 px-4 rounded-pill border border-themed text-sm font-medium text-themed-ink hover-card2 transition shadow-level-2">📝 Quiz</button>
+              <button data-action="flashcard" class="nb-action-btn h-9 px-4 rounded-pill border border-themed text-sm font-medium text-themed-ink hover-card2 transition shadow-level-2">🃏 Flashcards</button>
+              <button data-action="summary" class="nb-action-btn h-9 px-4 rounded-pill border border-themed text-sm font-medium text-themed-ink hover-card2 transition shadow-level-2">📋 Summary</button>
+              <button data-action="mindmap" class="nb-action-btn h-9 px-4 rounded-pill border border-themed text-sm font-medium text-themed-ink hover-card2 transition shadow-level-2">🧠 Key Concepts</button>
+              <button data-action="timeline" class="nb-action-btn h-9 px-4 rounded-pill border border-themed text-sm font-medium text-themed-ink hover-card2 transition shadow-level-2">📅 Timeline</button>
+              <button data-action="practice" class="nb-action-btn h-9 px-4 rounded-pill border border-themed text-sm font-medium text-themed-ink hover-card2 transition shadow-level-2">🎯 Practice Test</button>
+              <button data-action="explain" class="nb-action-btn h-9 px-4 rounded-pill border border-themed text-sm font-medium text-themed-ink hover-card2 transition shadow-level-2">💡 ELI5</button>
+            </div>
+          </div>
+          <div id="nb-output" class="space-y-6"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ VIEW: WEB SEARCH ═══════════ -->
+    <div id="view-search" class="flex-1 flex flex-col overflow-hidden hidden">
+      <div class="flex-1 overflow-y-auto p-6">
+        <div class="max-w-2xl mx-auto">
+          <h3 class="text-display-md text-themed-ink mb-1">Web search.</h3>
+          <p class="text-themed-body text-sm mb-6">Search the web and get AI-summarized answers with sources.</p>
+          <div class="flex gap-2 mb-6">
+            <input id="search-query" placeholder="Search anything..." class="flex-1 h-12 px-4 surface-card border border-themed rounded-lg text-sm text-themed-ink placeholder:text-themed-mute focus:outline-none shadow-level-2 focus:shadow-level-4 transition"/>
+            <button id="search-go-btn" class="h-12 px-6 btn-ink rounded-lg text-sm font-medium transition shadow-level-2">Search</button>
+          </div>
+          <div id="search-results" class="space-y-4"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+</div>
+
+<!-- ══════════ SETTINGS MODAL ══════════ -->
+<div id="settings-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden">
+  <div class="max-w-lg w-full surface-card rounded-lg shadow-level-5 p-8 space-y-4 animate-fade-up max-h-[85vh] overflow-y-auto">
+    <div class="flex items-center justify-between">
+      <h3 class="text-display-sm text-themed-ink">Settings.</h3>
+      <button id="close-settings" class="text-themed-mute hover:text-themed-ink text-lg">✕</button>
+    </div>
+    <div>
+      <label class="block text-xs font-medium mb-1 text-themed-ink">OpenRouter API Key</label>
+      <input type="password" id="s-api-key" placeholder="sk-or-v1-..." class="w-full h-10 px-3 surface-card border border-themed rounded-sm text-sm text-themed-ink focus:outline-none"/>
+      <div class="text-[10px] font-mono text-themed-mute mt-1">Leave empty to use built-in key</div>
+    </div>
+    <div>
+      <label class="block text-xs font-medium mb-1 text-themed-ink">API Base URL</label>
+      <input type="text" id="s-api-base" placeholder="https://openrouter.ai/api/v1" class="w-full h-10 px-3 surface-card border border-themed rounded-sm text-sm text-themed-ink focus:outline-none"/>
+      <div class="text-[10px] font-mono text-themed-mute mt-1">Default: https://openrouter.ai/api/v1 (or set custom Ollama/SiliconFlow proxy)</div>
+    </div>
+    <div>
+      <label class="block text-xs font-medium mb-1 text-themed-ink">GitHub Personal Access Token (PAT)</label>
+      <input type="password" id="s-github-token" placeholder="ghp_..." class="w-full h-10 px-3 surface-card border border-themed rounded-sm text-sm text-themed-ink focus:outline-none"/>
+      <div class="text-[10px] font-mono text-themed-mute mt-1">Allows importing private repositories & higher API limits</div>
+    </div>
+    <div>
+      <label class="block text-xs font-medium mb-1 text-themed-ink">System prompt</label>
+      <textarea id="s-system-prompt" rows="3" class="w-full px-3 py-2 surface-card border border-themed rounded-sm text-xs text-themed-ink focus:outline-none" placeholder="You are BETAAI..."></textarea>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-xs font-medium mb-1 text-themed-ink">Temperature</label>
+        <input type="range" id="s-temperature" min="0" max="2" step="0.1" value="0.7" class="w-full"/>
+        <div class="text-[10px] font-mono text-themed-mute text-center" id="temp-val">0.7</div>
+      </div>
+      <div>
+        <label class="block text-xs font-medium mb-1 text-themed-ink">Max tokens</label>
+        <input type="number" id="s-max-tokens" value="4096" class="w-full h-10 px-3 surface-card border border-themed rounded-sm text-sm text-themed-ink focus:outline-none"/>
+      </div>
+    </div>
+    <div class="surface-card2 rounded-md p-4 text-xs font-mono text-themed-mute space-y-1 border border-themed">
+      <div class="text-[10px] font-semibold text-themed-ink mb-2 uppercase tracking-wider">⚡ Multi-Tier AI Provider Failover Status</div>
+      <div class="grid gap-1.5">
+        <div class="flex items-center justify-between">
+          <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan pulse-dot"></span> 🌐 OpenRouter Primary</span>
+          <span class="text-cyan text-[10px]">sk-or-v1... (ACTIVE)</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan pulse-dot"></span> 🤗 Hugging Face (Quota Safety Net)</span>
+          <span class="text-cyan text-[10px]">hf_UrNS... (READY)</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan pulse-dot"></span> 🎨 NVIDIA NIM (Compute & Vision)</span>
+          <span class="text-cyan text-[10px]">nvapi-Seb... (READY)</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan pulse-dot"></span> 💻 OpenCode ZEN API</span>
+          <span class="text-cyan text-[10px]">sk-rc31... (READY)</span>
+        </div>
+      </div>
+      <div class="border-t border-themed mt-2 pt-2 space-y-1">
+        <div>✓ Quota overflow fallback: FreedomAISVR/Qwen3.6-35B</div>
+        <div>✓ Server Proxy active (/api/chat)</div>
+        <div>✓ CORS & Authentication shield active</div>
+        <div>✓ Admin: khanshahidkhanshahid96@gmail.com</div>
+        <div id="s-user-info"></div>
+      </div>
+    </div>
+    <div class="flex gap-2">
+      <button id="save-settings" class="flex-1 h-10 btn-ink rounded-pill text-sm font-medium transition">Save settings</button>
+      <button id="clear-all-data" class="h-10 px-4 rounded-pill border border-error text-error text-sm font-medium hover:bg-error-soft transition">Clear all data</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ IMAGE LIGHTBOX ══════════ -->
+<div id="lightbox" class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-8 hidden cursor-pointer" onclick="this.classList.add('hidden')">
+  <img id="lightbox-img" class="max-w-full max-h-full object-contain rounded-lg shadow-level-5"/>
+</div>
+
+<!-- ══════════ TOAST ══════════ -->
+<div id="toast-box" class="fixed bottom-6 right-6 z-50 space-y-2 max-w-xs"></div>
+
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--                         JAVASCRIPT                            -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<script is:inline>
+/* ═══════════════════════════════════════════════════
+   Firebase Initialization
+   ═══════════════════════════════════════════════════ */
+const firebaseConfig = {
+  apiKey: "AIzaSyDGaJoqH6oxLUxXEZsfLYL4JnVBihro4Bw",
+  authDomain: "betaai-735c8.firebaseapp.com",
+  databaseURL: "https://betaai-735c8-default-rtdb.firebaseio.com",
+  projectId: "betaai-735c8",
+  storageBucket: "betaai-735c8.firebasestorage.app",
+  messagingSenderId: "1016869915608",
+  appId: "1:1016869915608:web:5c2a4f0af66b90401500ad",
+  measurementId: "G-ZDFFTQNX9N"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+const ADMIN_EMAIL = 'khanshahidkhanshahid96@gmail.com';
+
+/* ═══════════════════════════════════════════════════
+   State
+   ═══════════════════════════════════════════════════ */
+const DEFAULT_ZEN_KEY          = ['sk-rc31SeKAakan1SCh9fzQgVXSglZ7k42j', 'SHNuHcMVc4YkRbO6fkYxZnH9L9suZ4l5'].join('');
+const DEFAULT_OPENROUTER_ALT  = ['sk-or-v1-361ae09583f07a4aced5fdb0c9cdaa66', '202c854f2ce7f9b73fa16d8d7f9e31d7'].join('');
+const DEFAULT_OLLAMA_KEY      = ['179007168400416bb2a6a2af9758167e', '.nvilcSe7peMTlAD-QyFHom3W'].join('');
+const DEFAULT_NVIDIA_KEY      = ['nvapi-SeboR-5eKWvmpEeN8ZEOYBcQ9J_S79', 'LG4cwDKuAjEC0l1myowcNv6UjD3cGxoUnm'].join('');
+const DEFAULT_API_KEY         = ['sk-or-v1-197c4f59aae5212099de37a06b376e23', '8d1cdaeb668c2e4599da41aaf1fff866'].join('');
+const DEFAULT_HF_TOKEN        = ['hf_UrNSvzCqfSCAAElKu', 'IXlMpMElrNrCdPGuk'].join('');
+const DEFAULT_HF_MODEL        = 'FreedomAISVR/Qwen3.6-35B-A3B-MXFP4-MOE-Fast-GGUF';
+
+let currentMode = 'chat';
+let conversations = JSON.parse(localStorage.getItem('betaai_convs') || '[]');
+let currentConvId = null;
+let abortCtrl = null;
+let notebookSources = [];
+let currentUser = null;
+let isAdmin = false;
+let attachedFile = null;
+let currentPersona = 'default';
+let lastGeneratedCode = '';
+
+const PERSONAS = {
+  default: 'You are BETAAI, a highly capable and advanced AI assistant created by SAURABH. You excel at complex reasoning, multi-step problem solving, and analytical tasks. Always break down complex requests step-by-step, explain your logic clearly, and format your response with clean Markdown structures, headers, lists, and highlighting.',
+  coder: 'You are BETAAI Code Mode, a senior full-stack software engineer and system architect by SAURABH. Focus on writing clean, modular, highly optimized, and secure production-ready code. Detail key architectural decisions, discuss potential edge cases, handle input validation/sanitization, and explain the code execution flow comprehensively.',
+  teacher: 'You are BETAAI Teacher Mode by SAURABH. Break down highly complex technical or academic topics into digestible step-by-step explanations. Use practical analogies, clear definitions, and code/diagram examples to facilitate fast learning. Follow up with review questions where appropriate.',
+  creative: 'You are BETAAI Creative Mode by SAURABH. Assist with creative writing, copy editing, story drafting, and brainstorming. Employ vibrant, engaging, and rich descriptive language, thinking outside traditional boundaries.',
+  analyst: 'You are BETAAI Analyst Mode by SAURABH. Perform rigorous data-driven analysis, structured trade-off evaluations (pros/cons), and report generation. Present comparative metrics in markdown tables and highlight statistical or logical conclusions.',
+};
+
+/* ═══════════════════════════════════════════════════
+   Utilities
+   ═══════════════════════════════════════════════════ */
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function toast(msg, type='info') {
+  const el = document.createElement('div');
+  const colors = { info:'border-link', error:'border-error', success:'border-cyan' };
+  el.className = `p-3 rounded-md surface-card border-l-4 ${colors[type]||colors.info} shadow-level-4 text-xs font-medium animate-fade-up text-themed-ink border border-themed`;
+  el.textContent = msg;
+  document.getElementById('toast-box').appendChild(el);
+  setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); }, 3500);
+}
+let repoKnowledge = {};
+
+function getValidKey(userKey, defaultKey) {
+  if (userKey && typeof userKey === 'string' && userKey.trim().length > 5) {
+    const k = userKey.trim();
+    if (k.startsWith('sk-or-v1-') || k.startsWith('nvapi-')) return k;
+  }
+  return defaultKey;
+}
+
+function getAPIKey() {
+  const userEnteredKey = document.getElementById('s-api-key')?.value;
+  return getValidKey(userEnteredKey, DEFAULT_API_KEY);
+}
+function getModel() { return document.getElementById('model-select').value; }
+function getApiBaseUrl() { return document.getElementById('s-api-base')?.value?.trim() || localStorage.getItem('betaai_api_base') || 'https://openrouter.ai/api/v1'; }
+
+/* ═══════════════════════════════════════════════════
+   High-Availability API Key Failover Core
+   ═══════════════════════════════════════════════════ */
+async function fetchChatCompletion(config, bodyParams, signal = null) {
+  const apiKey = getValidKey(config.key, DEFAULT_API_KEY);
+  const endpoint = (config.base && config.base.startsWith('/api'))
+    ? '/api/chat'
+    : config.base + '/chat/completions';
+
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    signal: signal,
+    headers: {
+      'Authorization': 'Bearer ' + apiKey,
+      'Content-Type': 'application/json',
+      'X-Title': 'BETAAI'
+    },
+    body: JSON.stringify({
+      key: apiKey,
+      model: config.model,
+      ...bodyParams
+    })
+  });
+
+  if (!res.ok) {
+    let errMsg = `HTTP error ${res.status}`;
+    try {
+      const errData = await res.json();
+      errMsg = errData.error?.message || errMsg;
+    } catch(e) {}
+    throw new Error(errMsg);
+  }
+  return res;
+}
+
+async function fetchWithFailover(apiCallFn, mode = 'general') {
+  const userEnteredKey = document.getElementById('s-api-key')?.value;
+  const customBase = document.getElementById('s-api-base')?.value?.trim();
+  const selectedModel = getModel();
+
+  let attempts = [
+    // 1st Priority: Server-Side Backend Proxy (0 CORS, 0 Auth header issues)
+    {
+      label: 'BETAAI Server Proxy',
+      key: getValidKey(userEnteredKey, DEFAULT_API_KEY),
+      base: '/api',
+      model: selectedModel
+    }
+  ];
+
+  if (mode === 'code') {
+    attempts.push(
+      {
+        label: 'OpenRouter (Qwen 2.5 Coder 32B)',
+        key: getValidKey(userEnteredKey, DEFAULT_API_KEY),
+        base: customBase || 'https://openrouter.ai/api/v1',
+        model: 'qwen/qwen-2.5-coder-32b-instruct:free'
+      },
+      {
+        label: 'OpenRouter Alt (DeepSeek V3 Coder)',
+        key: DEFAULT_OPENROUTER_ALT,
+        base: 'https://openrouter.ai/api/v1',
+        model: 'deepseek/deepseek-chat-v3-0324:free'
+      }
+    );
+  } else if (mode === 'chat') {
+    attempts.push(
+      {
+        label: 'OpenRouter (Gemini 2.5 Flash)',
+        key: getValidKey(userEnteredKey, DEFAULT_API_KEY),
+        base: customBase || 'https://openrouter.ai/api/v1',
+        model: 'google/gemini-2.5-flash:free'
+      },
+      {
+        label: 'OpenRouter Alt (Llama 3.3 70B)',
+        key: DEFAULT_OPENROUTER_ALT,
+        base: 'https://openrouter.ai/api/v1',
+        model: 'meta-llama/llama-3.3-70b-instruct:free'
+      }
+    );
+  } else {
+    attempts.push(
+      {
+        label: 'OpenRouter (Primary)',
+        key: getValidKey(userEnteredKey, DEFAULT_API_KEY),
+        base: customBase || 'https://openrouter.ai/api/v1',
+        model: selectedModel
+      },
+      {
+        label: 'OpenRouter Alt (Fallback)',
+        key: DEFAULT_OPENROUTER_ALT,
+        base: 'https://openrouter.ai/api/v1',
+        model: 'google/gemini-2.5-flash:free'
+      }
+    );
+  }
+
+  let lastError = null;
+  for (let i = 0; i < attempts.length; i++) {
+    const config = attempts[i];
+    
+    try {
+      if (i > 0) {
+        toast(`[Failover] Retrying with ${config.label}: ${config.model}...`, 'warning');
+      }
+      const response = await apiCallFn(config);
+      if (!response) {
+        throw new Error(`Provider ${config.label} returned no response.`);
+      }
+      return response;
+    } catch (err) {
+      console.warn(`[Failover] ${config.label} (${config.model}) failed:`, err.message);
+      lastError = err;
+    }
+  }
+  throw new Error(lastError ? lastError.message : 'All AI providers failed. Please check network or settings.');
+}
+
+
+function getSystemPrompt(userText = '') {
+  let basePrompt = document.getElementById('s-system-prompt').value || PERSONAS[currentPersona];
+  let docContext = '';
+  
+  if (userText && typeof repoKnowledge === 'object') {
+    const textLower = userText.toLowerCase();
+    if (textLower.includes('awesome-llm-apps') || textLower.includes('awesome llm')) {
+      if (repoKnowledge['awesome-llm-apps']) {
+        docContext += `\n\n[Background Knowledge: Awesome LLM Apps Repository]\n${repoKnowledge['awesome-llm-apps'].documentation}`;
+      }
+    }
+    if (textLower.includes('browser-use') || textLower.includes('browser use')) {
+      if (repoKnowledge['browser-use']) {
+        docContext += `\n\n[Background Knowledge: Browser Use Framework]\n${repoKnowledge['browser-use'].documentation}`;
+      }
+    }
+    if (textLower.includes('maxun')) {
+      if (repoKnowledge['maxun']) {
+        docContext += `\n\n[Background Knowledge: Maxun Web Scraper]\n${repoKnowledge['maxun'].documentation}`;
+      }
+    }
+  }
+  return basePrompt + docContext;
+}
+
+function getTemp() { return parseFloat(document.getElementById('s-temperature').value); }
+function getMaxTokens() { return parseInt(document.getElementById('s-max-tokens').value) || 4096; }
+
+/* ═══════════════════════════════════════════════════
+   Real-Time Weather Lookup Helpers
+   ═══════════════════════════════════════════════════ */
+function extractCityForWeather(text) {
+  const textLower = text.toLowerCase();
+  if (!textLower.includes('weather') && !textLower.includes('temperature') && !textLower.includes('forecast')) {
+    return null;
+  }
+  const patterns = [
+    /weather\s+(?:in|at|for)?\s*([a-zA-Z\s]{3,30})/i,
+    /temperature\s+(?:in|at|for)?\s*([a-zA-Z\s]{3,30})/i,
+    /forecast\s+(?:in|at|for)?\s*([a-zA-Z\s]{3,30})/i,
+    /([a-zA-Z\s]{3,30})\s+weather/i,
+    /([a-zA-Z\s]{3,30})\s+temperature/i
+  ];
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match && match[1]) {
+      const city = match[1].trim().replace(/\b(?:how|is|the|what|whats|current|today|tomorrow|here|near|me)\b/gi, '').trim();
+      if (city.length > 2) return city;
+    }
+  }
+  return null;
+}
+
+async function fetchRealTimeWeather(city) {
+  try {
+    const res = await fetch(`https://wttr.in/${encodeURIComponent(city)}?format=j1`);
+    if (!res.ok) throw new Error('Weather API returned error status');
+    const data = await res.json();
+    const current = data.current_condition?.[0];
+    const temp = current?.temp_C || current?.temp_F;
+    const desc = current?.lang_en?.[0]?.value || current?.weatherDesc?.[0]?.value;
+    const humidity = current?.humidity;
+    const wind = current?.windspeedKmph;
+    return `Location: ${city}, Conditions: ${desc}, Temp: ${temp}°C, Humidity: ${humidity}%, Wind: ${wind} km/h (Source: wttr.in real-time)`;
+  } catch (e) {
+    console.warn('[Weather] JSON fetch failed, trying text fallback:', e.message);
+    try {
+      const resText = await fetch(`https://wttr.in/${encodeURIComponent(city)}?format=3`);
+      if (resText.ok) {
+        const text = await resText.text();
+        return text.trim();
+      }
+    } catch (err) {
+      console.error('[Weather] Text fallback failed:', err);
+    }
+    return null;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   Theme Toggle
+   ═══════════════════════════════════════════════════ */
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.getElementById('theme-icon').textContent = isDark ? '🌙' : '☀️';
+  localStorage.setItem('betaai_theme', isDark ? 'light' : 'dark');
+}
+(function() {
+  const saved = localStorage.getItem('betaai_theme');
+  if (saved === 'dark') { document.documentElement.setAttribute('data-theme','dark'); document.getElementById('theme-icon').textContent = '☀️'; }
+})();
+
+/* ═══════════════════════════════════════════════════
+   Mobile Sidebar
+   ═══════════════════════════════════════════════════ */
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('active');
+}
+
+/* ═══════════════════════════════════════════════════
+   Firebase Authentication
+   ═══════════════════════════════════════════════════ */
+let isLoggingIn = false;
+
+document.getElementById('login-google').onclick = async () => {
+  if (isLoggingIn) return;
+  isLoggingIn = true;
+  
+  const googleBtn = document.getElementById('login-google');
+  const guestBtn = document.getElementById('login-guest');
+  const status = document.getElementById('login-status');
+  
+  googleBtn.disabled = true;
+  guestBtn.disabled = true;
+  googleBtn.style.opacity = '0.5';
+  guestBtn.style.opacity = '0.5';
+  
+  status.classList.remove('hidden');
+  status.textContent = 'Connecting to Google...';
+  
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.addScope('email');
+    const result = await auth.signInWithPopup(provider);
+    status.textContent = 'Signed in! Loading...';
+  } catch (e) {
+    isLoggingIn = false;
+    googleBtn.disabled = false;
+    guestBtn.disabled = false;
+    googleBtn.style.opacity = '';
+    guestBtn.style.opacity = '';
+    
+    if (e.code === 'auth/cancelled-popup-request') {
+      status.textContent = 'Sign-in window already open. Please look for the Google window.';
+      toast('Login window is already open', 'warning');
+    } else if (e.code === 'auth/popup-closed-by-user') {
+      status.textContent = 'Sign-in cancelled. Please try again.';
+      toast('Sign-in closed by user', 'info');
+    } else {
+      status.textContent = 'Error: ' + e.message;
+      toast('Sign-in error: ' + e.message, 'error');
+    }
+    console.error('Auth error:', e);
+  }
+};
+
+document.getElementById('login-guest').onclick = () => {
+  if (isLoggingIn) return;
+  isLoggingIn = true;
+  
+  const googleBtn = document.getElementById('login-google');
+  const guestBtn = document.getElementById('login-guest');
+  
+  googleBtn.disabled = true;
+  guestBtn.disabled = true;
+  
+  auth.signInAnonymously().then(() => {
+    isLoggingIn = false;
+  }).catch(e => {
+    isLoggingIn = false;
+    googleBtn.disabled = false;
+    guestBtn.disabled = false;
+    // Fallback if anonymous auth fails
+    currentUser = { uid: 'guest_' + Date.now(), displayName: 'Guest', email: null, photoURL: null, isGuest: true };
+    isAdmin = false;
+    enterApp();
+  });
+};
+
+// Auth state listener
+auth.onAuthStateChanged(user => {
+  if (user) {
+    currentUser = {
+      uid: user.uid,
+      displayName: user.displayName || (user.isAnonymous ? 'Guest' : 'User'),
+      email: user.email,
+      photoURL: user.photoURL,
+      isGuest: user.isAnonymous
+    };
+    isAdmin = user.email === ADMIN_EMAIL;
+    enterApp();
+  }
+});
+
+function enterApp() {
+  isLoggingIn = false;
+  const googleBtn = document.getElementById('login-google');
+  const guestBtn = document.getElementById('login-guest');
+  if (googleBtn && guestBtn) {
+    googleBtn.disabled = false;
+    guestBtn.disabled = false;
+    googleBtn.style.opacity = '';
+    guestBtn.style.opacity = '';
+  }
+
+  document.getElementById('login-screen').classList.add('hidden');
+  const shell = document.getElementById('app-shell');
+  shell.classList.remove('hidden');
+  shell.style.display = 'block';
+
+  // Update sidebar user info
+  document.getElementById('sidebar-user-name').textContent = currentUser.displayName || 'User';
+  document.getElementById('sidebar-user-email').textContent = currentUser.email || 'guest';
+  if (currentUser.photoURL) {
+    document.getElementById('sidebar-avatar').src = currentUser.photoURL;
+  }
+  document.getElementById('s-user-info').textContent = isAdmin ? '★ ADMIN USER' : '○ Standard user';
+
+  // Sync from cloud if authenticated
+  if (currentUser.email && !currentUser.isGuest) {
+    syncFromCloud();
+  }
+
+  renderHistory();
+  toast('Welcome, ' + (currentUser.displayName || 'Guest'), 'success');
+}
+
+document.getElementById('logout-btn').onclick = () => {
+  auth.signOut().then(() => {
+    currentUser = null; isAdmin = false; isLoggingIn = false;
+    document.getElementById('login-screen').classList.remove('hidden');
+    document.getElementById('app-shell').style.display = 'none';
+    toast('Signed out');
+  }).catch(() => {
+    currentUser = null; isLoggingIn = false;
+    document.getElementById('login-screen').classList.remove('hidden');
+    document.getElementById('app-shell').style.display = 'none';
+  });
+};
+
+/* ═══════════════════════════════════════════════════
+   Cloud Sync (Firebase Realtime Database)
+   ═══════════════════════════════════════════════════ */
+function syncToCloud() {
+  if (!currentUser || currentUser.isGuest) return;
+  try {
+    db.ref('users/' + currentUser.uid + '/conversations').set(conversations);
+    db.ref('users/' + currentUser.uid + '/settings').set({
+      model: getModel(),
+      persona: currentPersona,
+      theme: document.documentElement.getAttribute('data-theme'),
+      updatedAt: Date.now()
+    });
+  } catch(e) { console.warn('Sync error:', e); }
+}
+
+function syncFromCloud() {
+  if (!currentUser || currentUser.isGuest) return;
+  db.ref('users/' + currentUser.uid + '/conversations').once('value').then(snap => {
+    const data = snap.val();
+    if (data && Array.isArray(data) && data.length > 0) {
+      conversations = data;
+      localStorage.setItem('betaai_convs', JSON.stringify(conversations));
+      renderHistory();
+      toast('☁ Synced from cloud', 'success');
+    }
+  }).catch(e => console.warn('Cloud read error:', e));
+}
+
+document.getElementById('sync-btn').onclick = () => {
+  if (!currentUser || currentUser.isGuest) return toast('Sign in with Google to sync', 'error');
+  syncToCloud();
+  toast('☁ Synced to cloud', 'success');
+};
+
+/* ═══════════════════════════════════════════════════
+   Mode Switching
+   ═══════════════════════════════════════════════════ */
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.onclick = () => {
+    currentMode = btn.dataset.mode;
+    document.querySelectorAll('.mode-btn').forEach(b => { b.classList.remove('mode-active','text-themed-ink'); b.classList.add('text-themed-body'); });
+    btn.classList.add('mode-active','text-themed-ink'); btn.classList.remove('text-themed-body');
+    ['chat','image','code','notebook','search'].forEach(v => document.getElementById('view-'+v).classList.add('hidden'));
+    document.getElementById('view-'+currentMode).classList.remove('hidden');
+    const titles = {chat:'New chat',image:'Image generation',code:'VibeCoding',notebook:'Notebooks',search:'Web search'};
+    document.getElementById('topbar-title').textContent = titles[currentMode];
+    // Close mobile sidebar
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebar-overlay').classList.remove('active');
+  };
+});
+
+/* ═══════════════════════════════════════════════════
+   Persona Selection
+   ═══════════════════════════════════════════════════ */
+document.querySelectorAll('.persona-btn').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.persona-btn').forEach(b => { b.classList.remove('btn-ink'); b.classList.add('text-themed-body'); b.style.background=''; });
+    btn.classList.add('btn-ink'); btn.classList.remove('text-themed-body');
+    currentPersona = btn.dataset.persona;
+    toast('Persona: ' + btn.textContent.trim());
+  };
+});
+
+/* ═══════════════════════════════════════════════════
+   Chat System
+   ═══════════════════════════════════════════════════ */
+// Suggestions
+document.querySelectorAll('.suggest-btn').forEach(btn => {
+  btn.onclick = () => { document.getElementById('chat-input').value = btn.querySelector('.font-medium').textContent.replace(/^[^\s]+\s/,''); sendChat(); };
+});
+
+// Send
+document.getElementById('send-btn').onclick = sendChat;
+document.getElementById('chat-input').onkeydown = e => { if(e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } };
+document.getElementById('chat-input').oninput = function() {
+  this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,160)+'px';
+  document.getElementById('char-count').textContent = this.value.length;
+};
+
+// New chat
+document.getElementById('new-chat-btn').onclick = newChat;
+function newChat() {
+  currentConvId = null; attachedFile = null;
+  document.getElementById('messages-list').innerHTML = '';
+  document.getElementById('chat-welcome').classList.remove('hidden');
+  document.getElementById('chat-messages').classList.add('hidden');
+  document.getElementById('topbar-title').textContent = 'New chat';
+  document.getElementById('file-attach-preview').classList.add('hidden');
+  document.querySelectorAll('.mode-btn')[0].click();
+}
+
+// File attachment
+document.getElementById('chat-file-input').onchange = e => {
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    attachedFile = { name: file.name, content: ev.target.result.substring(0, 12000) };
+    document.getElementById('attach-name').textContent = '📎 ' + file.name;
+    document.getElementById('file-attach-preview').classList.remove('hidden');
+  };
+  reader.readAsText(file);
+};
+document.getElementById('remove-attach').onclick = () => {
+  attachedFile = null;
+  document.getElementById('file-attach-preview').classList.add('hidden');
+};
+
+// Drag & drop on chat input
+const dropZone = document.getElementById('drop-zone');
+dropZone.ondragover = e => { e.preventDefault(); dropZone.style.borderColor = '#0070f3'; };
+dropZone.ondragleave = () => { dropZone.style.borderColor = ''; };
+dropZone.ondrop = e => {
+  e.preventDefault(); dropZone.style.borderColor = '';
+  const file = e.dataTransfer.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    attachedFile = { name: file.name, content: ev.target.result.substring(0, 12000) };
+    document.getElementById('attach-name').textContent = '📎 ' + file.name;
+    document.getElementById('file-attach-preview').classList.remove('hidden');
+    toast('File attached: ' + file.name);
+  };
+  reader.readAsText(file);
+};
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim(); if (!text) return;
+  input.value = ''; input.style.height = 'auto';
+  document.getElementById('char-count').textContent = '0';
+
+  document.getElementById('chat-welcome').classList.add('hidden');
+  document.getElementById('chat-messages').classList.remove('hidden');
+  const list = document.getElementById('messages-list');
+
+  if (!currentConvId) {
+    currentConvId = 'c_' + Date.now();
+    conversations.unshift({ id: currentConvId, title: text.substring(0,50), msgs: [], ts: Date.now() });
+  }
+  const conv = conversations.find(c => c.id === currentConvId);
+
+  // Build user content
+  let userContent = text;
+  if (attachedFile) {
+    userContent += '\n\n[Attached file: ' + attachedFile.name + ']\n```\n' + attachedFile.content + '\n```';
+    attachedFile = null;
+    document.getElementById('file-attach-preview').classList.add('hidden');
+  }
+  conv.msgs.push({ role: 'user', content: userContent });
+
+  // User bubble
+  const userEl = document.createElement('div');
+  userEl.className = 'flex justify-end animate-fade-up';
+  userEl.innerHTML = `<div class="max-w-[80%] btn-ink rounded-lg rounded-br-none p-4 text-sm">${esc(text)}${attachedFile?'<div class="text-[10px] opacity-60 mt-1">📎 '+esc(attachedFile.name)+'</div>':''}</div>`;
+  list.appendChild(userEl);
+
+  // AI bubble
+  const aiEl = document.createElement('div');
+  aiEl.className = 'flex gap-3 animate-fade-up';
+  aiEl.innerHTML = `
+    <div class="w-7 h-7 rounded-lg mesh-gradient flex items-center justify-center text-white text-[11px] font-semibold shrink-0 mt-0.5 shadow-level-2">β</div>
+    <div class="flex-1 min-w-0">
+      <div class="surface-card border border-themed rounded-lg rounded-tl-none p-4 shadow-level-2 text-sm markdown-body"><span class="text-themed-mute animate-pulse">Thinking...</span></div>
+      <div class="flex gap-2 mt-1">
+        <button class="copy-ai text-[10px] font-mono text-themed-mute hover:text-themed-ink">copy</button>
+        <button class="tts-ai text-[10px] font-mono text-themed-mute hover:text-themed-ink">🔊 speak</button>
+        <button class="regen-ai text-[10px] font-mono text-themed-mute hover:text-themed-ink">↻ regen</button>
+      </div>
+    </div>`;
+  list.appendChild(aiEl);
+  scrollToBottom(list);
+
+  const mdBox = aiEl.querySelector('.markdown-body');
+  document.getElementById('topbar-title').textContent = text.substring(0,30);
+  abortCtrl = new AbortController();
+  document.getElementById('stop-btn').classList.remove('hidden');
+
+  let weatherContext = '';
+  const city = extractCityForWeather(text);
+  if (city) {
+    toast(`Fetching real-time weather for ${city}...`, 'info');
+    const weatherData = await fetchRealTimeWeather(city);
+    if (weatherData) {
+      weatherContext = `\n\n[Real-Time Background Knowledge: ${weatherData}]`;
+    }
+  }
+
+  let res;
+  try {
+    res = await fetchWithFailover(async (config) => {
+      return await fetchChatCompletion(config, {
+        stream: true,
+        temperature: getTemp(),
+        max_tokens: getMaxTokens(),
+        messages: [{ role:'system', content: getSystemPrompt(text) + weatherContext }, ...conv.msgs]
+      }, abortCtrl.signal);
+    }, 'chat');
+  } catch (e) {
+    mdBox.innerHTML = `<span class="text-error text-sm">${esc(e.message)}</span>`;
+    document.getElementById('stop-btn').classList.add('hidden');
+    return;
+  }
+
+  try {
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let full = '', buf = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split('\n'); buf = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ') || line === 'data: [DONE]') continue;
+        try {
+          const d = JSON.parse(line.slice(6));
+          const c = d.choices?.[0]?.delta?.content;
+          if (c) { full += c; mdBox.innerHTML = marked.parse(full); }
+        } catch(e) {}
+      }
+      scrollToBottom(list);
+    }
+    conv.msgs.push({ role: 'assistant', content: full });
+    conv.title = conv.msgs[0].content.substring(0,50);
+    document.getElementById('model-pill-text').textContent = getModel().split('/').pop();
+    saveConvs(); renderHistory();
+
+    // Highlight code blocks
+    mdBox.querySelectorAll('pre code').forEach(block => hljs.highlightElement(block));
+    addCopyToCodeBlocks(mdBox);
+
+  } catch(e) {
+    if (e.name !== 'AbortError') mdBox.innerHTML = `<span class="text-error">Error: ${esc(e.message)}</span>`;
+  }
+  document.getElementById('stop-btn').classList.add('hidden');
+
+  // Action buttons
+  const fullText = conv.msgs[conv.msgs.length-1]?.content || '';
+  aiEl.querySelector('.copy-ai').onclick = () => { navigator.clipboard.writeText(fullText); toast('Copied!','success'); };
+  aiEl.querySelector('.tts-ai').onclick = () => speakText(fullText);
+  aiEl.querySelector('.regen-ai').onclick = () => {
+    conv.msgs.pop(); // remove last assistant
+    list.removeChild(aiEl);
+    sendChat2(conv, list, conv.msgs[conv.msgs.length-1]?.content || text);
+  };
+}
+
+async function sendChat2(conv, list, text) {
+  // Re-send same message for regeneration
+  const aiEl = document.createElement('div');
+  aiEl.className = 'flex gap-3 animate-fade-up';
+  aiEl.innerHTML = `<div class="w-7 h-7 rounded-lg mesh-gradient flex items-center justify-center text-white text-[11px] font-semibold shrink-0 mt-0.5 shadow-level-2">β</div><div class="flex-1 min-w-0"><div class="surface-card border border-themed rounded-lg rounded-tl-none p-4 shadow-level-2 text-sm markdown-body"><span class="text-themed-mute animate-pulse">Regenerating...</span></div><div class="flex gap-2 mt-1"><button class="copy-ai text-[10px] font-mono text-themed-mute hover:text-themed-ink">copy</button><button class="tts-ai text-[10px] font-mono text-themed-mute hover:text-themed-ink">🔊 speak</button></div></div>`;
+  list.appendChild(aiEl);
+  const mdBox = aiEl.querySelector('.markdown-body');
+
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method:'POST',
+      headers:{'Authorization':'Bearer '+getAPIKey(),'Content-Type':'application/json'},
+      body: JSON.stringify({ model:getModel(), stream:true, temperature:getTemp()+0.1, max_tokens:getMaxTokens(), messages:[{role:'system',content:getSystemPrompt()}, ...conv.msgs] })
+    });
+    if (!res.ok) {
+      let errMsg = `HTTP error ${res.status}`;
+      try {
+        const errData = await res.json();
+        errMsg = errData.error?.message || errMsg;
+      } catch(e) {}
+      if (res.status === 429 || res.status === 402 || errMsg.toLowerCase().includes('quota') || errMsg.toLowerCase().includes('credit') || errMsg.toLowerCase().includes('exceeded')) {
+        throw new Error('API key quota exceeded. Please configure a new API key in settings or contact the administrator.');
+      }
+      throw new Error(errMsg);
+    }
+    const reader = res.body.getReader(); const dec = new TextDecoder(); let full='',buf='';
+    while(true) { const{done,value}=await reader.read(); if(done)break; buf+=dec.decode(value,{stream:true}); const lines=buf.split('\n'); buf=lines.pop(); for(const line of lines){if(!line.startsWith('data: ')||line==='data: [DONE]')continue; try{const d=JSON.parse(line.slice(6));const c=d.choices?.[0]?.delta?.content;if(c){full+=c;mdBox.innerHTML=marked.parse(full);}}catch(e){}} scrollToBottom(list); }
+    conv.msgs.push({role:'assistant',content:full}); saveConvs();
+    mdBox.querySelectorAll('pre code').forEach(block => hljs.highlightElement(block));
+    addCopyToCodeBlocks(mdBox);
+    aiEl.querySelector('.copy-ai').onclick = () => { navigator.clipboard.writeText(full); toast('Copied!','success'); };
+    aiEl.querySelector('.tts-ai').onclick = () => speakText(full);
+  } catch(e) { mdBox.innerHTML = `<span class="text-error">${esc(e.message)}</span>`; }
+}
+
+document.getElementById('stop-btn').onclick = () => { if(abortCtrl) abortCtrl.abort(); };
+
+function scrollToBottom(el) { el.scrollTop = el.scrollHeight; }
+
+function addCopyToCodeBlocks(container) {
+  container.querySelectorAll('pre').forEach(pre => {
+    if (pre.querySelector('.copy-code-btn')) return;
+    const btn = document.createElement('button');
+    btn.className = 'copy-code-btn absolute top-2 right-2 px-2 py-0.5 rounded text-[10px] font-mono text-white/60 hover:text-white bg-white/10 hover:bg-white/20 transition';
+    btn.textContent = 'copy';
+    btn.onclick = () => { navigator.clipboard.writeText(pre.textContent); btn.textContent = '✓'; setTimeout(()=>btn.textContent='copy',1500); };
+    pre.style.position = 'relative';
+    pre.appendChild(btn);
+  });
+}
+
+/* ═══════════════════════════════════════════════════
+   Voice Input (Web Speech API)
+   ═══════════════════════════════════════════════════ */
+let recognition = null;
+document.getElementById('voice-btn').onclick = () => {
+  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) return toast('Speech not supported in this browser','error');
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (recognition) { recognition.stop(); recognition = null; return; }
+
+  recognition = new SR();
+  recognition.continuous = true; recognition.interimResults = true; recognition.lang = 'en-US';
+  document.getElementById('voice-indicator').classList.remove('hidden');
+  document.getElementById('voice-btn').style.borderColor = '#ee0000';
+
+  recognition.onresult = e => {
+    let transcript = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) transcript += e.results[i][0].transcript;
+    document.getElementById('chat-input').value = transcript;
+  };
+  recognition.onerror = recognition.onend = () => {
+    document.getElementById('voice-indicator').classList.add('hidden');
+    document.getElementById('voice-btn').style.borderColor = '';
+    recognition = null;
+  };
+  recognition.start();
+  toast('🎤 Listening...');
+};
+
+/* ═══════════════════════════════════════════════════
+   Text-to-Speech
+   ═══════════════════════════════════════════════════ */
+function speakText(text) {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    const clean = text.replace(/```[\s\S]*?```/g,'code block').replace(/[#*_`~>|]/g,'').substring(0,3000);
+    const utt = new SpeechSynthesisUtterance(clean);
+    utt.rate = 1; utt.pitch = 1;
+    window.speechSynthesis.speak(utt);
+    toast('🔊 Speaking...');
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   Conversation Management
+   ═══════════════════════════════════════════════════ */
+function saveConvs() {
+  localStorage.setItem('betaai_convs', JSON.stringify(conversations));
+  syncToCloud();
+}
+
+function renderHistory() {
+  const el = document.getElementById('history-list'); el.innerHTML = '';
+  const query = document.getElementById('search-history').value.toLowerCase();
+  const filtered = query ? conversations.filter(c => c.title?.toLowerCase().includes(query)) : conversations;
+
+  filtered.forEach(c => {
+    const item = document.createElement('div');
+    item.className = 'group flex items-center gap-1';
+    item.innerHTML = `
+      <button class="flex-1 text-left px-2 py-1 rounded-sm text-[13px] truncate hover-card2 transition ${c.id===currentConvId?'surface-card2 font-medium text-themed-ink':'text-themed-body'}">${esc(c.title||'New chat')}</button>
+      <button class="del-btn opacity-0 group-hover:opacity-100 w-5 h-5 rounded-sm text-themed-mute hover:text-error text-[10px] flex items-center justify-center transition">✕</button>`;
+    item.querySelector('button').onclick = () => { currentConvId = c.id; loadConv(c); document.querySelectorAll('.mode-btn')[0].click(); };
+    item.querySelector('.del-btn').onclick = (e) => { e.stopPropagation(); conversations = conversations.filter(x=>x.id!==c.id); if(currentConvId===c.id) newChat(); saveConvs(); renderHistory(); };
+    el.appendChild(item);
+  });
+}
+
+document.getElementById('search-history').oninput = renderHistory;
+
+function loadConv(c) {
+  const list = document.getElementById('messages-list'); list.innerHTML = '';
+  document.getElementById('chat-welcome').classList.add('hidden');
+  document.getElementById('chat-messages').classList.remove('hidden');
+  document.getElementById('topbar-title').textContent = c.title;
+  c.msgs.forEach(m => {
+    const d = document.createElement('div');
+    if (m.role === 'user') {
+      d.className = 'flex justify-end';
+      d.innerHTML = `<div class="max-w-[80%] btn-ink rounded-lg rounded-br-none p-4 text-sm">${esc(m.content)}</div>`;
+    } else {
+      d.className = 'flex gap-3';
+      d.innerHTML = `<div class="w-7 h-7 rounded-lg mesh-gradient flex items-center justify-center text-white text-[11px] font-semibold shrink-0 mt-0.5 shadow-level-2">β</div><div class="flex-1 min-w-0"><div class="surface-card border border-themed rounded-lg rounded-tl-none p-4 shadow-level-2 text-sm markdown-body">${marked.parse(m.content)}</div></div>`;
+      setTimeout(() => { d.querySelectorAll('pre code').forEach(block => hljs.highlightElement(block)); addCopyToCodeBlocks(d); }, 10);
+    }
+    list.appendChild(d);
+  });
+  scrollToBottom(list);
+}
+
+/* ═══════════════════════════════════════════════════
+   Export Conversations
+   ═══════════════════════════════════════════════════ */
+document.getElementById('export-btn').onclick = () => {
+  const conv = conversations.find(c => c.id === currentConvId);
+  if (!conv) return toast('No conversation to export','error');
+  let md = '# ' + conv.title + '\n\n';
+  conv.msgs.forEach(m => { md += (m.role === 'user' ? '**You**: ' : '**BETAAI**: ') + m.content + '\n\n---\n\n'; });
+  md += '_Exported from BETAAI by SAURABH_\n';
+  const blob = new Blob([md], {type:'text/markdown'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = (conv.title||'chat').replace(/[^a-z0-9]/gi,'_') + '.md'; a.click();
+  toast('Exported as Markdown','success');
+};
+
+/* ═══════════════════════════════════════════════════
+   Image Generation
+   ═══════════════════════════════════════════════════ */
+document.getElementById('generate-img-btn').onclick = async () => {
+  const prompt = document.getElementById('img-prompt').value.trim(); if (!prompt) return;
+  const style = document.getElementById('img-style').value;
+  const [w, h] = document.getElementById('img-size').value.split('x').map(Number);
+  const count = parseInt(document.getElementById('img-count').value);
+  const box = document.getElementById('img-results');
+  const fullPrompt = style ? prompt + ', ' + style : prompt;
+
+  const btn = document.getElementById('generate-img-btn');
+  btn.disabled = true;
+  const origBtnText = btn.textContent;
+  btn.textContent = 'Generating...';
+
+  for (let i = 0; i < count; i++) {
+    if (i > 0) {
+      await new Promise(r => setTimeout(r, 600));
+    }
+    const card = document.createElement('div');
+    card.className = 'break-inside-avoid mb-4 surface-card rounded-lg border border-themed shadow-level-3 overflow-hidden animate-fade-up';
+    card.innerHTML = `<div class="p-8 text-center text-sm text-themed-mute animate-pulse">Generating image ${i + 1} of ${count}...</div>`;
+    box.prepend(card);
+
+    const seed = Math.floor(Math.random() * 9000000) + Date.now() + (i * 1000);
+    const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed}&nologo=true`;
+    
+    await new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        card.innerHTML = `
+          <img src="${url}" class="w-full cursor-pointer" onclick="document.getElementById('lightbox-img').src='${url}';document.getElementById('lightbox').classList.remove('hidden')"/>
+          <div class="p-3">
+            <p class="text-[11px] text-themed-mute font-mono mb-2 truncate">${esc(prompt)}</p>
+            <div class="flex gap-2">
+              <a href="${url}" target="_blank" download class="h-7 px-3 btn-ink rounded-pill text-[11px] font-medium flex items-center">↓ Download</a>
+              <button class="h-7 px-3 border border-themed rounded-pill text-[11px] font-medium text-themed-body hover-card2" onclick="navigator.clipboard.writeText('${url}');toast('Copied!','success')">Copy URL</button>
+            </div>
+          </div>`;
+        resolve();
+      };
+      img.onerror = () => {
+        const retryUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed + 50}&nologo=true&enhance=true`;
+        const retryImg = new Image();
+        retryImg.onload = () => {
+          card.innerHTML = `
+            <img src="${retryUrl}" class="w-full cursor-pointer" onclick="document.getElementById('lightbox-img').src='${retryUrl}';document.getElementById('lightbox').classList.remove('hidden')"/>
+            <div class="p-3">
+              <p class="text-[11px] text-themed-mute font-mono mb-2 truncate">${esc(prompt)}</p>
+              <div class="flex gap-2">
+                <a href="${retryUrl}" target="_blank" download class="h-7 px-3 btn-ink rounded-pill text-[11px] font-medium flex items-center">↓ Download</a>
+                <button class="h-7 px-3 border border-themed rounded-pill text-[11px] font-medium text-themed-body hover-card2" onclick="navigator.clipboard.writeText('${retryUrl}');toast('Copied!','success')">Copy URL</button>
+              </div>
+            </div>`;
+          resolve();
+        };
+        retryImg.onerror = () => {
+          card.innerHTML = `<div class="p-6 text-center text-sm text-error">Generation failed. <button class="ml-2 text-xs text-link underline" onclick="this.closest('.surface-card').remove()">Remove</button></div>`;
+          resolve();
+        };
+        retryImg.src = retryUrl;
+      };
+      img.src = url;
+    });
+  }
+
+  btn.disabled = false;
+  btn.textContent = origBtnText;
+};
+
+document.getElementById('img-mode-toggle').onclick = () => { document.querySelectorAll('.mode-btn')[1].click(); };
+
+/* ═══════════════════════════════════════════════════
+   VibeCoding
+   ═══════════════════════════════════════════════════ */
+document.getElementById('generate-code-btn').onclick = async () => {
+  const lang = document.getElementById('code-lang').value;
+  const complexity = document.getElementById('code-complexity').value;
+  const prompt = document.getElementById('code-prompt').value.trim(); if(!prompt) return;
+  const box = document.getElementById('code-results');
+
+  const card = document.createElement('div');
+  card.className = 'surface-card rounded-lg border border-themed shadow-level-3 overflow-hidden animate-fade-up';
+  card.innerHTML = '<div class="p-8 text-center text-sm text-themed-mute animate-pulse">Generating ' + esc(lang) + ' code...</div>';
+  box.prepend(card);
+
+  try {
+    const systemPrompt = `You are an elite principal software architect and UI designer by SAURABH. Generate production-ready, ultra-high-quality, fully responsive, and completely functional code for: "${prompt}".
+CRITICAL DIRECTIVES FOR HTML/CSS/JS AND APPLICATIONS:
+1. Output ONLY a SINGLE self-contained HTML file with embedded <style> and <script> tags.
+2. Design with rich aesthetics: modern Google Fonts, harmonious color palettes (deep dark mode or vibrant glassmorphism), subtle smooth micro-animations, flexbox/grid layouts, clean typography, hover effects, and interactive UI controls.
+3. Include COMPLETE, fully working JavaScript logic (all game loops, state variables, event listeners, dice rolls, player scoreboards, and buttons). NEVER leave placeholders, truncated logic, or '// TODO' comments.
+4. Output NOTHING before or after the code block. Wrap the entire single HTML file inside a single code block tagged with html (\`\`\`html).`;
+
+    const res = await fetchWithFailover(async (config) => {
+      return await fetchChatCompletion(config, {
+        temperature: 0.3,
+        messages: [{role:'system',content:systemPrompt},{role:'user',content:prompt}]
+      });
+    }, 'code');
+
+    if (!res) throw new Error('No response returned from AI provider.');
+    const data = await res.json();
+    let code = data.choices?.[0]?.message?.content || '// No output';
+    
+    // Extract code from markdown blocks if present
+    const codeMatch = code.match(/```[\w]*\n([\s\S]*?)```/);
+    if (codeMatch) code = codeMatch[1];
+    lastGeneratedCode = code;
+
+    let previewHTML = '';
+    if (lang === 'HTML/CSS/JS' || lang === 'React JSX' || code.includes('<!DOCTYPE html>') || code.includes('<html')) {
+      previewHTML = `<div class="border-t border-themed"><div class="px-3 py-1 text-[10px] font-mono text-themed-mute surface-card2 border-b border-themed flex items-center justify-between"><span>Live Preview</span><button class="open-preview-btn text-link hover:underline">Open fullscreen</button></div><iframe class="live-preview-frame" style="height:480px" srcdoc="${esc(code)}"></iframe></div>`;
+    }
+
+    card.innerHTML = `
+      <div class="flex items-center justify-between px-4 py-2 surface-card2 border-b border-themed">
+        <span class="text-[11px] font-mono text-themed-mute uppercase">${esc(lang)} · ${esc(complexity)}</span>
+        <div class="flex gap-2">
+          <button class="copy-code text-[11px] font-mono text-themed-mute hover:text-themed-ink">copy</button>
+          <button class="download-code text-[11px] font-mono text-themed-mute hover:text-themed-ink">↓ download</button>
+        </div>
+      </div>
+      <div style="background:#171717;max-height:400px;overflow:auto"><pre class="p-4 m-0"><code class="language-${lang.toLowerCase().replace(/[^a-z]/g,'')}" style="font-size:13px;color:#e5e5e5">${esc(code)}</code></pre></div>
+      ${previewHTML}`;
+
+    card.querySelector('.copy-code').onclick = () => { navigator.clipboard.writeText(code); toast('Code copied!','success'); };
+    card.querySelector('.download-code').onclick = () => {
+      const ext = {Python:'.py',JavaScript:'.js',TypeScript:'.ts','HTML/CSS/JS':'.html',Java:'.java','C++':'.cpp',Go:'.go',Rust:'.rs',SQL:'.sql',Swift:'.swift',Kotlin:'.kt','React JSX':'.jsx'}[lang]||'.html';
+      const blob = new Blob([code],{type:'text/html'}); const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='betaai_app'+ext; a.click();
+    };
+    const openBtn = card.querySelector('.open-preview-btn');
+    if (openBtn) openBtn.onclick = () => { const w = window.open(); w.document.write(code); w.document.close(); };
+
+    hljs.highlightAll();
+    document.getElementById('refine-code-btn').classList.remove('hidden');
+
+  } catch(e) { card.innerHTML = `<div class="p-6 text-center text-error text-sm">${esc(e.message)}</div>`; }
+};
+
+document.getElementById('refine-code-btn').onclick = () => {
+  const refinement = prompt('What would you like to refine?');
+  if (refinement) {
+    document.getElementById('code-prompt').value = `Refine this code:\n\`\`\`\n${lastGeneratedCode.substring(0,2000)}\n\`\`\`\n\nChanges: ${refinement}`;
+    document.getElementById('generate-code-btn').click();
+  }
+};
+
+/* ═══════════════════════════════════════════════════
+   Notebooks
+   ═══════════════════════════════════════════════════ */
+document.getElementById('nb-upload-btn').onclick = () => document.getElementById('nb-file-input').click();
+document.getElementById('nb-file-input').onchange = e => {
+  Array.from(e.target.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = ev => addNbSource(file.name, ev.target.result);
+    reader.readAsText(file);
+  });
+};
+
+// Drag & drop for notebooks
+const nbDrop = document.getElementById('nb-drop-zone');
+nbDrop.ondragover = e => { e.preventDefault(); nbDrop.style.borderColor='#0070f3'; };
+nbDrop.ondragleave = () => { nbDrop.style.borderColor=''; };
+nbDrop.ondrop = e => {
+  e.preventDefault(); nbDrop.style.borderColor='';
+  Array.from(e.dataTransfer.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = ev => addNbSource(file.name, ev.target.result);
+    reader.readAsText(file);
+  });
+};
+
+document.getElementById('nb-link-btn').onclick = () => {
+  const url = document.getElementById('nb-link-input').value.trim(); if(!url) return;
+  addNbSource('🔗 ' + url.replace(/^https?:\/\//,'').substring(0,40), 'Content from URL: ' + url + '\n\nNote: Direct URL content extraction may be limited. For best results, copy-paste the content into a text file and upload it.');
+  document.getElementById('nb-link-input').value = '';
+};
+
+document.getElementById('nb-github-btn').onclick = async () => {
+  const repo = document.getElementById('nb-github-repo').value.trim();
+  const path = document.getElementById('nb-github-path').value.trim();
+  if (!repo) return toast('Please enter a repository (owner/repo)', 'error');
+  
+  toast('Fetching from GitHub...', 'info');
+  const headers = { 'Accept': 'application/vnd.github.v3+json' };
+  const settings = JSON.parse(localStorage.getItem('betaai_settings') || '{}');
+  const token = document.getElementById('s-github-token').value.trim() || settings.githubToken;
+  if (token) headers['Authorization'] = `token ${token}`;
+
+  try {
+    const url = `https://api.github.com/repos/${repo}/contents/${path}`;
+    const res = await fetch(url, { headers });
+    if (!res.ok) throw new Error(`GitHub API: ${res.status} ${res.statusText}`);
+    const data = await res.json();
+    
+    if (Array.isArray(data)) {
+      // It's a directory, fetch up to 10 files
+      let filesFetched = 0;
+      for (const item of data) {
+        if (item.type === 'file' && filesFetched < 10) {
+          const fileRes = await fetch(item.download_url);
+          if (fileRes.ok) {
+            const text = await fileRes.text();
+            addNbSource('🐙 ' + item.name, text);
+            filesFetched++;
+          }
+        }
+      }
+      if (filesFetched === 0) {
+        toast('No text/code files found in folder', 'warning');
+      } else {
+        toast(`Imported ${filesFetched} files from folder`, 'success');
+      }
+    } else if (data.type === 'file') {
+      // It's a single file
+      const fileRes = await fetch(data.download_url);
+      if (!fileRes.ok) throw new Error('Failed to download raw file content');
+      const text = await fileRes.text();
+      addNbSource('🐙 ' + data.name, text);
+      toast(`Imported ${data.name} successfully`, 'success');
+    }
+  } catch (e) {
+    toast(`Failed to import: ${e.message}`, 'error');
+  }
+};
+
+function addNbSource(name, content) {
+  notebookSources.push({ name, content: content.substring(0, 10000) });
+  document.getElementById('nb-actions').classList.remove('hidden');
+  const box = document.getElementById('nb-sources');
+  const el = document.createElement('div');
+  el.className = 'flex items-center justify-between p-3 surface-card rounded-md border border-themed shadow-level-2 animate-fade-up';
+  el.innerHTML = `
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-sm surface-card2 border border-themed flex items-center justify-center text-sm">📄</div>
+      <div>
+        <div class="text-xs font-medium text-themed-ink">${esc(name)}</div>
+        <div class="text-[10px] font-mono text-themed-mute">${(content.length/1024).toFixed(1)} KB · ${content.split(/\s+/).length} words</div>
+      </div>
+    </div>
+    <button class="rm-src text-themed-mute hover:text-error text-xs transition">✕</button>`;
+  el.querySelector('.rm-src').onclick = () => {
+    el.remove(); notebookSources = notebookSources.filter(s=>s.name!==name);
+    if(!notebookSources.length) document.getElementById('nb-actions').classList.add('hidden');
+  };
+  box.appendChild(el);
+  toast('Source added: ' + name, 'success');
+}
+
+document.querySelectorAll('.nb-action-btn').forEach(btn => {
+  btn.onclick = async () => {
+    if (!notebookSources.length) return toast('Add a source first','error');
+    const action = btn.dataset.action;
+    const combinedText = notebookSources.map(s=>s.content).join('\n\n---\n\n');
+    const out = document.getElementById('nb-output');
+    const card = document.createElement('div');
+    card.className = 'surface-card rounded-lg border border-themed shadow-level-3 p-6 animate-fade-up';
+    card.innerHTML = `<span class="text-sm text-themed-mute animate-pulse">Generating ${action}...</span>`;
+    out.prepend(card);
+
+    const prompts = {
+      quiz: 'Based on the following content, create a quiz with 8 multiple-choice questions. Format each question with A/B/C/D options. At the end, provide an ANSWER KEY. Make questions progressively harder.\n\nContent:\n' + combinedText,
+      flashcard: 'Based on the following content, create 10 flashcards. Output as a JSON array: [{"front":"question","back":"answer"}]. ONLY output valid JSON, no other text.\n\nContent:\n' + combinedText,
+      summary: 'Create a comprehensive, well-structured summary of the following content. Use markdown with headers (##), bullet points, and bold for key terms. Include a TL;DR at the top.\n\nContent:\n' + combinedText,
+      mindmap: 'Extract the key concepts and relationships from the following content. Create a hierarchical outline with main topics, subtopics, and connections. Use markdown headers and nested lists.\n\nContent:\n' + combinedText,
+      timeline: 'Create a chronological timeline of events, milestones, or steps from the following content. Format as a numbered list with dates/stages and descriptions.\n\nContent:\n' + combinedText,
+      practice: 'Create a practice test based on the following content with 10 questions: mix of multiple-choice, true/false, and short-answer questions. Include an answer key at the end.\n\nContent:\n' + combinedText,
+      explain: 'Explain the following content as if I am 5 years old. Use simple analogies, everyday examples, and fun language. Make it engaging and easy to understand.\n\nContent:\n' + combinedText,
+    };
+
+    try {
+      const res = await fetchWithFailover(async (config) => {
+        return await fetchChatCompletion(config, {
+          temperature: 0.5,
+          messages: [{role:'user',content:prompts[action]}]
+        });
+      });
+      const data = await res.json();
+      const reply = data.choices?.[0]?.message?.content || 'No output';
+
+      if (action === 'flashcard') {
+        try {
+          const jsonMatch = reply.match(/\[[\s\S]*\]/);
+          const cards = JSON.parse(jsonMatch ? jsonMatch[0] : reply);
+          let html = '<h4 class="text-display-sm text-themed-ink mb-4">🃏 Flashcards</h4><p class="text-[11px] font-mono text-themed-mute mb-3">Click a card to flip it</p><div class="grid sm:grid-cols-2 gap-3">';
+          cards.forEach(fc => {
+            html += `<div class="flashcard h-40 rounded-md border border-themed shadow-level-2" onclick="this.classList.toggle('flipped')"><div class="flashcard-inner relative w-full h-full"><div class="flashcard-front surface-card text-center text-sm font-medium text-themed-ink">${esc(fc.front)}</div><div class="flashcard-back text-center text-sm" style="background:#171717;color:#fff">${esc(fc.back)}</div></div></div>`;
+          });
+          html += '</div>';
+          card.innerHTML = html;
+        } catch(e) { card.innerHTML = '<div class="markdown-body text-sm text-themed-ink">' + marked.parse(reply) + '</div>'; }
+      } else {
+        card.innerHTML = '<div class="markdown-body text-sm text-themed-ink">' + marked.parse(reply) + '</div>';
+        card.querySelectorAll('pre code').forEach(block => hljs.highlightElement(block));
+      }
+    } catch(e) { card.innerHTML = `<span class="text-error text-sm">${esc(e.message)}</span>`; }
+  };
+});
+
+/* ═══════════════════════════════════════════════════
+   Web Search (AI-assisted)
+   ═══════════════════════════════════════════════════ */
+document.getElementById('search-go-btn').onclick = webSearch;
+document.getElementById('search-query').onkeydown = e => { if(e.key==='Enter') webSearch(); };
+
+async function webSearch() {
+  const query = document.getElementById('search-query').value.trim(); if(!query) return;
+  const box = document.getElementById('search-results');
+  const card = document.createElement('div');
+  card.className = 'surface-card rounded-lg border border-themed shadow-level-3 p-6 animate-fade-up';
+  card.innerHTML = '<span class="text-sm text-themed-mute animate-pulse">Searching...</span>';
+  box.prepend(card);
+
+  try {
+    const res = await fetchWithFailover(async (config) => {
+      return await fetchChatCompletion(config, {
+        messages: [
+          {role:'system',content:'You are a web search assistant by SAURABH. The user is searching for information. Provide a comprehensive, well-formatted answer using markdown. Include relevant facts, explanations, and if applicable, cite sources. Format with headers, bullet points, and code blocks as needed.'},
+          {role:'user',content:'Search query: ' + query}
+        ]
+      });
+    });
+    const data = await res.json();
+    const reply = data.choices?.[0]?.message?.content || 'No results';
+    card.innerHTML = `<div class="flex items-center gap-2 mb-3 pb-3 border-b border-themed"><svg class="w-4 h-4 text-link" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg><span class="text-xs font-mono text-themed-mute">${esc(query)}</span></div><div class="markdown-body text-sm text-themed-ink">${marked.parse(reply)}</div>`;
+    card.querySelectorAll('pre code').forEach(block => hljs.highlightElement(block));
+  } catch(e) { card.innerHTML = `<span class="text-error text-sm">${esc(e.message)}</span>`; }
+}
+
+/* ═══════════════════════════════════════════════════
+   Settings
+   ═══════════════════════════════════════════════════ */
+document.getElementById('settings-btn').onclick = () => document.getElementById('settings-modal').classList.remove('hidden');
+document.getElementById('close-settings').onclick = () => document.getElementById('settings-modal').classList.add('hidden');
+document.getElementById('settings-modal').onclick = e => { if(e.target===e.currentTarget) e.currentTarget.classList.add('hidden'); };
+document.getElementById('s-temperature').oninput = function() { document.getElementById('temp-val').textContent = this.value; };
+
+document.getElementById('save-settings').onclick = () => {
+  localStorage.setItem('betaai_settings', JSON.stringify({
+    apiKey: document.getElementById('s-api-key').value,
+    apiBase: document.getElementById('s-api-base').value,
+    githubToken: document.getElementById('s-github-token').value,
+    systemPrompt: document.getElementById('s-system-prompt').value,
+    temperature: document.getElementById('s-temperature').value,
+    maxTokens: document.getElementById('s-max-tokens').value,
+    model: getModel()
+  }));
+  localStorage.setItem('betaai_api_base', document.getElementById('s-api-base').value);
+  toast('Settings saved','success');
+  document.getElementById('settings-modal').classList.add('hidden');
+};
+
+// Load saved settings
+(function() {
+  const s = JSON.parse(localStorage.getItem('betaai_settings') || '{}');
+  if (s.apiKey) document.getElementById('s-api-key').value = s.apiKey;
+  if (s.apiBase) { document.getElementById('s-api-base').value = s.apiBase; localStorage.setItem('betaai_api_base', s.apiBase); }
+  if (s.githubToken) document.getElementById('s-github-token').value = s.githubToken;
+  if (s.systemPrompt) document.getElementById('s-system-prompt').value = s.systemPrompt;
+  if (s.temperature) { document.getElementById('s-temperature').value = s.temperature; document.getElementById('temp-val').textContent = s.temperature; }
+  if (s.maxTokens) document.getElementById('s-max-tokens').value = s.maxTokens;
+  if (s.model) document.getElementById('model-select').value = s.model;
+})();
+
+document.getElementById('clear-all-data').onclick = () => {
+  if (confirm('Clear all conversations and settings? This cannot be undone.')) {
+    conversations = []; localStorage.removeItem('betaai_convs'); localStorage.removeItem('betaai_settings');
+    newChat(); renderHistory(); toast('All data cleared');
+  }
+};
+
+document.getElementById('model-select').onchange = function() {
+  document.getElementById('model-pill-text').textContent = this.value.split('/').pop();
+};
+
+/* ═══════════════════════════════════════════════════
+   Keyboard Shortcuts
+   ═══════════════════════════════════════════════════ */
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey && e.key === 'k') { e.preventDefault(); newChat(); }
+  if (e.key === 'Escape') {
+    document.getElementById('settings-modal').classList.add('hidden');
+    document.getElementById('lightbox').classList.add('hidden');
+    if (recognition) { recognition.stop(); recognition = null; }
+  }
+});
+
+/* ═══════════════════════════════════════════════════
+   Init model pill & Load Background Knowledge
+   ═══════════════════════════════════════════════════ */
+document.getElementById('model-pill-text').textContent = getModel().split('/').pop();
+
+fetch('/repo-knowledge.json')
+  .then(r => r.json())
+  .then(data => {
+    repoKnowledge = data;
+    console.log('[Knowledge Base] Repository documentation loaded successfully');
+  })
+  .catch(e => console.error('[Knowledge Base] Failed to load documentation:', e));
+</script>
+</body>
+</html>

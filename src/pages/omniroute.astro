@@ -1,0 +1,974 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="OmniRoute — The Free AI Gateway & Universal LLM Proxy" wide={true} noSidebars={true}>
+  <!-- Hero Section with Mesh Gradient backdrop -->
+  <section class="relative pt-20 pb-16 overflow-hidden flex flex-col items-center text-center">
+    <!-- Mesh Gradient Overlay specific to Hero -->
+    <div class="absolute inset-0 w-full h-[400px] pointer-events-none z-0 opacity-20">
+      <div class="mesh-gradient-bg w-full h-full"></div>
+    </div>
+    
+    <div class="relative z-10 max-w-4xl mx-auto flex flex-col items-center gap-6 px-4">
+      <!-- Release Version Badge -->
+      <div class="inline-flex items-center gap-2 px-3 py-1 bg-canvas-soft border border-hairline rounded-full shadow-level-2 transition-all hover:border-hairline-strong duration-200">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span class="text-caption-mono text-mute font-semibold">Release v3.8.45 Active</span>
+      </div>
+
+      <!-- Headline -->
+      <h1 class="text-display-xl md:text-[56px] leading-[1.05] font-semibold text-ink tracking-[-2.4px] max-w-3xl">
+        Connect every AI tool to 237 providers.
+      </h1>
+
+      <!-- Description -->
+      <p class="text-body-lg text-body max-w-2xl leading-relaxed">
+        One endpoint. 17 routing strategies. Auto-fallback across 90+ free models. 
+        Stack RTK + Caveman compression to shrink prompts by up to 95% and never hit rate limits.
+      </p>
+
+      <!-- CTA Buttons -->
+      <div class="flex items-center gap-4 mt-4">
+        <a 
+          href="#compression-studio" 
+          class="h-12 px-8 bg-primary text-on-primary rounded-pill text-[15px] font-semibold hover:bg-black transition-all duration-200 shadow-level-4 flex items-center justify-center cursor-pointer"
+        >
+          Try Simulator
+        </a>
+        <a 
+          href="#cli-setup" 
+          class="h-12 px-8 bg-canvas text-ink border border-hairline rounded-pill text-[15px] font-semibold hover:border-hairline-strong hover:bg-canvas-soft-2 transition-all duration-200 shadow-level-2 flex items-center justify-center cursor-pointer"
+        >
+          CLI Setup
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Key Metrics Strip -->
+  <section class="max-w-[1200px] mx-auto px-4 py-8 border-y border-hairline">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+      <div class="flex flex-col gap-1">
+        <span class="text-display-md text-ink tracking-[-0.96px] font-semibold">237</span>
+        <span class="text-caption-mono text-mute">AI Providers</span>
+      </div>
+      <div class="flex flex-col gap-1">
+        <span class="text-display-md text-ink tracking-[-0.96px] font-semibold">90+</span>
+        <span class="text-caption-mono text-mute">Free Tiers</span>
+      </div>
+      <div class="flex flex-col gap-1">
+        <span class="text-display-md text-ink tracking-[-0.96px] font-semibold">15–95%</span>
+        <span class="text-caption-mono text-mute">Token Savings</span>
+      </div>
+      <div class="flex flex-col gap-1">
+        <span class="text-display-md text-ink tracking-[-0.96px] font-semibold">1.6B</span>
+        <span class="text-caption-mono text-mute">Free Tokens/Mo</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section: Token Compression Studio -->
+  <section id="compression-studio" class="max-w-[1200px] mx-auto px-4 py-16 flex flex-col gap-8">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div class="flex flex-col gap-2 max-w-2xl">
+        <span class="text-caption-mono text-violet font-semibold">Token Compactor</span>
+        <h2 class="text-display-lg text-ink tracking-[-1.28px] font-semibold">
+          Save up to 95% tokens automatically.
+        </h2>
+        <p class="text-body-md text-body">
+          Every request routes through OmniRoute's stacked compression pipeline. Drop technical logs, shorten prose, and de-duplicate conversation history before sending payloads to upstream LLMs.
+        </p>
+      </div>
+    </div>
+
+    <!-- Playground Widget Container -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 border border-hairline rounded-lg bg-canvas shadow-level-3 overflow-hidden">
+      <!-- Left Column: Settings and Input -->
+      <div class="lg:col-span-5 p-6 border-b lg:border-b-0 lg:border-r border-hairline flex flex-col gap-6 bg-canvas-soft">
+        <div class="flex flex-col gap-2">
+          <label class="text-caption-mono text-mute font-semibold">1. Choose Input Template</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button 
+              type="button" 
+              id="preset-code-err"
+              class="px-3 py-2 bg-canvas border border-hairline hover:border-hairline-strong rounded-sm text-body-sm font-medium transition-all text-ink cursor-pointer"
+            >
+              React Error
+            </button>
+            <button 
+              type="button" 
+              id="preset-git-diff"
+              class="px-3 py-2 bg-canvas border border-hairline hover:border-hairline-strong rounded-sm text-body-sm font-medium transition-all text-ink cursor-pointer"
+            >
+              Git Diff
+            </button>
+            <button 
+              type="button" 
+              id="preset-prose"
+              class="px-3 py-2 bg-canvas border border-hairline hover:border-hairline-strong rounded-sm text-body-sm font-medium transition-all text-ink cursor-pointer"
+            >
+              Prose Explain
+            </button>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-2 flex-1">
+          <label for="comp-input" class="text-caption-mono text-mute font-semibold">2. Prompt / Output Payload</label>
+          <textarea 
+            id="comp-input" 
+            rows="8"
+            class="w-full flex-1 p-3 bg-canvas border border-hairline rounded-sm text-code text-ink placeholder:text-mute focus:outline-none focus:border-hairline-strong font-mono resize-none transition-colors"
+          ></textarea>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <label class="text-caption-mono text-mute font-semibold">3. Select Compression Pipeline</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button 
+              type="button" 
+              id="pipe-caveman"
+              class="px-3 py-2.5 bg-canvas border border-hairline hover:border-hairline-strong rounded-sm text-body-sm text-left transition-all text-ink cursor-pointer flex flex-col"
+            >
+              <strong class="text-body-sm-strong leading-none">Caveman Mode</strong>
+              <span class="text-[11px] text-mute mt-1">Rule-based prose (~40% off)</span>
+            </button>
+            <button 
+              type="button" 
+              id="pipe-rtk"
+              class="px-3 py-2.5 bg-canvas border border-hairline hover:border-hairline-strong rounded-sm text-body-sm text-left transition-all text-ink cursor-pointer flex flex-col"
+            >
+              <strong class="text-body-sm-strong leading-none">RTK Filter</strong>
+              <span class="text-[11px] text-mute mt-1">Tool log compaction (~75% off)</span>
+            </button>
+            <button 
+              type="button" 
+              id="pipe-stacked"
+              class="col-span-2 px-3 py-2.5 bg-primary text-on-primary rounded-sm text-body-sm text-left transition-all cursor-pointer flex flex-col border border-primary shadow-level-2"
+            >
+              <strong class="text-body-sm-strong leading-none flex items-center gap-1.5">
+                Stacked (RTK &rarr; Caveman)
+                <span class="text-[9px] uppercase bg-violet text-white px-1.5 py-0.5 rounded-full font-mono">Max Saving</span>
+              </strong>
+              <span class="text-[11px] text-on-primary/80 mt-1">Stacked engines for compound reduction (~89% avg)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Results & Interactive Analysis -->
+      <div class="lg:col-span-7 p-6 flex flex-col gap-6">
+        <!-- Live Metrics Bar -->
+        <div class="grid grid-cols-3 gap-4 border-b border-hairline pb-5">
+          <div class="flex flex-col gap-0.5">
+            <span class="text-caption-mono text-mute leading-none">Tokens Saved</span>
+            <span id="saved-pct" class="text-display-md text-emerald-500 font-semibold tracking-[-0.96px]">89.2%</span>
+          </div>
+          <div class="flex flex-col gap-0.5">
+            <span class="text-caption-mono text-mute leading-none">Input Tokens</span>
+            <span id="orig-tokens" class="text-display-md text-ink font-semibold tracking-[-0.96px]">235</span>
+          </div>
+          <div class="flex flex-col gap-0.5">
+            <span class="text-caption-mono text-mute leading-none">Sent Tokens</span>
+            <span id="sent-tokens" class="text-display-md text-ink font-semibold tracking-[-0.96px]">25</span>
+          </div>
+        </div>
+
+        <!-- Before / After Side-by-Side -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+          <!-- Before Payload -->
+          <div class="flex flex-col gap-2">
+            <span class="text-caption-mono text-mute leading-none">Verbatim Payload (Original)</span>
+            <div class="flex-1 p-3.5 bg-canvas-soft-2 border border-hairline rounded-sm font-mono text-[12px] text-body overflow-y-auto max-h-[220px] select-none whitespace-pre-wrap leading-relaxed" id="view-original"></div>
+          </div>
+
+          <!-- After Payload -->
+          <div class="flex flex-col gap-2">
+            <span class="text-caption-mono text-violet leading-none flex items-center justify-between">
+              Compressed Payload
+              <span class="text-[10px] font-mono text-emerald-500 bg-emerald-50 border border-emerald-200 px-1 rounded-sm">Protected Code</span>
+            </span>
+            <div class="flex-1 p-3.5 bg-canvas-soft border border-hairline rounded-sm font-mono text-[12px] text-ink overflow-y-auto max-h-[220px] whitespace-pre-wrap leading-relaxed" id="view-compressed"></div>
+          </div>
+        </div>
+
+        <!-- Comparative Cost Savings Simulator card -->
+        <div class="bg-violet-soft/20 border border-violet-soft/40 p-4 rounded-sm flex items-center justify-between gap-4">
+          <div class="flex flex-col gap-0.5">
+            <span class="text-body-sm-strong font-medium text-ink">Estimated Monthly Token Cost</span>
+            <p class="text-caption text-body">Calculated based on 5M tokens/month using OpenAI / Anthropic base pricing.</p>
+          </div>
+          <div class="flex flex-col items-end shrink-0">
+            <span class="text-caption text-mute line-through leading-none font-mono" id="original-cost-estimate">$75.00</span>
+            <span class="text-body-md-strong font-bold text-violet font-mono text-lg" id="saved-cost-estimate">$8.10/mo</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section: Smart Routing & Fallback Simulator -->
+  <section class="bg-primary text-on-primary py-20">
+    <div class="max-w-[1200px] mx-auto px-4 flex flex-col gap-12">
+      <div class="max-w-2xl flex flex-col gap-2">
+        <span class="text-caption-mono text-violet-soft font-semibold">Resilience Engine</span>
+        <h2 class="text-display-lg text-on-primary tracking-[-1.28px] font-semibold">
+          Auto-fallback in milliseconds.
+        </h2>
+        <p class="text-body-md text-on-primary/80">
+          Combos route request flows seamlessly across 4 hierarchical tiers. If a premium model fails or rate limits are triggered, the proxy slide-routes downstream instantly to avoid workflow disruptions.
+        </p>
+      </div>
+
+      <!-- Simulator Interactive Canvas -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+        <!-- Interactive Controller -->
+        <div class="lg:col-span-4 p-6 bg-white/5 border border-white/10 rounded-lg flex flex-col gap-6 justify-between">
+          <div class="flex flex-col gap-4">
+            <h3 class="text-body-md-strong font-semibold">Simulate Failures</h3>
+            <p class="text-body-sm text-on-primary/75">
+              Click individual steps below to simulate upstream outages, timeouts, or quota blocks, and witness OmniRoute's real-time self-healing combo fallback.
+            </p>
+            
+            <div class="flex flex-col gap-2.5 mt-2">
+              <button 
+                type="button" 
+                id="btn-fail-tier1"
+                class="w-full py-2.5 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500 rounded-sm text-body-sm font-mono text-red-200 transition-all cursor-pointer flex items-center justify-between px-3"
+              >
+                <span>Fail Tier 1 (429 Rate Limit)</span>
+                <span id="status-tier1" class="text-[10px] uppercase bg-emerald-500 text-white font-mono px-1.5 py-0.5 rounded-sm tracking-wider font-semibold">Online</span>
+              </button>
+              <button 
+                type="button" 
+                id="btn-fail-tier2"
+                class="w-full py-2.5 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500 rounded-sm text-body-sm font-mono text-red-200 transition-all cursor-pointer flex items-center justify-between px-3"
+              >
+                <span>Fail Tier 2 (Upstream Outage)</span>
+                <span id="status-tier2" class="text-[10px] uppercase bg-emerald-500 text-white font-mono px-1.5 py-0.5 rounded-sm tracking-wider font-semibold">Online</span>
+              </button>
+              <button 
+                type="button" 
+                id="btn-fail-tier3"
+                class="w-full py-2.5 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 hover:border-red-500 rounded-sm text-body-sm font-mono text-red-200 transition-all cursor-pointer flex items-center justify-between px-3"
+              >
+                <span>Fail Tier 3 (Budget Exceeded)</span>
+                <span id="status-tier3" class="text-[10px] uppercase bg-emerald-500 text-white font-mono px-1.5 py-0.5 rounded-sm tracking-wider font-semibold">Online</span>
+              </button>
+            </div>
+          </div>
+
+          <button 
+            type="button" 
+            id="btn-reset-simulator"
+            class="w-full py-2.5 bg-white text-primary hover:bg-white/95 rounded-sm text-body-sm-strong font-medium transition-all cursor-pointer"
+          >
+            Reset Simulator
+          </button>
+        </div>
+
+        <!-- Simulation Flow visualizer -->
+        <div class="lg:col-span-8 p-6 bg-white/5 border border-white/10 rounded-lg flex flex-col justify-between gap-8 relative overflow-hidden">
+          <div class="flex items-center justify-between border-b border-white/10 pb-4">
+            <span class="text-caption-mono text-violet-soft">Active Routing Chain</span>
+            <span class="text-[11px] font-mono text-violet-soft flex items-center gap-1.5" id="simulation-verdict">
+              <span class="w-2 h-2 bg-emerald-400 rounded-full animate-ping"></span>
+              ROUTING FLOW ACTIVE: Claude 3.5 Sonnet
+            </span>
+          </div>
+
+          <!-- Flow Node grid -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 py-4 relative">
+            <!-- Flow line (bg decoration) -->
+            <div class="absolute top-[42px] left-[10%] right-[10%] h-0.5 bg-white/10 hidden md:block z-0"></div>
+            
+            <!-- Tier 1 -->
+            <div 
+              id="node-tier1"
+              class="relative z-10 p-4 border rounded-sm flex flex-col gap-2 transition-all duration-300 bg-primary border-violet text-on-primary shadow-[0_0_15px_rgba(121,40,202,0.4)]"
+            >
+              <div class="text-[10px] font-mono text-violet-soft uppercase tracking-widest leading-none">Tier 1 &bull; Subscription</div>
+              <strong class="text-body-md font-semibold mt-1 font-sans">Claude Opus</strong>
+              <span class="text-[11px] font-mono text-violet-soft font-semibold leading-none" id="label-tier1">ACTIVE PATH</span>
+            </div>
+
+            <!-- Tier 2 -->
+            <div 
+              id="node-tier2"
+              class="relative z-10 p-4 border rounded-sm flex flex-col gap-2 transition-all duration-300 bg-primary border-white/15 text-on-primary/60"
+            >
+              <div class="text-[10px] font-mono text-white/40 uppercase tracking-widest leading-none">Tier 2 &bull; API Key</div>
+              <strong class="text-body-md font-semibold mt-1 font-sans">DeepSeek V3</strong>
+              <span class="text-[11px] font-mono text-white/30 leading-none" id="label-tier2">STANDBY</span>
+            </div>
+
+            <!-- Tier 3 -->
+            <div 
+              id="node-tier3"
+              class="relative z-10 p-4 border rounded-sm flex flex-col gap-2 transition-all duration-300 bg-primary border-white/15 text-on-primary/60"
+            >
+              <div class="text-[10px] font-mono text-white/40 uppercase tracking-widest leading-none">Tier 3 &bull; Cheap</div>
+              <strong class="text-body-md font-semibold mt-1 font-sans">MiniMax 0.2</strong>
+              <span class="text-[11px] font-mono text-white/30 leading-none" id="label-tier3">STANDBY</span>
+            </div>
+
+            <!-- Tier 4 -->
+            <div 
+              id="node-tier4"
+              class="relative z-10 p-4 border rounded-sm flex flex-col gap-2 transition-all duration-300 bg-primary border-white/15 text-on-primary/60"
+            >
+              <div class="text-[10px] font-mono text-white/40 uppercase tracking-widest leading-none">Tier 4 &bull; Free</div>
+              <strong class="text-body-md font-semibold mt-1 font-sans">Pollinations</strong>
+              <span class="text-[11px] font-mono text-white/30 leading-none" id="label-tier4">STANDBY</span>
+            </div>
+          </div>
+
+          <!-- Log console output -->
+          <div class="p-4 bg-black/40 border border-white/10 rounded-sm font-mono text-[12px] leading-relaxed max-h-[140px] overflow-y-auto text-white/80 flex flex-col gap-1" id="sim-console">
+            <span class="text-white/45">[14:50:02] Initializing OmniRoute resilient request pipeline...</span>
+            <span class="text-white/45">[14:50:02] Scored 237 connections. Built virtual auto-combo chain.</span>
+            <span class="text-emerald-400 font-semibold">[14:50:02] Routing request to Claude Opus. Status: Healthy.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section: Interactive Providers Directory -->
+  <section class="max-w-[1200px] mx-auto px-4 py-16 flex flex-col gap-8">
+    <div class="flex flex-col gap-2">
+      <span class="text-caption-mono text-violet font-semibold">Integrations</span>
+      <h2 class="text-display-lg text-ink tracking-[-1.28px] font-semibold">
+        Aggregate every major model.
+      </h2>
+      <p class="text-body-md text-body max-w-2xl">
+        Point your tools to our universal proxy and configure connection secrets once. Browse the connected endpoints, filter by class, and select your fallbacks.
+      </p>
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-hairline pb-4">
+      <div class="flex gap-2" id="provider-filters">
+        <button 
+          type="button" 
+          class="h-8 px-4 rounded-pill-sm text-body-sm bg-primary text-on-primary transition-all cursor-pointer"
+          data-filter="all"
+        >
+          All (237)
+        </button>
+        <button 
+          type="button" 
+          class="h-8 px-4 rounded-pill-sm text-body-sm text-body hover:text-ink hover:bg-canvas-soft-2 transition-all cursor-pointer"
+          data-filter="free"
+        >
+          Free Tiers (90+)
+        </button>
+        <button 
+          type="button" 
+          class="h-8 px-4 rounded-pill-sm text-body-sm text-body hover:text-ink hover:bg-canvas-soft-2 transition-all cursor-pointer"
+          data-filter="premium"
+        >
+          Premium Labs
+        </button>
+        <button 
+          type="button" 
+          class="h-8 px-4 rounded-pill-sm text-body-sm text-body hover:text-ink hover:bg-canvas-soft-2 transition-all cursor-pointer"
+          data-filter="local"
+        >
+          Local / Offline
+        </button>
+      </div>
+
+      <div class="relative w-full md:w-64">
+        <input 
+          type="text" 
+          placeholder="Filter providers..." 
+          id="provider-search"
+          class="w-full h-9 bg-canvas-soft border border-hairline rounded-sm pl-8 pr-3 text-body-sm text-ink placeholder:text-mute focus:outline-none focus:border-hairline-strong transition-colors"
+        />
+        <svg class="absolute left-2.5 top-2.5 text-mute" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Provider Grid -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="provider-grid">
+      <!-- OpenAI -->
+      <div class="p-4 bg-canvas border border-hairline rounded-md shadow-level-2 hover:border-hairline-strong hover:shadow-level-3 transition-all flex flex-col gap-2" data-type="premium" data-name="openai">
+        <div class="flex items-center justify-between">
+          <strong class="text-body-md font-semibold text-ink">OpenAI</strong>
+          <span class="text-[10px] font-mono text-violet bg-violet-soft/20 border border-violet-soft/40 px-1.5 py-0.5 rounded-sm">Lab</span>
+        </div>
+        <p class="text-caption text-body">GPT-4o, GPT-4o-mini, o1-pro models catalog.</p>
+        <span class="text-[11px] font-mono text-mute mt-auto">Pricing: API catalog</span>
+      </div>
+
+      <!-- Anthropic -->
+      <div class="p-4 bg-canvas border border-hairline rounded-md shadow-level-2 hover:border-hairline-strong hover:shadow-level-3 transition-all flex flex-col gap-2" data-type="premium" data-name="anthropic">
+        <div class="flex items-center justify-between">
+          <strong class="text-body-md font-semibold text-ink">Anthropic</strong>
+          <span class="text-[10px] font-mono text-violet bg-violet-soft/20 border border-violet-soft/40 px-1.5 py-0.5 rounded-sm">Lab</span>
+        </div>
+        <p class="text-caption text-body">Claude 3.5 Sonnet, Claude Opus, and Fable 5.</p>
+        <span class="text-[11px] font-mono text-mute mt-auto">Pricing: API catalog</span>
+      </div>
+
+      <!-- DeepSeek -->
+      <div class="p-4 bg-canvas border border-hairline rounded-md shadow-level-2 hover:border-hairline-strong hover:shadow-level-3 transition-all flex flex-col gap-2" data-type="premium" data-name="deepseek">
+        <div class="flex items-center justify-between">
+          <strong class="text-body-md font-semibold text-ink">DeepSeek</strong>
+          <span class="text-[10px] font-mono text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-sm">Budget</span>
+        </div>
+        <p class="text-caption text-body">DeepSeek V3 and DeepSeek R1 reasoning.</p>
+        <span class="text-[11px] font-mono text-mute mt-auto">Pricing: Ultra-cheap ($0.55/1M)</span>
+      </div>
+
+      <!-- Qoder AI -->
+      <div class="p-4 bg-canvas border border-hairline rounded-md shadow-level-2 hover:border-hairline-strong hover:shadow-level-3 transition-all flex flex-col gap-2" data-type="free" data-name="qoder ai">
+        <div class="flex items-center justify-between">
+          <strong class="text-body-md font-semibold text-ink">Qoder AI</strong>
+          <span class="text-[10px] font-mono text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-sm">Free</span>
+        </div>
+        <p class="text-caption text-body">Provides unlimited free access to DeepSeek-R1 and Kimi-K2.</p>
+        <span class="text-[11px] font-mono text-mute mt-auto">Pricing: $0 Free</span>
+      </div>
+
+      <!-- Pollinations -->
+      <div class="p-4 bg-canvas border border-hairline rounded-md shadow-level-2 hover:border-hairline-strong hover:shadow-level-3 transition-all flex flex-col gap-2" data-type="free" data-name="pollinations">
+        <div class="flex items-center justify-between">
+          <strong class="text-body-md font-semibold text-ink">Pollinations</strong>
+          <span class="text-[10px] font-mono text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-sm">Free</span>
+        </div>
+        <p class="text-caption text-body">No API keys required. Serves Llama 3.1 & GPT-4o-mini.</p>
+        <span class="text-[11px] font-mono text-mute mt-auto">Pricing: $0 Free</span>
+      </div>
+
+      <!-- Kiro AI -->
+      <div class="p-4 bg-canvas border border-hairline rounded-md shadow-level-2 hover:border-hairline-strong hover:shadow-level-3 transition-all flex flex-col gap-2" data-type="free" data-name="kiro ai">
+        <div class="flex items-center justify-between">
+          <strong class="text-body-md font-semibold text-ink">Kiro AI</strong>
+          <span class="text-[10px] font-mono text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-sm">Free</span>
+        </div>
+        <p class="text-caption text-body">Adaptive reasoning tokens, free ~50 credits/month.</p>
+        <span class="text-[11px] font-mono text-mute mt-auto">Pricing: $0 Free</span>
+      </div>
+
+      <!-- Ollama -->
+      <div class="p-4 bg-canvas border border-hairline rounded-md shadow-level-2 hover:border-hairline-strong hover:shadow-level-3 transition-all flex flex-col gap-2" data-type="local" data-name="ollama">
+        <div class="flex items-center justify-between">
+          <strong class="text-body-md font-semibold text-ink">Ollama</strong>
+          <span class="text-[10px] font-mono text-blue-600 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded-sm">Local</span>
+        </div>
+        <p class="text-caption text-body">Run models locally on your GPU. Zero-network dependencies.</p>
+        <span class="text-[11px] font-mono text-mute mt-auto">Pricing: Self-Hosted</span>
+      </div>
+
+      <!-- Cerebras -->
+      <div class="p-4 bg-canvas border border-hairline rounded-md shadow-level-2 hover:border-hairline-strong hover:shadow-level-3 transition-all flex flex-col gap-2" data-type="free" data-name="cerebras">
+        <div class="flex items-center justify-between">
+          <strong class="text-body-md font-semibold text-ink">Cerebras</strong>
+          <span class="text-[10px] font-mono text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-sm">Free</span>
+        </div>
+        <p class="text-caption text-body">High speed inference. Serves Qwen3 235B at ~1M tokens/day.</p>
+        <span class="text-[11px] font-mono text-mute mt-auto">Pricing: $0 Free</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section: CLI Integration Cockpit -->
+  <section id="cli-setup" class="max-w-[1200px] mx-auto px-4 py-16 flex flex-col gap-8">
+    <div class="flex flex-col gap-2">
+      <span class="text-caption-mono text-violet font-semibold">Integrations</span>
+      <h2 class="text-display-lg text-ink tracking-[-1.28px] font-semibold">
+        One configuration. Every tool.
+      </h2>
+      <p class="text-body-md text-body max-w-2xl">
+        Point any LLM-powered coding workspace or agent to your local routing gateway. Select your target tool below to get the custom setup commands.
+      </p>
+    </div>
+
+    <!-- Integration Tabbed UI -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 border border-hairline rounded-lg bg-canvas shadow-level-3 overflow-hidden">
+      <!-- Left sidebar: Tool selector -->
+      <div class="lg:col-span-4 p-6 bg-canvas-soft border-b lg:border-b-0 lg:border-r border-hairline flex flex-col gap-2" id="cli-tool-tabs">
+        <button 
+          type="button" 
+          class="flex items-center justify-between p-3 rounded-sm text-left text-body-sm-strong font-medium bg-primary text-on-primary transition-all cursor-pointer w-full"
+          data-tool="claude-code"
+        >
+          <span>Claude Code</span>
+          <span class="text-[10px] font-mono opacity-85">omniroute cli</span>
+        </button>
+        <button 
+          type="button" 
+          class="flex items-center justify-between p-3 rounded-sm text-left text-body-sm hover:text-ink hover:bg-canvas-soft-2 transition-all cursor-pointer w-full"
+          data-tool="cursor"
+        >
+          <span>Cursor IDE</span>
+          <span class="text-[10px] font-mono text-mute">Custom OpenAI API</span>
+        </button>
+        <button 
+          type="button" 
+          class="flex items-center justify-between p-3 rounded-sm text-left text-body-sm hover:text-ink hover:bg-canvas-soft-2 transition-all cursor-pointer w-full"
+          data-tool="cline"
+        >
+          <span>Cline / Roo Code</span>
+          <span class="text-[10px] font-mono text-mute">Generic OpenAI</span>
+        </button>
+        <button 
+          type="button" 
+          class="flex items-center justify-between p-3 rounded-sm text-left text-body-sm hover:text-ink hover:bg-canvas-soft-2 transition-all cursor-pointer w-full"
+          data-tool="continue"
+        >
+          <span>Continue.dev</span>
+          <span class="text-[10px] font-mono text-mute">config.json snippet</span>
+        </button>
+      </div>
+
+      <!-- Right Column: Terminal Display -->
+      <div class="lg:col-span-8 p-6 flex flex-col gap-4 bg-primary text-on-primary">
+        <div class="flex items-center justify-between border-b border-white/10 pb-3">
+          <div class="flex items-center gap-1.5">
+            <span class="w-3 h-3 rounded-full bg-red-500/80"></span>
+            <span class="w-3 h-3 rounded-full bg-yellow-500/80"></span>
+            <span class="w-3 h-3 rounded-full bg-green-500/80"></span>
+          </div>
+          <span class="text-caption-mono text-white/40" id="terminal-title">terminal &bull; claude-code setup</span>
+        </div>
+
+        <!-- CLI Output Area -->
+        <div class="flex-1 font-mono text-code leading-relaxed text-white/90 whitespace-pre overflow-x-auto py-2" id="terminal-content"># Run the guided launcher inside your project
+omniroute launch-codex
+
+# To configure Claude Code CLI:
+claude mcp add-server omniroute \
+  --type http \
+  --url http://localhost:20128/api/mcp/stream
+
+# Test your endpoint returns healthy connections
+curl http://localhost:20128/v1/models \
+  -H "Authorization: Bearer YOUR_OMNIROUTE_KEY"</div>
+
+        <!-- Copy instructions button -->
+        <div class="flex items-center justify-between border-t border-white/10 pt-3">
+          <span class="text-[11px] text-white/40 font-mono">Gateway listening on port 20128</span>
+          <button 
+            type="button" 
+            id="btn-copy-code"
+            class="h-8 px-4 bg-white text-primary rounded-sm text-body-sm font-medium hover:bg-white/90 transition-all cursor-pointer flex items-center gap-1.5"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            Copy Snippet
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Client-side Script for Simulator and Controls -->
+  <script is:inline>
+    // PRESETS FOR TOKEN COMPRESSION STUDIO
+    const PRESETS = {
+      codeErr: {
+        text: `Error: Expected server HTML to contain a matching <div> in <div>.\n  at Header (Header.jsx:12)\n  at div (Layout.jsx:45)\n  at body\n  at html\n  at App\n\nThis hydration mismatch is likely caused by printing dynamic timestamps on server side:\nconst time = new Date().toLocaleTimeString();\nReactDOM.hydrate(<App time={time} />, document.getElementById('root'));\nServer time was 10:00:02 PM, but client time was 10:00:03 PM during hydration.`,
+        comp: `Dynamic timestamps causes React hydration mismatch error. Wrap timestamp output in useEffect or pass statically to avoid matching warnings.`,
+        tokens: 95,
+        saved: 78
+      },
+      gitDiff: {
+        text: `diff --git a/src/App.jsx b/src/App.jsx\nindex a1b2c3d..e4f5g6h 100644\n--- a/src/App.jsx\n+++ b/src/App.jsx\n@@ -12,5 +12,7 @@ function App() {\n   return (\n     <div class="container">\n-      <h1 class="text-3xl">Old Title</h1>\n+      <h1 class="text-3xl font-semibold tracking-tight text-ink font-sans">New Sentence Case Title.</h1>\n+      <p class="text-body-md text-body mt-2">Added fresh typography support matching DESIGN.md guidelines.</p>\n     </div>\n   )\n }`,
+        comp: `Modified App.jsx title layout: changed to Vercel-style typography and added details sentence matching design guidelines.`,
+        tokens: 125,
+        saved: 84
+      },
+      prose: {
+        text: `The reason your React component is re-rendering is likely because you're creating a new object reference on each render cycle. When you pass an inline object as a prop, React's shallow comparison sees it as a different object every time, which triggers a re-render. I would recommend using useMemo to memoize the object.`,
+        comp: `New object ref each render. Inline object prop = new ref = re-render. Wrap in useMemo.`,
+        tokens: 69,
+        saved: 72
+      }
+    };
+
+    const terminalPresets = {
+      'claude-code': `# Run the guided launcher inside your project\nomniroute launch-codex\n\n# To configure Claude Code CLI:\nclaude mcp add-server omniroute \\\n  --type http \\\n  --url http://localhost:20128/api/mcp/stream\n\n# Test your endpoint returns healthy connections\ncurl http://localhost:20128/v1/models \\\n  -H "Authorization: Bearer YOUR_OMNIROUTE_KEY"`,
+      'cursor': `# Open Cursor Settings -> Models -> OpenAI API\n# Set Endpoint URL to:\nhttp://localhost:20128/v1\n\n# Set API Key to:\nYOUR_OMNIROUTE_API_KEY\n\n# Available Virtual Models:\n- auto\n- auto/coding\n- auto/fast`,
+      'cline': `# In Cline / Roo Code settings:\n# 1. Select API Provider: "OpenAI Compatible"\n# 2. Base URL: http://localhost:20128/v1\n# 3. API Key: YOUR_OMNIROUTE_API_KEY\n# 4. Model ID: auto/coding`,
+      'continue': `// Add to ~/.continue/config.json\n{\n  "models": [\n    {\n      "title": "OmniRoute Auto",\n      "provider": "openai",\n      "model": "auto",\n      "apiBase": "http://localhost:20128/v1",\n      "apiKey": "YOUR_OMNIROUTE_KEY"\n    }\n  ]\n}`
+    };
+
+    // INIT ELEMENTS
+    const compInput = document.getElementById('comp-input');
+    const viewOriginal = document.getElementById('view-original');
+    const viewCompressed = document.getElementById('view-compressed');
+    const savedPct = document.getElementById('saved-pct');
+    const origTokens = document.getElementById('orig-tokens');
+    const sentTokens = document.getElementById('sent-tokens');
+    const origCost = document.getElementById('original-cost-estimate');
+    const savedCost = document.getElementById('saved-cost-estimate');
+
+    const presetCodeErr = document.getElementById('preset-code-err');
+    const presetGitDiff = document.getElementById('preset-git-diff');
+    const presetProse = document.getElementById('preset-prose');
+
+    const pipeCaveman = document.getElementById('pipe-caveman');
+    const pipeRtk = document.getElementById('pipe-rtk');
+    const pipeStacked = document.getElementById('pipe-stacked');
+
+    let activePreset = 'prose';
+    let activePipe = 'stacked';
+
+    // UPDATE SIMULATOR MATH
+    function updateCompressionStudio() {
+      const textVal = compInput.value;
+      viewOriginal.textContent = textVal;
+
+      // Custom scaling factor based on selections
+      let baseSavings = 0.89; // Stacked
+      let displayOutput = '';
+      
+      const presetData = PRESETS[activePreset];
+
+      if (activePipe === 'caveman') {
+        baseSavings = 0.40;
+        displayOutput = presetData ? presetData.comp + '\n\n[Prose compressed, syntax retained]' : 'Caveman condensed form...';
+      } else if (activePipe === 'rtk') {
+        baseSavings = 0.72;
+        displayOutput = presetData ? presetData.comp + '\n\n[Log outputs trimmed & normalized]' : 'RTK filtered content...';
+      } else {
+        // Stacked
+        baseSavings = presetData ? (presetData.saved / 100) : 0.89;
+        displayOutput = presetData ? presetData.comp : 'Stacked output form...';
+      }
+
+      const inputLen = textVal.length;
+      // Estimate token count roughly (1 token ~ 4 chars)
+      const inputTokens = Math.max(15, Math.round(inputLen / 4.1));
+      const outputTokens = Math.max(4, Math.round(inputTokens * (1 - baseSavings)));
+      const finalSavings = ((1 - (outputTokens / inputTokens)) * 100).toFixed(1);
+
+      savedPct.textContent = `${finalSavings}%`;
+      origTokens.textContent = inputTokens;
+      sentTokens.textContent = outputTokens;
+      viewCompressed.textContent = displayOutput;
+
+      // Cost estimation based on 5M tokens per month
+      const rawCost = (5000000 / 1000000) * 15.0; // ~$15 per million avg
+      const compCost = rawCost * (1 - (finalSavings / 100));
+
+      origCost.textContent = `$${rawCost.toFixed(2)}`;
+      savedCost.textContent = `$${compCost.toFixed(2)}/mo`;
+    }
+
+    // EVENT BINDINGS FOR COMPRESSION STUDIO
+    presetCodeErr?.addEventListener('click', () => {
+      activePreset = 'codeErr';
+      compInput.value = PRESETS.codeErr.text;
+      updateCompressionStudio();
+    });
+
+    presetGitDiff?.addEventListener('click', () => {
+      activePreset = 'gitDiff';
+      compInput.value = PRESETS.gitDiff.text;
+      updateCompressionStudio();
+    });
+
+    presetProse?.addEventListener('click', () => {
+      activePreset = 'prose';
+      compInput.value = PRESETS.prose.text;
+      updateCompressionStudio();
+    });
+
+    pipeCaveman?.addEventListener('click', () => {
+      activePipe = 'caveman';
+      pipeCaveman.className = 'px-3 py-2.5 bg-primary text-on-primary rounded-sm text-body-sm text-left transition-all cursor-pointer flex flex-col border border-primary shadow-level-2';
+      pipeRtk.className = 'px-3 py-2.5 bg-canvas border border-hairline hover:border-hairline-strong rounded-sm text-body-sm text-left transition-all text-ink cursor-pointer flex flex-col';
+      pipeStacked.className = 'col-span-2 px-3 py-2.5 bg-canvas border border-hairline hover:border-hairline-strong rounded-sm text-body-sm text-left transition-all text-ink cursor-pointer flex flex-col';
+      updateCompressionStudio();
+    });
+
+    pipeRtk?.addEventListener('click', () => {
+      activePipe = 'rtk';
+      pipeCaveman.className = 'px-3 py-2.5 bg-canvas border border-hairline hover:border-hairline-strong rounded-sm text-body-sm text-left transition-all text-ink cursor-pointer flex flex-col';
+      pipeRtk.className = 'px-3 py-2.5 bg-primary text-on-primary rounded-sm text-body-sm text-left transition-all cursor-pointer flex flex-col border border-primary shadow-level-2';
+      pipeStacked.className = 'col-span-2 px-3 py-2.5 bg-canvas border border-hairline hover:border-hairline-strong rounded-sm text-body-sm text-left transition-all text-ink cursor-pointer flex flex-col';
+      updateCompressionStudio();
+    });
+
+    pipeStacked?.addEventListener('click', () => {
+      activePipe = 'stacked';
+      pipeCaveman.className = 'px-3 py-2.5 bg-canvas border border-hairline hover:border-hairline-strong rounded-sm text-body-sm text-left transition-all text-ink cursor-pointer flex flex-col';
+      pipeRtk.className = 'px-3 py-2.5 bg-canvas border border-hairline hover:border-hairline-strong rounded-sm text-body-sm text-left transition-all text-ink cursor-pointer flex flex-col';
+      pipeStacked.className = 'col-span-2 px-3 py-2.5 bg-primary text-on-primary rounded-sm text-body-sm text-left transition-all cursor-pointer flex flex-col border border-primary shadow-level-2';
+      updateCompressionStudio();
+    });
+
+    compInput?.addEventListener('input', updateCompressionStudio);
+
+    // Initial load setup for compression
+    if (compInput) compInput.value = PRESETS.prose.text;
+    updateCompressionStudio();
+
+
+    // ----------------------------------------------------
+    // FALLBACK SIMULATOR ENGINE
+    // ----------------------------------------------------
+    const btnFailTier1 = document.getElementById('btn-fail-tier1');
+    const btnFailTier2 = document.getElementById('btn-fail-tier2');
+    const btnFailTier3 = document.getElementById('btn-fail-tier3');
+    const btnResetSim = document.getElementById('btn-reset-simulator');
+
+    const statusTier1 = document.getElementById('status-tier1');
+    const statusTier2 = document.getElementById('status-tier2');
+    const statusTier3 = document.getElementById('status-tier3');
+
+    const nodeTier1 = document.getElementById('node-tier1');
+    const nodeTier2 = document.getElementById('node-tier2');
+    const nodeTier3 = document.getElementById('node-tier3');
+    const nodeTier4 = document.getElementById('node-tier4');
+
+    const labelTier1 = document.getElementById('label-tier1');
+    const labelTier2 = document.getElementById('label-tier2');
+    const labelTier3 = document.getElementById('label-tier3');
+    const labelTier4 = document.getElementById('label-tier4');
+
+    const simConsole = document.getElementById('sim-console');
+    const simulationVerdict = document.getElementById('simulation-verdict');
+
+    let tierStatus = { t1: true, t2: true, t3: true };
+
+    function writeConsoleLog(msg, color = 'text-white/45') {
+      const span = document.createElement('span');
+      span.className = color;
+      const now = new Date();
+      const timeStr = `[${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}]`;
+      span.textContent = `${timeStr} ${msg}`;
+      simConsole?.appendChild(span);
+      if (simConsole) simConsole.scrollTop = simConsole.scrollHeight;
+    }
+
+    function updateSimulationFlow() {
+      // Clear styles
+      const nodes = [nodeTier1, nodeTier2, nodeTier3, nodeTier4];
+      const labels = [labelTier1, labelTier2, labelTier3, labelTier4];
+
+      nodes.forEach(n => {
+        if (n) {
+          n.className = "relative z-10 p-4 border rounded-sm flex flex-col gap-2 transition-all duration-300 bg-primary border-white/15 text-on-primary/60";
+        }
+      });
+      labels.forEach(l => {
+        if (l) {
+          l.textContent = "STANDBY";
+          l.className = "text-[11px] font-mono text-white/30 leading-none";
+        }
+      });
+
+      if (tierStatus.t1) {
+        // T1 Active
+        if (nodeTier1) nodeTier1.className = "relative z-10 p-4 border rounded-sm flex flex-col gap-2 transition-all duration-300 bg-primary border-violet text-on-primary shadow-[0_0_15px_rgba(121,40,202,0.4)]";
+        if (labelTier1) {
+          labelTier1.textContent = "ACTIVE PATH";
+          labelTier1.className = "text-[11px] font-mono text-violet-soft font-semibold leading-none";
+        }
+        if (simulationVerdict) simulationVerdict.innerHTML = '<span class="w-2 h-2 bg-emerald-400 rounded-full animate-ping"></span> ROUTING FLOW ACTIVE: Claude Opus';
+      } else if (tierStatus.t2) {
+        // T2 Active
+        if (nodeTier2) nodeTier2.className = "relative z-10 p-4 border rounded-sm flex flex-col gap-2 transition-all duration-300 bg-primary border-violet text-on-primary shadow-[0_0_15px_rgba(121,40,202,0.4)]";
+        if (labelTier2) {
+          labelTier2.textContent = "ACTIVE PATH";
+          labelTier2.className = "text-[11px] font-mono text-violet-soft font-semibold leading-none";
+        }
+        if (nodeTier1) nodeTier1.className = "relative z-10 p-4 border rounded-sm flex flex-col gap-2 transition-all duration-300 bg-primary border-red-500/40 text-red-300/60";
+        if (labelTier1) {
+          labelTier1.textContent = "FAILED";
+          labelTier1.className = "text-[11px] font-mono text-red-400 font-semibold leading-none";
+        }
+        if (simulationVerdict) simulationVerdict.innerHTML = '<span class="w-2 h-2 bg-emerald-400 rounded-full animate-ping"></span> ROUTING FLOW ACTIVE: DeepSeek V3';
+      } else if (tierStatus.t3) {
+        // T3 Active
+        if (nodeTier3) nodeTier3.className = "relative z-10 p-4 border rounded-sm flex flex-col gap-2 transition-all duration-300 bg-primary border-violet text-on-primary shadow-[0_0_15px_rgba(121,40,202,0.4)]";
+        if (labelTier3) {
+          labelTier3.textContent = "ACTIVE PATH";
+          labelTier3.className = "text-[11px] font-mono text-violet-soft font-semibold leading-none";
+        }
+        if (nodeTier1) nodeTier1.className = "relative z-10 p-4 border rounded-sm flex flex-col gap-2 transition-all duration-300 bg-primary border-red-500/40 text-red-300/60";
+        if (labelTier1) {
+          labelTier1.textContent = "FAILED";
+          labelTier1.className = "text-[11px] font-mono text-red-400 font-semibold leading-none";
+        }
+        if (nodeTier2) nodeTier2.className = "relative z-10 p-4 border rounded-sm flex flex-col gap-2 transition-all duration-300 bg-primary border-red-500/40 text-red-300/60";
+        if (labelTier2) {
+          labelTier2.textContent = "FAILED";
+          labelTier2.className = "text-[11px] font-mono text-red-400 font-semibold leading-none";
+        }
+        if (simulationVerdict) simulationVerdict.innerHTML = '<span class="w-2 h-2 bg-emerald-400 rounded-full animate-ping"></span> ROUTING FLOW ACTIVE: MiniMax';
+      } else {
+        // T4 Active (Free fallback)
+        if (nodeTier4) nodeTier4.className = "relative z-10 p-4 border rounded-sm flex flex-col gap-2 transition-all duration-300 bg-primary border-violet text-on-primary shadow-[0_0_15px_rgba(121,40,202,0.4)]";
+        if (labelTier4) {
+          labelTier4.textContent = "ACTIVE PATH";
+          labelTier4.className = "text-[11px] font-mono text-violet-soft font-semibold leading-none";
+        }
+        nodes.slice(0,3).forEach((n, idx) => {
+          if (n) n.className = "relative z-10 p-4 border rounded-sm flex flex-col gap-2 transition-all duration-300 bg-primary border-red-500/40 text-red-300/60";
+          const l = labels[idx];
+          if (l) {
+            l.textContent = "FAILED";
+            l.className = "text-[11px] font-mono text-red-400 font-semibold leading-none";
+          }
+        });
+        if (simulationVerdict) simulationVerdict.innerHTML = '<span class="w-2 h-2 bg-emerald-400 rounded-full animate-ping"></span> ROUTING FLOW ACTIVE: Pollinations (Free)';
+      }
+    }
+
+    btnFailTier1?.addEventListener('click', () => {
+      if (tierStatus.t1) {
+        tierStatus.t1 = false;
+        if (statusTier1) {
+          statusTier1.textContent = "Offline (429)";
+          statusTier1.className = "text-[10px] uppercase bg-red-600 text-white font-mono px-1.5 py-0.5 rounded-sm tracking-wider font-semibold";
+        }
+        writeConsoleLog("WARN: Claude Opus returned HTTP 429 (Too Many Requests). Quota Limit breached.", "text-yellow-400");
+        writeConsoleLog("Resilience triggering: sliding to Tier 2 (DeepSeek V3). Time elapsed: 14ms.", "text-violet-soft");
+        updateSimulationFlow();
+      }
+    });
+
+    btnFailTier2?.addEventListener('click', () => {
+      if (tierStatus.t2) {
+        tierStatus.t2 = false;
+        if (statusTier2) {
+          statusTier2.textContent = "Offline (503)";
+          statusTier2.className = "text-[10px] uppercase bg-red-600 text-white font-mono px-1.5 py-0.5 rounded-sm tracking-wider font-semibold";
+        }
+        writeConsoleLog("WARN: DeepSeek V3 returned HTTP 503 (Outage). Server unreachable.", "text-yellow-400");
+        writeConsoleLog("Resilience triggering: sliding to Tier 3 (MiniMax 0.2). Time elapsed: 18ms.", "text-violet-soft");
+        updateSimulationFlow();
+      }
+    });
+
+    btnFailTier3?.addEventListener('click', () => {
+      if (tierStatus.t3) {
+        tierStatus.t3 = false;
+        if (statusTier3) {
+          statusTier3.textContent = "Offline";
+          statusTier3.className = "text-[10px] uppercase bg-red-600 text-white font-mono px-1.5 py-0.5 rounded-sm tracking-wider font-semibold";
+        }
+        writeConsoleLog("WARN: MiniMax USD budget quota check failed (Limit reached).", "text-yellow-400");
+        writeConsoleLog("Resilience triggering: sliding to Tier 4 (Free - Pollinations). Time elapsed: 22ms.", "text-violet-soft");
+        updateSimulationFlow();
+      }
+    });
+
+    btnResetSim?.addEventListener('click', () => {
+      tierStatus = { t1: true, t2: true, t3: true };
+      
+      if (statusTier1) {
+        statusTier1.textContent = "Online";
+        statusTier1.className = "text-[10px] uppercase bg-emerald-500 text-white font-mono px-1.5 py-0.5 rounded-sm tracking-wider font-semibold";
+      }
+      if (statusTier2) {
+        statusTier2.textContent = "Online";
+        statusTier2.className = "text-[10px] uppercase bg-emerald-500 text-white font-mono px-1.5 py-0.5 rounded-sm tracking-wider font-semibold";
+      }
+      if (statusTier3) {
+        statusTier3.textContent = "Online";
+        statusTier3.className = "text-[10px] uppercase bg-emerald-500 text-white font-mono px-1.5 py-0.5 rounded-sm tracking-wider font-semibold";
+      }
+
+      if (simConsole) simConsole.innerHTML = '';
+      writeConsoleLog("Initializing OmniRoute resilient request pipeline...", "text-white/45");
+      writeConsoleLog("Scored 237 connections. Built virtual auto-combo chain.", "text-white/45");
+      writeConsoleLog("Routing request to Claude Opus. Status: Healthy.", "text-emerald-400 font-semibold");
+
+      updateSimulationFlow();
+    });
+
+
+    // ----------------------------------------------------
+    // PROVIDERS SEARCH & FILTER
+    // ----------------------------------------------------
+    const providerSearch = document.getElementById('provider-search');
+    const providerGrid = document.getElementById('provider-grid');
+    const filterButtons = document.querySelectorAll('#provider-filters button');
+
+    let activeFilter = 'all';
+
+    function filterProviders() {
+      const query = providerSearch.value.toLowerCase().trim();
+      const items = providerGrid.querySelectorAll('div[data-type]');
+
+      items.forEach(item => {
+        const type = item.getAttribute('data-type');
+        const name = item.getAttribute('data-name');
+        
+        const matchesFilter = activeFilter === 'all' || type === activeFilter;
+        const matchesSearch = name.includes(query);
+
+        if (matchesFilter && matchesSearch) {
+          item.classList.remove('hidden');
+        } else {
+          item.classList.add('hidden');
+        }
+      });
+    }
+
+    filterButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterButtons.forEach(b => {
+          b.className = 'h-8 px-4 rounded-pill-sm text-body-sm text-body hover:text-ink hover:bg-canvas-soft-2 transition-all cursor-pointer';
+        });
+        btn.className = 'h-8 px-4 rounded-pill-sm text-body-sm bg-primary text-on-primary transition-all cursor-pointer';
+        activeFilter = btn.getAttribute('data-filter');
+        filterProviders();
+      });
+    });
+
+    providerSearch?.addEventListener('input', filterProviders);
+
+
+    // ----------------------------------------------------
+    // INTEGRATION TABS & COPY
+    // ----------------------------------------------------
+    const tabButtons = document.querySelectorAll('#cli-tool-tabs button');
+    const terminalTitle = document.getElementById('terminal-title');
+    const terminalContent = document.getElementById('terminal-content');
+    const btnCopyCode = document.getElementById('btn-copy-code');
+
+    let activeTool = 'claude-code';
+
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabButtons.forEach(b => {
+          b.className = 'flex items-center justify-between p-3 rounded-sm text-left text-body-sm hover:text-ink hover:bg-canvas-soft-2 transition-all cursor-pointer w-full';
+          const indicator = b.querySelector('span:last-child');
+          if (indicator) indicator.className = 'text-[10px] font-mono text-mute';
+        });
+        
+        btn.className = 'flex items-center justify-between p-3 rounded-sm text-left text-body-sm-strong font-medium bg-primary text-on-primary transition-all cursor-pointer w-full';
+        const activeIndicator = btn.querySelector('span:last-child');
+        if (activeIndicator) activeIndicator.className = 'text-[10px] font-mono opacity-85';
+
+        activeTool = btn.getAttribute('data-tool');
+        terminalTitle.textContent = `terminal • ${activeTool} setup`;
+        terminalContent.textContent = terminalPresets[activeTool];
+      });
+    });
+
+    btnCopyCode?.addEventListener('click', () => {
+      const codeText = terminalContent.textContent;
+      navigator.clipboard.writeText(codeText).then(() => {
+        const origText = btnCopyCode.innerHTML;
+        btnCopyCode.innerHTML = 'Copied!';
+        setTimeout(() => {
+          btnCopyCode.innerHTML = origText;
+        }, 1500);
+      });
+    });
+  </script>
+</Layout>

@@ -1,0 +1,339 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="New Translation - Viblo AI" wide={true} noSidebars={true}>
+  
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    
+    <!-- Translation Form Column -->
+    <div class="lg:col-span-8 flex flex-col gap-4">
+      <div class="flex items-center justify-between">
+        <a href="/translations" class="text-body hover:text-ink text-body-sm flex items-center gap-1.5 transition-colors">
+          &larr; Back to Translations
+        </a>
+      </div>
+
+      <!-- Creator Card -->
+      <div class="bg-canvas border border-hairline rounded-md p-5 md:p-6 shadow-level-2 flex flex-col gap-4">
+        <h2 class="text-display-sm tracking-tight text-ink font-semibold">Publish a Translation</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Target Language -->
+          <div class="flex flex-col gap-1">
+            <label for="trans-lang" class="text-caption-mono text-mute font-medium">Target Language</label>
+            <input 
+              type="text" 
+              id="trans-lang" 
+              placeholder="e.g. Vietnamese, Japanese, Spanish" 
+              class="w-full h-10 bg-canvas-soft border border-hairline rounded-sm px-3 text-body-sm text-ink placeholder:text-mute focus:outline-none focus:border-hairline-strong transition-colors"
+            />
+          </div>
+
+          <!-- Original Article URL -->
+          <div class="flex flex-col gap-1">
+            <label for="trans-url" class="text-caption-mono text-mute font-medium">Original Article URL</label>
+            <input 
+              type="url" 
+              id="trans-url" 
+              placeholder="https://example.com/blog/article-link" 
+              class="w-full h-10 bg-canvas-soft border border-hairline rounded-sm px-3 text-body-sm text-ink placeholder:text-mute focus:outline-none focus:border-hairline-strong transition-colors"
+            />
+          </div>
+        </div>
+
+        <!-- Translation Title -->
+        <div class="flex flex-col gap-1">
+          <label for="trans-title" class="text-caption-mono text-mute font-medium">Translated Title</label>
+          <input 
+            type="text" 
+            id="trans-title" 
+            placeholder="[Vietnamese] Deep Dive into React Server Components" 
+            class="w-full h-10 bg-canvas-soft border border-hairline rounded-sm px-3 text-body-sm text-ink placeholder:text-mute focus:outline-none focus:border-hairline-strong transition-colors font-medium"
+          />
+        </div>
+
+        <!-- Editor Tab triggers -->
+        <div class="flex border-b border-hairline pb-2 mt-2 gap-4">
+          <button type="button" id="trans-toggle-editor" class="text-body-sm font-semibold text-ink border-b-2 border-primary pb-1.5 cursor-pointer">Editor</button>
+          <button type="button" id="trans-toggle-preview" class="text-body-sm font-medium text-body hover:text-ink pb-1.5 cursor-pointer">Live Preview</button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 min-h-[350px]">
+          <!-- Markdown Editor -->
+          <div id="trans-editor-pane" class="flex flex-col">
+            <textarea 
+              id="trans-content"
+              placeholder="Paste or write your translated Markdown article here..."
+              class="w-full flex-1 min-h-[320px] resize-y bg-canvas border-0 focus:outline-none text-body-md text-ink leading-relaxed font-mono text-sm"
+            ></textarea>
+          </div>
+
+          <!-- Preview box -->
+          <div id="trans-preview-pane" class="hidden md:block border-t md:border-t-0 md:border-l border-hairline pt-4 md:pt-0 md:pl-6 overflow-y-auto max-h-[450px]">
+            <h4 class="text-caption-mono text-mute mb-2 uppercase select-none">Preview Output</h4>
+            <div class="prose prose-sm max-w-none text-body-sm text-ink leading-relaxed space-y-4" id="trans-live-preview">
+              <span class="italic text-mute">Translation output preview will render here...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit Button row -->
+        <div class="flex items-center justify-end gap-3 border-t border-hairline pt-4">
+          <a href="/translations" class="h-9 px-4 border border-hairline hover:border-hairline-strong rounded-pill text-body text-[13px] font-medium transition-all flex items-center justify-center">
+            Cancel
+          </a>
+          <button 
+            type="button" 
+            id="trans-publish-btn"
+            class="h-9 px-5 bg-primary text-on-primary rounded-pill text-[13px] font-medium hover:bg-black transition-all shadow-level-3 cursor-pointer"
+          >
+            Publish Translation
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Translation Helper Widget Column -->
+    <div class="lg:col-span-4 flex flex-col gap-6 sticky top-24">
+      <div class="bg-canvas border border-hairline rounded-md p-5 shadow-level-2 flex flex-col gap-4">
+        <div class="border-b border-hairline pb-2">
+          <h3 class="text-caption-mono text-violet font-semibold flex items-center gap-1.5">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+              <polyline points="2 17 12 22 22 17"></polyline>
+              <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+            AI Translation Tool
+          </h3>
+        </div>
+
+        <p class="text-body-sm text-body leading-relaxed">
+          Paste English technical paragraphs below, and Gemini will translate them accurately.
+        </p>
+
+        <!-- Tool input -->
+        <div class="flex flex-col gap-1.5">
+          <label for="ai-source-text" class="text-caption-mono text-mute">Source English Text</label>
+          <textarea 
+            id="ai-source-text"
+            placeholder="Paste original paragraph here..."
+            rows="3"
+            class="w-full bg-canvas-soft border border-hairline rounded-sm p-2 text-body-sm text-ink placeholder:text-mute focus:outline-none focus:border-hairline-strong transition-colors"
+          ></textarea>
+        </div>
+
+        <button 
+          type="button" 
+          id="ai-translate-run"
+          class="w-full h-8 bg-violet hover:bg-violet-deep text-white text-[12px] font-medium rounded-sm shadow-level-2 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+        >
+          Translate with Gemini
+        </button>
+
+        <!-- Translation Output box -->
+        <div id="ai-trans-output-box" class="hidden flex-col bg-canvas-soft-2 border border-hairline rounded-sm p-3.5 gap-2 max-h-[250px] overflow-y-auto">
+          <div class="flex items-center justify-between border-b border-hairline pb-1">
+            <span class="text-[10px] font-mono text-mute uppercase">Gemini Translation</span>
+            <button type="button" id="ai-trans-close" class="text-mute hover:text-ink text-xs">&times; Clear</button>
+          </div>
+          <div id="ai-trans-result-text" class="text-body-sm text-body leading-relaxed space-y-2 select-text whitespace-pre-wrap">
+            <!-- Result text -->
+          </div>
+          <div class="flex justify-end pt-1.5 border-t border-hairline mt-1">
+            <button 
+              type="button" 
+              id="ai-trans-insert-btn"
+              class="h-7 px-3 bg-primary text-on-primary rounded-sm text-[11px] font-medium hover:bg-black transition-colors cursor-pointer"
+            >
+              Insert at Cursor
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" is:inline></script>
+
+  <script>
+    import { getDb, saveDb, getCurrentUser, type Translation } from '../../utils/db';
+    import { askGemini } from '../../utils/ai';
+
+    const langInput = document.getElementById('trans-lang') as HTMLInputElement;
+    const urlInput = document.getElementById('trans-url') as HTMLInputElement;
+    const titleInput = document.getElementById('trans-title') as HTMLInputElement;
+    const contentInput = document.getElementById('trans-content') as HTMLTextAreaElement;
+    const livePreview = document.getElementById('trans-live-preview');
+    const publishBtn = document.getElementById('trans-publish-btn');
+
+    // Tab buttons
+    const btnEditor = document.getElementById('trans-toggle-editor');
+    const btnPreview = document.getElementById('trans-toggle-preview');
+    const paneEditor = document.getElementById('trans-editor-pane');
+    const panePreview = document.getElementById('trans-preview-pane');
+
+    // AI Translation Elements
+    const sourceText = document.getElementById('ai-source-text') as HTMLTextAreaElement;
+    const translateRunBtn = document.getElementById('ai-translate-run');
+    const transOutputBox = document.getElementById('ai-trans-output-box');
+    const transResultText = document.getElementById('ai-trans-result-text');
+    const transCloseBtn = document.getElementById('ai-trans-close');
+    const transInsertBtn = document.getElementById('ai-trans-insert-btn');
+
+    let lastTranslationResult = '';
+
+    function updateLivePreview() {
+      if (!livePreview || !contentInput) return;
+      const text = contentInput.value;
+
+      if (!text.trim()) {
+        livePreview.innerHTML = `<span class="italic text-mute">Translation output preview will render here...</span>`;
+        return;
+      }
+
+      // @ts-ignore
+      if (typeof marked !== 'undefined') {
+        // @ts-ignore
+        livePreview.innerHTML = marked.parse(text);
+      } else {
+        livePreview.textContent = text;
+      }
+    }
+
+    if (contentInput) {
+      contentInput.addEventListener('input', updateLivePreview);
+    }
+
+    // Tabs
+    if (btnEditor && btnPreview && paneEditor && panePreview) {
+      btnEditor.addEventListener('click', () => {
+        paneEditor.classList.remove('hidden');
+        panePreview.classList.add('hidden');
+        btnEditor.className = "text-body-sm font-semibold text-ink border-b-2 border-primary pb-1.5 cursor-pointer";
+        btnPreview.className = "text-body-sm font-medium text-body hover:text-ink pb-1.5 cursor-pointer";
+      });
+
+      btnPreview.addEventListener('click', () => {
+        paneEditor.classList.add('hidden');
+        panePreview.classList.remove('hidden');
+        panePreview.classList.add('block');
+        btnPreview.className = "text-body-sm font-semibold text-ink border-b-2 border-primary pb-1.5 cursor-pointer";
+        btnEditor.className = "text-body-sm font-medium text-body hover:text-ink pb-1.5 cursor-pointer";
+        updateLivePreview();
+      });
+    }
+
+    // AI Translation Run
+    if (translateRunBtn && sourceText && transOutputBox && transResultText) {
+      translateRunBtn.addEventListener('click', async () => {
+        const text = sourceText.value.trim();
+        const targetLang = langInput.value.trim() || "Vietnamese";
+
+        if (!text) {
+          alert("Please paste some English technical text in the source textarea first.");
+          return;
+        }
+
+        const apiKey = localStorage.getItem('GEMINI_API_KEY') || "";
+        if (!apiKey) {
+          alert("Please set your Gemini API key in the 'AI Key' status panel in the navbar first.");
+          return;
+        }
+
+        transOutputBox.classList.remove('hidden');
+        transOutputBox.classList.add('flex');
+        transResultText.innerHTML = `<span class="italic text-mute">Translating text...</span>`;
+        if (transInsertBtn) transInsertBtn.classList.add('hidden');
+
+        try {
+          const prompt = `
+            You are a professional technical translator. Translate the following English software development text into ${targetLang}. 
+            Provide a high-quality translation that keeps programming terminologies (such as API, closures, hooks, routing, middleware) correct and natural in context.
+            Output ONLY the translation text itself. Do not add conversational headers or explanations.
+
+            Original English Text:
+            ${text}
+          `;
+          const result = await askGemini(prompt, apiKey);
+          lastTranslationResult = result;
+
+          transResultText.textContent = result;
+          if (transInsertBtn) transInsertBtn.classList.remove('hidden');
+
+        } catch (err: any) {
+          transResultText.innerHTML = `
+            <span class="text-error font-medium">Translation Error:</span>
+            <span class="text-error-deep block mt-1">${err.message}</span>
+          `;
+        }
+      });
+    }
+
+    // Insert translation result at text cursor position
+    if (transInsertBtn && contentInput) {
+      transInsertBtn.addEventListener('click', () => {
+        if (!lastTranslationResult) return;
+
+        const start = contentInput.selectionStart;
+        const end = contentInput.selectionEnd;
+        const oldVal = contentInput.value;
+
+        // Insert text
+        contentInput.value = oldVal.substring(0, start) + lastTranslationResult + oldVal.substring(end);
+        
+        // Move cursor after the inserted text
+        contentInput.selectionStart = contentInput.selectionEnd = start + lastTranslationResult.length;
+        contentInput.focus();
+
+        updateLivePreview();
+        sourceText.value = '';
+        if (transOutputBox) transOutputBox.classList.add('hidden');
+        lastTranslationResult = '';
+      });
+    }
+
+    if (transCloseBtn && transOutputBox) {
+      transCloseBtn.addEventListener('click', () => {
+        transOutputBox.classList.add('hidden');
+        transOutputBox.classList.remove('flex');
+        lastTranslationResult = '';
+      });
+    }
+
+    // Publish execution
+    if (publishBtn) {
+      publishBtn.addEventListener('click', () => {
+        const title = titleInput.value.trim();
+        const targetLang = langInput.value.trim();
+        const origUrl = urlInput.value.trim();
+        const content = contentInput.value.trim();
+
+        if (!title || !targetLang || !origUrl || !content) {
+          alert("Please fill out all fields (Target Language, Original URL, Translation Title, and Content) before publishing.");
+          return;
+        }
+
+        const db = getDb();
+        const currentUser = getCurrentUser();
+
+        const newTrans: Translation = {
+          id: `trans-${Date.now()}`,
+          title: title,
+          content: content,
+          originalUrl: origUrl,
+          targetLang: targetLang,
+          authorId: currentUser.id,
+          createdAt: new Date().toISOString()
+        };
+
+        db.translations.push(newTrans);
+        saveDb(db);
+
+        // Redirect to list
+        window.location.href = '/translations';
+      });
+    }
+  </script>
+</Layout>

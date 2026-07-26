@@ -1,0 +1,392 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Write Post - Viblo AI" wide={true} noSidebars={true}>
+  <!-- Publish Workspace Wrapper -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    
+    <!-- Editor and Preview Column -->
+    <div class="lg:col-span-8 flex flex-col gap-4">
+      
+      <!-- Back to Feed link -->
+      <div class="flex items-center justify-between">
+        <a href="/" class="text-body hover:text-ink text-body-sm flex items-center gap-1.5 transition-colors">
+          &larr; Back to Feed
+        </a>
+        
+        <span class="text-[12px] font-mono text-mute" id="saving-status">
+          Draft Saved Locally
+        </span>
+      </div>
+
+      <!-- Editor Card -->
+      <div class="bg-canvas border border-hairline rounded-md p-5 md:p-6 shadow-level-2 flex flex-col gap-4">
+        <!-- Title Input -->
+        <div class="flex flex-col gap-1.5">
+          <input 
+            type="text" 
+            id="editor-title"
+            placeholder="Title of your article..." 
+            class="w-full text-display-sm md:text-display-md font-semibold border-b border-hairline focus:border-hairline-strong py-2 focus:outline-none placeholder:text-mute"
+          />
+        </div>
+
+        <!-- Tags Input -->
+        <div class="flex flex-col gap-1.5">
+          <label for="editor-tags" class="text-caption-mono text-mute">Tags (comma-separated)</label>
+          <input 
+            type="text" 
+            id="editor-tags"
+            placeholder="e.g. JavaScript, Astro, TailwindCSS" 
+            class="w-full h-10 bg-canvas-soft-2 border border-hairline rounded-sm px-3 text-body-sm text-ink placeholder:text-mute focus:outline-none focus:border-hairline-strong focus:bg-canvas transition-colors"
+          />
+        </div>
+
+        <!-- Tab toggles for Editor / Preview on small screens, split side-by-side on wide screen -->
+        <div class="flex border-b border-hairline pb-2 mt-2 gap-4">
+          <button type="button" id="toggle-editor" class="text-body-sm font-semibold text-ink border-b-2 border-primary pb-1.5 cursor-pointer">Editor</button>
+          <button type="button" id="toggle-preview" class="text-body-sm font-medium text-body hover:text-ink pb-1.5 cursor-pointer">Live Preview</button>
+        </div>
+
+        <!-- Text Area / Preview Container -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 min-h-[400px]">
+          <!-- Markdown Editor -->
+          <div id="editor-textarea-pane" class="flex flex-col">
+            <textarea 
+              id="editor-content"
+              placeholder="Write your article in Markdown. Standard headings, bold text, links, and code blocks are supported..."
+              class="w-full flex-1 min-h-[350px] resize-y bg-canvas border-0 focus:outline-none text-body-md text-ink leading-relaxed font-mono text-sm"
+            ></textarea>
+          </div>
+
+          <!-- Live Preview Panel -->
+          <div id="editor-preview-pane" class="hidden md:block border-t md:border-t-0 md:border-l border-hairline pt-4 md:pt-0 md:pl-6 overflow-y-auto max-h-[500px]">
+            <h4 class="text-caption-mono text-mute mb-2 uppercase select-none">Preview Output</h4>
+            <div class="prose prose-sm max-w-none text-body-md text-ink leading-relaxed space-y-4" id="live-preview-box">
+              <span class="italic text-mute">Output preview will render here...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit Button row -->
+        <div class="flex items-center justify-end gap-3 border-t border-hairline pt-4">
+          <a href="/" class="h-9 px-4 border border-hairline hover:border-hairline-strong rounded-pill text-body text-[13px] font-medium transition-all flex items-center justify-center">
+            Cancel
+          </a>
+          <button 
+            type="button" 
+            id="publish-btn"
+            class="h-9 px-5 bg-primary text-on-primary rounded-pill text-[13px] font-medium hover:bg-black transition-all shadow-level-3 cursor-pointer"
+          >
+            Publish Article
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Writing Assistant Column -->
+    <div class="lg:col-span-4 flex flex-col gap-6 sticky top-24">
+      <div class="bg-canvas border border-hairline rounded-md p-5 shadow-level-2 flex flex-col gap-4">
+        <div class="border-b border-hairline pb-2">
+          <h3 class="text-caption-mono text-violet font-semibold flex items-center gap-1.5">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+              <polyline points="2 17 12 22 22 17"></polyline>
+              <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+            AI Writer Assistant
+          </h3>
+        </div>
+
+        <p class="text-body-sm text-body leading-relaxed">
+          Need ideas? Use Gemini to suggest tags, structure an outline, or polish grammar.
+        </p>
+
+        <div class="flex flex-col gap-2">
+          <!-- Suggest tags -->
+          <button 
+            type="button" 
+            id="ai-btn-suggest"
+            class="ai-tool-btn w-full h-9 border border-hairline hover:border-hairline-strong bg-canvas-soft text-[12px] text-body hover:text-ink font-medium rounded-sm transition-all text-left px-3 flex items-center justify-between"
+          >
+            Suggest Tags & Title ideas
+            <span class="text-mute font-mono text-[10px]">&rarr;</span>
+          </button>
+          
+          <!-- Improve spelling -->
+          <button 
+            type="button" 
+            id="ai-btn-improve"
+            class="ai-tool-btn w-full h-9 border border-hairline hover:border-hairline-strong bg-canvas-soft text-[12px] text-body hover:text-ink font-medium rounded-sm transition-all text-left px-3 flex items-center justify-between"
+          >
+            Polish spelling & grammar
+            <span class="text-mute font-mono text-[10px]">&rarr;</span>
+          </button>
+
+          <!-- Create Outline -->
+          <button 
+            type="button" 
+            id="ai-btn-outline"
+            class="ai-tool-btn w-full h-9 border border-hairline hover:border-hairline-strong bg-canvas-soft text-[12px] text-body hover:text-ink font-medium rounded-sm transition-all text-left px-3 flex items-center justify-between"
+          >
+            Generate outline from Title
+            <span class="text-mute font-mono text-[10px]">&rarr;</span>
+          </button>
+        </div>
+
+        <!-- AI Assistant Status box -->
+        <div id="ai-writer-status" class="hidden flex-col bg-canvas-soft-2 border border-hairline rounded-sm p-3.5 gap-2 max-h-[250px] overflow-y-auto">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-mono text-mute uppercase">Assistant output</span>
+            <button type="button" id="ai-writer-clear" class="text-mute hover:text-ink text-xs">&times; Close</button>
+          </div>
+          <div id="ai-writer-output-text" class="text-body-sm text-body leading-relaxed space-y-2 prose prose-sm font-sans select-text">
+            <!-- Outputs -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Load marked library for markdown preview -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" is:inline></script>
+
+  <script>
+    import { getDb, saveDb, getCurrentUser, type Post } from '../utils/db';
+    import { askGemini, PROMPTS } from '../utils/ai';
+
+    // UI elements references
+    const titleInput = document.getElementById('editor-title') as HTMLInputElement;
+    const tagsInput = document.getElementById('editor-tags') as HTMLInputElement;
+    const contentInput = document.getElementById('editor-content') as HTMLTextAreaElement;
+    const livePreview = document.getElementById('live-preview-box');
+    const savingStatus = document.getElementById('saving-status');
+    const publishBtn = document.getElementById('publish-btn');
+
+    // Tab buttons
+    const btnEditor = document.getElementById('toggle-editor');
+    const btnPreview = document.getElementById('toggle-preview');
+    const paneTextarea = document.getElementById('editor-textarea-pane');
+    const panePreview = document.getElementById('editor-preview-pane');
+
+    // AI Writer Buttons
+    const aiBtnSuggest = document.getElementById('ai-btn-suggest');
+    const aiBtnImprove = document.getElementById('ai-btn-improve');
+    const aiBtnOutline = document.getElementById('ai-btn-outline');
+    const aiStatusBox = document.getElementById('ai-writer-status');
+    const aiOutputText = document.getElementById('ai-writer-output-text');
+    const aiClearBtn = document.getElementById('ai-writer-clear');
+
+    // Auto-render markdown live preview
+    function updateLivePreview() {
+      if (!livePreview || !contentInput) return;
+      const text = contentInput.value;
+      
+      if (!text.trim()) {
+        livePreview.innerHTML = `<span class="italic text-mute">Output preview will render here...</span>`;
+        return;
+      }
+
+      // @ts-ignore
+      if (typeof marked !== 'undefined') {
+        // @ts-ignore
+        livePreview.innerHTML = marked.parse(text);
+      } else {
+        livePreview.textContent = text;
+      }
+    }
+
+    if (contentInput) {
+      contentInput.addEventListener('input', updateLivePreview);
+    }
+
+    // Tab selectors (for smaller layouts/mobile viewports)
+    if (btnEditor && btnPreview && paneTextarea && panePreview) {
+      btnEditor.addEventListener('click', () => {
+        paneTextarea.classList.remove('hidden');
+        panePreview.classList.add('hidden');
+        btnEditor.className = "text-body-sm font-semibold text-ink border-b-2 border-primary pb-1.5 cursor-pointer";
+        btnPreview.className = "text-body-sm font-medium text-body hover:text-ink pb-1.5 cursor-pointer";
+      });
+
+      btnPreview.addEventListener('click', () => {
+        paneTextarea.classList.add('hidden');
+        panePreview.classList.remove('hidden');
+        panePreview.classList.add('block');
+        btnPreview.className = "text-body-sm font-semibold text-ink border-b-2 border-primary pb-1.5 cursor-pointer";
+        btnEditor.className = "text-body-sm font-medium text-body hover:text-ink pb-1.5 cursor-pointer";
+        updateLivePreview();
+      });
+    }
+
+    // AI suggestion handler
+    async function runAiTool(type: 'suggest' | 'improve' | 'outline') {
+      if (!aiStatusBox || !aiOutputText) return;
+      
+      const apiKey = localStorage.getItem('GEMINI_API_KEY') || "";
+      if (!apiKey) {
+        alert("Please set your Gemini API key in the 'AI Key' status panel in the navbar first.");
+        return;
+      }
+
+      aiStatusBox.classList.remove('hidden');
+      aiStatusBox.classList.add('flex');
+      aiOutputText.innerHTML = `<span class="italic text-mute">AI assistant is thinking...</span>`;
+
+      try {
+        let result = '';
+        if (type === 'suggest') {
+          const body = contentInput.value.trim() || "[No draft content written yet]";
+          const prompt = PROMPTS.suggestTagsAndTitle(body);
+          result = await askGemini(prompt, apiKey);
+          
+          aiOutputText.innerHTML = `
+            <p class="font-medium text-ink">Suggested Titles & Tags:</p>
+            <pre class="bg-canvas-soft p-2 border border-hairline font-mono text-[11px] rounded-sm whitespace-pre-wrap select-all">${result}</pre>
+            <p class="text-[11px] text-mute mt-1">Copy and paste suggested titles and tags above into inputs.</p>
+          `;
+        } else if (type === 'improve') {
+          const body = contentInput.value.trim();
+          if (!body) {
+            aiOutputText.innerHTML = `<span class="text-error">Please write some draft content in the editor first!</span>`;
+            return;
+          }
+          const prompt = PROMPTS.improveDraft(body);
+          result = await askGemini(prompt, apiKey);
+          
+          aiOutputText.innerHTML = `
+            <p class="font-medium text-ink">Improved Version Ready</p>
+            <div class="flex gap-2 mt-1.5">
+              <button type="button" id="ai-apply-rewrite" class="h-7 px-3 bg-primary text-on-primary rounded-sm text-xs hover:bg-black cursor-pointer">Apply to Editor</button>
+            </div>
+            <div class="mt-2 max-h-[120px] overflow-y-auto text-xs border border-hairline p-2 bg-canvas-soft rounded-sm select-text whitespace-pre-wrap">${result}</div>
+          `;
+          
+          // Wire up Apply button
+          const applyBtn = document.getElementById('ai-apply-rewrite');
+          if (applyBtn) {
+            applyBtn.addEventListener('click', () => {
+              contentInput.value = result;
+              updateLivePreview();
+              aiStatusBox.classList.add('hidden');
+            });
+          }
+        } else if (type === 'outline') {
+          const title = titleInput.value.trim();
+          if (!title) {
+            aiOutputText.innerHTML = `<span class="text-error">Please type a Title in the input box first!</span>`;
+            return;
+          }
+          const prompt = `Based on the following article title: "${title}", generate a structured Markdown blog post outline including an introduction, 3 main sections, and a conclusion.`;
+          result = await askGemini(prompt, apiKey);
+          
+          aiOutputText.innerHTML = `
+            <p class="font-medium text-ink">Outline Generated</p>
+            <div class="flex gap-2 mt-1.5">
+              <button type="button" id="ai-apply-outline" class="h-7 px-3 bg-primary text-on-primary rounded-sm text-xs hover:bg-black cursor-pointer">Apply to Editor</button>
+            </div>
+            <div class="mt-2 max-h-[120px] overflow-y-auto text-xs border border-hairline p-2 bg-canvas-soft rounded-sm select-text whitespace-pre-wrap">${result}</div>
+          `;
+          
+          // Wire up Apply outline button
+          const applyOutlineBtn = document.getElementById('ai-apply-outline');
+          if (applyOutlineBtn) {
+            applyOutlineBtn.addEventListener('click', () => {
+              contentInput.value = result;
+              updateLivePreview();
+              aiStatusBox.classList.add('hidden');
+            });
+          }
+        }
+      } catch (err: any) {
+        aiOutputText.innerHTML = `
+          <span class="text-error font-medium">Assistant Error:</span>
+          <span class="text-error-deep block mt-1">${err.message}</span>
+        `;
+      }
+    }
+
+    if (aiBtnSuggest) aiBtnSuggest.addEventListener('click', () => runAiTool('suggest'));
+    if (aiBtnImprove) aiBtnImprove.addEventListener('click', () => runAiTool('improve'));
+    if (aiBtnOutline) aiBtnOutline.addEventListener('click', () => runAiTool('outline'));
+
+    if (aiClearBtn && aiStatusBox) {
+      aiClearBtn.addEventListener('click', () => {
+        aiStatusBox.classList.add('hidden');
+        aiStatusBox.classList.remove('flex');
+      });
+    }
+
+    // Publish execution
+    if (publishBtn) {
+      publishBtn.addEventListener('click', () => {
+        const title = titleInput.value.trim();
+        const tagsRaw = tagsInput.value.trim();
+        const content = contentInput.value.trim();
+
+        if (!title || !content) {
+          alert("Please fill out both the Title and the Content of your post before publishing.");
+          return;
+        }
+
+        const tags = tagsRaw 
+          ? tagsRaw.split(',').map(t => t.trim()).filter(t => t.length > 0)
+          : ["General"];
+
+        const db = getDb();
+        const currentUser = getCurrentUser();
+
+        // Find an empty dynamic slot in localStorage to prevent 404 on SSG routes
+        const existingIds = db.posts.map(p => p.id);
+        let selectedId = '';
+        
+        for (let i = 1; i <= 10; i++) {
+          const candidateId = `custom-${i}`;
+          if (!existingIds.includes(candidateId)) {
+            selectedId = candidateId;
+            break;
+          }
+        }
+
+        if (!selectedId) {
+          // If all 10 slots are full, let's replace the oldest custom slot or alert
+          const oldestCustom = db.posts.find(p => p.id.startsWith('custom-'));
+          if (oldestCustom) {
+            selectedId = oldestCustom.id;
+            // Delete it first
+            db.posts = db.posts.filter(p => p.id !== selectedId);
+          } else {
+            selectedId = 'custom-1';
+          }
+        }
+
+        const newPost: Post = {
+          id: selectedId,
+          title: title,
+          content: content,
+          tags: tags,
+          authorId: currentUser.id,
+          views: 0,
+          likes: [],
+          bookmarks: [],
+          createdAt: new Date().toISOString(),
+          commentsCount: 0,
+          readTime: `${Math.max(1, Math.ceil(content.split(/\s+/).length / 200))} min read`,
+          trending: false
+        };
+
+        db.posts.push(newPost);
+        saveDb(db);
+
+        if (savingStatus) {
+          savingStatus.textContent = "Publishing...";
+        }
+
+        // Redirect to view the post
+        window.location.href = `/posts/${selectedId}`;
+      });
+    }
+  </script>
+</Layout>

@@ -1,0 +1,391 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="AI Assistant - Viblo AI" wide={true}>
+  <!-- Main Grid Workspace -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start flex-1 min-h-[500px]">
+    
+    <!-- Left column: AI Prompt Shortcuts -->
+    <div class="lg:col-span-4 flex flex-col gap-4">
+      <div class="bg-canvas border border-hairline rounded-md p-5 shadow-level-2 flex flex-col gap-4">
+        <div class="border-b border-hairline pb-2">
+          <h3 class="text-caption-mono text-mute font-semibold">Prompt Shortcuts</h3>
+        </div>
+        
+        <p class="text-body-sm text-body leading-relaxed">
+          Click any preset prompt below to automatically load and run the AI helper:
+        </p>
+
+        <div class="flex flex-col gap-2">
+          <button 
+            type="button" 
+            class="prompt-preset-btn text-left p-2.5 bg-canvas-soft border border-hairline hover:border-hairline-strong rounded-sm text-body-sm hover:text-ink transition-all cursor-pointer font-sans"
+            data-prompt="Explain React hydration mismatch warning and how to fix it in Next.js or Astro."
+          >
+            <strong>Hydration Mismatch</strong>
+            <span class="text-mute block text-[11px] mt-0.5 line-clamp-1">Explain react server hydration errors.</span>
+          </button>
+          
+          <button 
+            type="button" 
+            class="prompt-preset-btn text-left p-2.5 bg-canvas-soft border border-hairline hover:border-hairline-strong rounded-sm text-body-sm hover:text-ink transition-all cursor-pointer font-sans"
+            data-prompt="Convert this raw PostgreSQL query into Prisma ORM query builder syntax:\n\nSELECT * FROM users WHERE active = true AND reputation > 1000 ORDER BY created_at DESC LIMIT 10;"
+          >
+            <strong>SQL to Prisma ORM</strong>
+            <span class="text-mute block text-[11px] mt-0.5 line-clamp-1">Convert SELECT queries to Prisma syntax.</span>
+          </button>
+
+          <button 
+            type="button" 
+            class="prompt-preset-btn text-left p-2.5 bg-canvas-soft border border-hairline hover:border-hairline-strong rounded-sm text-body-sm hover:text-ink transition-all cursor-pointer font-sans"
+            data-prompt="Optimize the execution speed of this JavaScript double loop:\n\nconst items = [...];\nconst targets = [...];\nconst matches = [];\nfor (let i = 0; i < items.length; i++) {\n  for (let j = 0; j < targets.length; j++) {\n    if (items[i].id === targets[j].matchId) {\n      matches.push(items[i]);\n    }\n  }\n}"
+          >
+            <strong>Optimize JS Loops</strong>
+            <span class="text-mute block text-[11px] mt-0.5 line-clamp-1">Refactor O(N^2) search loops to O(N).</span>
+          </button>
+
+          <button 
+            type="button" 
+            class="prompt-preset-btn text-left p-2.5 bg-canvas-soft border border-hairline hover:border-hairline-strong rounded-sm text-body-sm hover:text-ink transition-all cursor-pointer font-sans"
+            data-prompt="Explain this complex regex pattern step-by-step:\n\nconst emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/;"
+          >
+            <strong>Regex Explainer</strong>
+            <span class="text-mute block text-[11px] mt-0.5 line-clamp-1">Explain dynamic text validation regex patterns.</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center/Right column: Chat Window -->
+    <div class="lg:col-span-8 flex flex-col h-[600px] border border-hairline bg-canvas rounded-md shadow-level-2 overflow-hidden">
+      <!-- Chat Header -->
+      <div class="bg-canvas border-b border-hairline px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-[#7928ca] to-[#ff0080] text-white flex items-center justify-center font-bold shadow-level-2">
+            AI
+          </div>
+          <div class="flex flex-col">
+            <span class="text-body-sm-strong font-semibold text-ink leading-none">Viblo AI Assistant</span>
+            <span class="text-[10px] font-mono text-emerald-500 mt-1 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Gemini-1.5-Flash Active
+            </span>
+          </div>
+        </div>
+        
+        <button 
+          type="button" 
+          id="clear-chat-history"
+          class="text-xs font-mono text-mute hover:text-ink hover:underline cursor-pointer"
+        >
+          Clear History
+        </button>
+      </div>
+
+      <!-- Messages Stream -->
+      <div class="flex-1 overflow-y-auto p-6 flex flex-col gap-6" id="chat-messages-container">
+        <!-- Default Welcome message -->
+        <div class="flex gap-4">
+          <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-[#7928ca] to-[#ff0080] text-white flex items-center justify-center font-bold text-xs shadow-level-2 shrink-0">
+            AI
+          </div>
+          <div class="flex-1 flex flex-col gap-1.5">
+            <span class="text-caption-mono text-mute">Gemini AI</span>
+            <div class="text-body-sm text-body leading-relaxed bg-canvas-soft border border-hairline p-4 rounded-sm">
+              <p>Hello! I am your developer assistant. I can help you:</p>
+              <ul class="list-disc pl-5 mt-2 space-y-1.5">
+                <li>Debug errors or hydration mismatches.</li>
+                <li>Refactor and optimize slow functions.</li>
+                <li>Write database queries or conversion scripts.</li>
+                <li>Explain complex code concepts.</li>
+              </ul>
+              <p class="mt-2.5">Type your question below or click any of the shortcut prompts on the left to get started!</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat input action bar -->
+      <div class="bg-canvas border-t border-hairline p-4 flex flex-col gap-2">
+        <!-- API Offline warning banner -->
+        <div id="chat-api-warning" class="hidden items-center justify-between bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-sm text-[11px] text-red-600 font-mono">
+          <span>Gemini key is missing. Set it in the navbar to chat.</span>
+          <button type="button" id="chat-warning-config-btn" class="underline hover:text-black font-semibold">Config Key</button>
+        </div>
+
+        <div class="flex gap-2">
+          <textarea 
+            id="chat-textarea" 
+            placeholder="Ask a technical question... Press Enter to send." 
+            rows="2"
+            class="flex-1 bg-canvas-soft border border-hairline rounded-sm p-3 text-body-sm text-ink placeholder:text-mute focus:outline-none focus:border-hairline-strong transition-colors resize-none font-sans"
+          ></textarea>
+          <button 
+            type="button" 
+            id="chat-send-btn"
+            class="h-10 px-5 bg-primary hover:bg-black text-on-primary text-[13px] font-medium rounded-sm shadow-level-3 transition-colors cursor-pointer self-end"
+          >
+            Send
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" is:inline></script>
+
+  <script>
+    import { askGemini } from '../utils/ai';
+    import { getCurrentUser } from '../utils/db';
+
+    interface Message {
+      sender: 'user' | 'ai';
+      text: string;
+    }
+
+    const messagesContainer = document.getElementById('chat-messages-container');
+    const textarea = document.getElementById('chat-textarea') as HTMLTextAreaElement;
+    const sendBtn = document.getElementById('chat-send-btn');
+    const clearBtn = document.getElementById('clear-chat-history');
+    const warningBanner = document.getElementById('chat-api-warning');
+    const warningConfigBtn = document.getElementById('chat-warning-config-btn');
+
+    let chatHistory: Message[] = [];
+
+    // Load Chat History from session storage
+    function loadChatHistory() {
+      const saved = sessionStorage.getItem('viblo_ai_chat');
+      if (saved) {
+        try {
+          chatHistory = JSON.parse(saved);
+          renderMessages();
+        } catch(e) {}
+      }
+    }
+
+    // Save Chat History
+    function saveChatHistory() {
+      sessionStorage.setItem('viblo_ai_chat', JSON.stringify(chatHistory));
+    }
+
+    // Check key status and toggle warning
+    function checkApiKey() {
+      const key = localStorage.getItem('GEMINI_API_KEY') || "";
+      if (warningBanner) {
+        if (!key || key.trim().length === 0) {
+          warningBanner.classList.remove('hidden');
+          warningBanner.classList.add('flex');
+        } else {
+          warningBanner.classList.add('hidden');
+          warningBanner.classList.remove('flex');
+        }
+      }
+    }
+
+    // Render all messages
+    function renderMessages() {
+      if (!messagesContainer) return;
+      const currentUser = getCurrentUser();
+
+      const defaultWelcome = `
+        <div class="flex gap-4">
+          <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-[#7928ca] to-[#ff0080] text-white flex items-center justify-center font-bold text-xs shadow-level-2 shrink-0">
+            AI
+          </div>
+          <div class="flex-1 flex flex-col gap-1.5">
+            <span class="text-caption-mono text-mute">Gemini AI</span>
+            <div class="text-body-sm text-body leading-relaxed bg-canvas-soft border border-hairline p-4 rounded-sm">
+              <p>Hello! I am your developer assistant. I can help you:</p>
+              <ul class="list-disc pl-5 mt-2 space-y-1.5">
+                <li>Debug errors or hydration mismatches.</li>
+                <li>Refactor and optimize slow functions.</li>
+                <li>Write database queries or conversion scripts.</li>
+                <li>Explain complex code concepts.</li>
+              </ul>
+              <p class="mt-2.5">Type your question below or click any of the shortcut prompts on the left to get started!</p>
+            </div>
+          </div>
+        </div>
+      `;
+
+      if (chatHistory.length === 0) {
+        messagesContainer.innerHTML = defaultWelcome;
+        return;
+      }
+
+      messagesContainer.innerHTML = chatHistory.map((m, idx) => {
+        if (m.sender === 'user') {
+          return `
+            <div class="flex gap-4 justify-end">
+              <div class="flex-1 flex flex-col gap-1.5 items-end">
+                <span class="text-caption-mono text-mute">${currentUser.displayName}</span>
+                <div class="text-body-sm text-ink leading-relaxed bg-canvas border border-hairline p-4 rounded-sm select-text whitespace-pre-wrap">
+                  ${m.text}
+                </div>
+              </div>
+              <div class="w-8 h-8 rounded-full bg-gradient-to-tr ${currentUser.avatarColor} text-white flex items-center justify-center font-bold text-xs shadow-level-2 shrink-0 mt-0.5">
+                ${currentUser.displayName.charAt(0)}
+              </div>
+            </div>
+          `;
+        } else {
+          // Parse Markdown response using CDN marked
+          let htmlText = '';
+          // @ts-ignore
+          if (typeof marked !== 'undefined') {
+            // @ts-ignore
+            htmlText = marked.parse(m.text);
+          } else {
+            htmlText = m.text.split('\n').map(l => `<p>${l}</p>`).join('');
+          }
+
+          return `
+            <div class="flex gap-4">
+              <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-[#7928ca] to-[#ff0080] text-white flex items-center justify-center font-bold text-xs shadow-level-2 shrink-0 mt-0.5">
+                AI
+              </div>
+              <div class="flex-1 flex flex-col gap-1.5 select-text">
+                <span class="text-caption-mono text-mute">Gemini AI</span>
+                <div class="text-body-sm text-body leading-relaxed bg-canvas-soft border border-hairline p-4 rounded-sm prose prose-sm max-w-none space-y-2">
+                  ${htmlText}
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      }).join('');
+
+      // Scroll to bottom
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    // Send Message execution
+    async function sendMessage(text: string) {
+      if (!text.trim()) return;
+
+      const apiKey = localStorage.getItem('GEMINI_API_KEY') || "";
+      if (!apiKey) {
+        alert("Please set your Gemini API key in the 'AI Key' status panel in the navbar first.");
+        return;
+      }
+
+      // Append User message
+      chatHistory.push({ sender: 'user', text });
+      renderMessages();
+      saveChatHistory();
+
+      if (textarea) textarea.value = '';
+
+      // Append loading placeholder
+      if (messagesContainer) {
+        const loadingHtml = `
+          <div class="flex gap-4" id="chat-loading-placeholder">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-[#7928ca] to-[#ff0080] text-white flex items-center justify-center font-bold text-xs shadow-level-2 shrink-0 mt-0.5 animate-pulse">
+              AI
+            </div>
+            <div class="flex-1 flex flex-col gap-1.5">
+              <span class="text-caption-mono text-mute">Gemini AI</span>
+              <div class="text-body-sm text-mute leading-relaxed bg-canvas-soft-2 border border-hairline p-4 rounded-sm animate-pulse italic">
+                Gemini is typing...
+              </div>
+            </div>
+          </div>
+        `;
+        messagesContainer.insertAdjacentHTML('beforeend', loadingHtml);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+
+      try {
+        // Build basic chat context for LLM
+        const chatContext = chatHistory.slice(-6).map(m => `${m.sender.toUpperCase()}: ${m.text}`).join('\n\n');
+        const prompt = `
+          You are a supportive, high-fidelity developer assistant answering programming questions inside the Viblo AI community workspace.
+          Help solve user bugs, optimize logic, review code, or write configuration settings.
+          Provide concrete, accurate markdown explanations with code blocks. Keep the tone professional and clean.
+
+          Recent Chat History:
+          ${chatContext}
+
+          Next AI response:
+        `;
+
+        const result = await askGemini(prompt, apiKey);
+        
+        // Remove loading placeholder
+        const placeholder = document.getElementById('chat-loading-placeholder');
+        if (placeholder) placeholder.remove();
+
+        chatHistory.push({ sender: 'ai', text: result });
+        renderMessages();
+        saveChatHistory();
+
+      } catch (err: any) {
+        const placeholder = document.getElementById('chat-loading-placeholder');
+        if (placeholder) placeholder.remove();
+
+        chatHistory.push({ 
+          sender: 'ai', 
+          text: `**Assistant Error:** ${err.message}. Please check your API Key configuration.` 
+        });
+        renderMessages();
+        saveChatHistory();
+      }
+    }
+
+    // Connect Input triggers
+    if (sendBtn && textarea) {
+      sendBtn.addEventListener('click', () => {
+        const val = textarea.value.trim();
+        if (val) sendMessage(val);
+      });
+
+      textarea.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          const val = textarea.value.trim();
+          if (val) sendMessage(val);
+        }
+      });
+    }
+
+    // Connect Clear history trigger
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        if (confirm("Are you sure you want to clear your current AI chat history?")) {
+          chatHistory = [];
+          sessionStorage.removeItem('viblo_ai_chat');
+          renderMessages();
+        }
+      });
+    }
+
+    // Connect warning banner triggers
+    if (warningConfigBtn) {
+      warningConfigBtn.addEventListener('click', () => {
+        const trigger = document.getElementById('api-settings-trigger');
+        if (trigger) trigger.click();
+      });
+    }
+
+    // Connect Preset prompts click triggers
+    document.querySelectorAll('.prompt-preset-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const target = e.currentTarget as HTMLButtonElement;
+        const prompt = target.getAttribute('data-prompt');
+        if (prompt) {
+          sendMessage(prompt);
+        }
+      });
+    });
+
+    // Listen to updates from navbar API settings
+    window.addEventListener('api-key-updated', () => {
+      checkApiKey();
+    });
+
+    // Startup Execution
+    checkApiKey();
+    loadChatHistory();
+  </script>
+</Layout>

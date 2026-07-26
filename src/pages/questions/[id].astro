@@ -1,0 +1,689 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { MOCK_QUESTIONS, MOCK_USERS } from '../../utils/db';
+
+export async function getStaticPaths() {
+  const ids = ['question-1', 'question-2'];
+  for (let i = 1; i <= 10; i++) {
+    ids.push(`custom-q-${i}`);
+  }
+  return ids.map(id => ({ params: { id } }));
+}
+
+const { id } = Astro.params;
+
+// SSR Fallback
+const ssrQuestion = MOCK_QUESTIONS.find(q => q.id === id) || MOCK_QUESTIONS[0];
+const ssrAuthor = MOCK_USERS.find(u => u.id === ssrQuestion.authorId) || MOCK_USERS[0];
+
+function formatDate(dateStr: string) {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+---
+
+<Layout title={`${ssrQuestion.title} - Q&A Forum`} description={ssrQuestion.title}>
+  
+  <!-- Back button -->
+  <div class="flex items-center justify-between border-b border-hairline pb-3">
+    <a href="/questions" class="text-body hover:text-ink text-body-sm flex items-center gap-1.5 transition-colors">
+      &larr; Back to Q&A Board
+    </a>
+    
+    <span class={`px-2 py-0.5 rounded-sm text-[11px] font-mono font-medium ${ssrQuestion.resolved ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-600 border border-amber-500/20'}`} id="q-status-badge">
+      {ssrQuestion.resolved ? 'Resolved' : 'Open Question'}
+    </span>
+  </div>
+
+  <!-- Main Question Box -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start mt-2">
+    <!-- Vote score column -->
+    <div class="lg:col-span-1 flex flex-row lg:flex-col items-center justify-center gap-2 lg:gap-3 bg-canvas-soft border border-hairline py-2 px-4 lg:py-4 lg:px-0 rounded-sm">
+      <button type="button" id="q-vote-up" class="text-mute hover:text-link p-1 cursor-pointer" title="Vote Up">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="18 15 12 9 6 15"></polyline>
+        </svg>
+      </button>
+      <span class="text-body-sm-strong font-mono font-bold text-ink text-base block" id="q-vote-count">{ssrQuestion.votes}</span>
+      <button type="button" id="q-vote-down" class="text-mute hover:text-error p-1 cursor-pointer" title="Vote Down">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Question Content -->
+    <div class="lg:col-span-11 bg-canvas border border-hairline rounded-md p-6 shadow-level-2 flex flex-col gap-4">
+      <!-- Title -->
+      <h1 class="text-display-sm md:text-display-md leading-tight text-ink font-semibold" id="q-title">
+        {ssrQuestion.title}
+      </h1>
+
+      <!-- Metadata -->
+      <div class="flex items-center gap-3 text-mute text-xs border-b border-hairline pb-3">
+        <div class={`w-6 h-6 rounded-full bg-gradient-to-tr ${ssrAuthor.avatarColor} text-white flex items-center justify-center font-bold text-[10px]`} id="q-author-avatar">
+          {ssrAuthor.displayName.charAt(0)}
+        </div>
+        <a href={`/profile/${ssrAuthor.username}`} class="hover:text-ink hover:underline font-medium" id="q-author-name">
+          {ssrAuthor.displayName}
+        </a>
+        <span>&bull;</span>
+        <span id="q-date">{formatDate(ssrQuestion.createdAt)}</span>
+        <span>&bull;</span>
+        <span id="q-views">{ssrQuestion.views} views</span>
+      </div>
+
+      <!-- Markdown body content -->
+      <div class="prose max-w-none text-body-md text-ink leading-relaxed space-y-4 font-sans select-text" id="q-markdown-body">
+        {ssrQuestion.content.split('\n').map(p => <p>{p}</p>)}
+      </div>
+
+      <!-- Tags -->
+      <div class="flex flex-wrap gap-2 mt-2" id="q-tags-container">
+        {ssrQuestion.tags.map(tag => (
+          <a href={`/questions?tag=${tag}`} class="text-xs font-mono text-mute bg-canvas-soft border border-hairline px-2 py-0.5 rounded-sm hover:text-ink transition-colors">
+            #{tag}
+          </a>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  <!-- Answers thread section -->
+  <section class="flex flex-col gap-4 mt-8">
+    <h3 class="text-display-sm tracking-tight text-ink font-semibold border-b border-hairline pb-2">
+      Answers (<span id="answers-total-count">{ssrQuestion.answersCount}</span>)
+    </h3>
+
+    <!-- Answers list -->
+    <div class="flex flex-col gap-4" id="answers-list-container">
+      <!-- Dynamic list -->
+    </div>
+
+    <!-- Write your Answer Form -->
+    <div class="bg-canvas border border-hairline rounded-md p-6 shadow-level-2 flex flex-col gap-4 mt-4">
+      <h4 class="text-body-sm-strong font-semibold text-ink">Your Answer</h4>
+      <form id="new-answer-form" class="flex flex-col gap-3">
+        <textarea 
+          placeholder="Type your markdown answer here. Be helpful and provide code blocks if necessary..." 
+          id="new-answer-textarea"
+          rows="5"
+          class="w-full bg-canvas-soft border border-hairline rounded-sm p-3 text-body-sm text-ink placeholder:text-mute focus:outline-none focus:border-hairline-strong transition-colors"
+        ></textarea>
+        <div class="flex justify-end">
+          <button 
+            type="submit" 
+            class="h-9 px-5 bg-primary text-on-primary rounded-sm text-[13px] font-medium hover:bg-black transition-all cursor-pointer"
+          >
+            Submit Answer
+          </button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- Sidebar Widgets: AI Answer Helper -->
+  <Fragment slot="sidebar">
+    <div class="bg-canvas border border-hairline rounded-md p-5 shadow-level-2 flex flex-col gap-4 sticky top-24">
+      <div class="border-b border-hairline pb-2 flex items-center justify-between">
+        <h3 class="text-caption-mono text-violet font-semibold flex items-center gap-1.5">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+            <polyline points="2 17 12 22 22 17"></polyline>
+            <polyline points="2 12 12 17 22 12"></polyline>
+          </svg>
+          AI Question Answerer
+        </h3>
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500" title="AI Ready"></span>
+      </div>
+
+      <p class="text-body-sm text-body leading-relaxed">
+        Let Gemini analyze this technical problem and draft a detailed solution.
+      </p>
+
+      <button 
+        type="button" 
+        id="ai-answer-btn"
+        class="w-full h-9 bg-violet hover:bg-violet-deep text-white text-[12px] font-medium rounded-sm shadow-level-2 transition-all cursor-pointer flex items-center justify-center gap-2"
+      >
+        Draft AI Answer
+      </button>
+
+      <!-- AI response text area -->
+      <div id="ai-q-box" class="hidden flex-col bg-canvas-soft-2 border border-hairline rounded-sm p-3.5 gap-2 max-h-[350px] overflow-y-auto">
+        <div class="flex items-center justify-between border-b border-hairline pb-1.5">
+          <span class="text-[10px] font-mono text-mute uppercase">Gemini Draft</span>
+          <button type="button" id="ai-q-clear" class="text-mute hover:text-ink text-xs">&times; Close</button>
+        </div>
+        <div id="ai-q-text" class="text-body-sm text-body leading-relaxed space-y-2 prose prose-sm font-sans select-text whitespace-pre-wrap">
+          <!-- Draft text -->
+        </div>
+        <div class="flex justify-end pt-2 border-t border-hairline mt-1">
+          <button 
+            type="button" 
+            id="ai-q-post-btn"
+            class="h-7 px-3 bg-primary text-on-primary rounded-sm text-[11px] font-medium hover:bg-black transition-colors cursor-pointer"
+          >
+            Post AI Answer to Forum
+          </button>
+        </div>
+      </div>
+    </div>
+  </Fragment>
+
+  <!-- Load Markdown Parser -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" is:inline></script>
+
+  <script>
+    import { getDb, saveDb, getCurrentUser, type Question, type Answer } from '../../utils/db';
+    import { askGemini, PROMPTS } from '../../utils/ai';
+
+    const pathParts = window.location.pathname.split('/');
+    const qId = pathParts[pathParts.length - 1] || pathParts[pathParts.length - 2];
+
+    let db = getDb();
+    let currentQ = db.questions.find(q => q.id === qId);
+
+    // AI draft answer cached string
+    let lastAiDraft = '';
+
+    function hydrateQuestion() {
+      if (!currentQ) {
+        window.location.href = '/questions';
+        return;
+      }
+
+      // Record a view count
+      currentQ.views = (currentQ.views || 0) + 1;
+      saveDb(db);
+
+      const author = db.users.find(u => u.id === currentQ.authorId) || db.users[0];
+
+      // Update question text
+      const titleEl = document.getElementById('q-title');
+      const authorNameEl = document.getElementById('q-author-name');
+      const authorAvatarEl = document.getElementById('q-author-avatar');
+      const dateEl = document.getElementById('q-date');
+      const viewsEl = document.getElementById('q-views');
+      const tagsContainer = document.getElementById('q-tags-container');
+      const voteCountEl = document.getElementById('q-vote-count');
+      const statusBadge = document.getElementById('q-status-badge');
+
+      if (titleEl) titleEl.textContent = currentQ.title;
+      if (authorNameEl) {
+        authorNameEl.textContent = author.displayName;
+        authorNameEl.setAttribute('href', `/profile/${author.username}`);
+      }
+      if (authorAvatarEl) {
+        authorAvatarEl.textContent = author.displayName.charAt(0);
+        authorAvatarEl.className = `w-6 h-6 rounded-full bg-gradient-to-tr ${author.avatarColor} text-white flex items-center justify-center font-bold text-[10px]`;
+      }
+      if (dateEl) dateEl.textContent = new Date(currentQ.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      if (viewsEl) viewsEl.textContent = `${currentQ.views} views`;
+      if (voteCountEl) voteCountEl.textContent = currentQ.votes.toString();
+      
+      if (statusBadge) {
+        statusBadge.textContent = currentQ.resolved ? 'Resolved' : 'Open Question';
+        statusBadge.className = `px-2 py-0.5 rounded-sm text-[11px] font-mono font-medium ${currentQ.resolved ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-600 border border-amber-500/20'}`;
+      }
+
+      if (tagsContainer) {
+        tagsContainer.innerHTML = currentQ.tags.map(t => `
+          <a href="/questions?tag=${t}" class="text-xs font-mono text-mute bg-canvas-soft border border-hairline px-2 py-0.5 rounded-sm hover:text-ink transition-colors">
+            #${t}
+          </a>
+        `).join('');
+      }
+
+      // Markdown parser call
+      const bodyEl = document.getElementById('q-markdown-body');
+      if (bodyEl) {
+        // @ts-ignore
+        if (typeof marked !== 'undefined') {
+          // @ts-ignore
+          bodyEl.innerHTML = marked.parse(currentQ.content);
+        } else {
+          bodyEl.innerHTML = currentQ.content.split('\n').map(l => `<p>${l}</p>`).join('');
+        }
+      }
+
+      hydrateVoteStyles();
+      hydrateAnswers();
+    }
+
+    // Hydrate Upvote / Downvote active colors
+    function hydrateVoteStyles() {
+      if (!currentQ) return;
+      const currentUser = getCurrentUser();
+      const userVote = currentQ.votedUserIds?.[currentUser.id];
+
+      const upBtn = document.getElementById('q-vote-up');
+      const downBtn = document.getElementById('q-vote-down');
+
+      if (upBtn) upBtn.className = `p-1 cursor-pointer transition-colors ${userVote === 'up' ? 'text-link font-bold' : 'text-mute hover:text-link'}`;
+      if (downBtn) downBtn.className = `p-1 cursor-pointer transition-colors ${userVote === 'down' ? 'text-error font-bold' : 'text-mute hover:text-error'}`;
+    }
+
+    // Hydrate Q&A Answers list
+    function hydrateAnswers() {
+      if (!currentQ) return;
+      const container = document.getElementById('answers-list-container');
+      const countEl = document.getElementById('answers-total-count');
+      if (!container) return;
+
+      const qAnswers = db.answers.filter(ans => ans.questionId === currentQ!.id);
+      if (countEl) countEl.textContent = qAnswers.length.toString();
+
+      // Sort: correct/resolved answers first, then by vote counts
+      qAnswers.sort((a, b) => {
+        if (a.correct && !b.correct) return -1;
+        if (!a.correct && b.correct) return 1;
+        return b.votes - a.votes;
+      });
+
+      if (qAnswers.length === 0) {
+        container.innerHTML = `
+          <div class="py-8 bg-canvas border border-hairline border-dashed rounded-md text-center text-mute text-body-sm font-mono shadow-level-1">
+            No answers yet. Share your expertise and write a solution below!
+          </div>
+        `;
+        return;
+      }
+
+      const currentUser = getCurrentUser();
+      const isQuestionAuthor = currentQ.authorId === currentUser.id;
+
+      container.innerHTML = qAnswers.map(ans => {
+        const author = db.users.find(u => u.id === ans.authorId) || db.users[0];
+        const dateStr = new Date(ans.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        const userVote = ans.votedUserIds?.[currentUser.id];
+        
+        let answerParsedContent = '';
+        // @ts-ignore
+        if (typeof marked !== 'undefined') {
+          // @ts-ignore
+          answerParsedContent = marked.parse(ans.content);
+        } else {
+          answerParsedContent = ans.content.split('\n').map(l => `<p>${l}</p>`).join('');
+        }
+
+        // Accept Answer toggle CTA visible ONLY to author of the question
+        let acceptCta = '';
+        if (ans.correct) {
+          acceptCta = `
+            <div class="flex items-center gap-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/25 px-2.5 py-1 rounded-sm text-[11px] font-mono font-medium">
+              ✔ Accepted Solution
+            </div>
+          `;
+        } else if (isQuestionAuthor) {
+          acceptCta = `
+            <button 
+              type="button" 
+              class="accept-ans-btn h-7 px-3 border border-emerald-500/30 text-emerald-600 hover:bg-emerald-500 hover:text-white rounded-sm text-xs font-mono transition-all cursor-pointer"
+              data-answer-id="${ans.id}"
+            >
+              Accept Answer
+            </button>
+          `;
+        }
+
+        return `
+          <article class="bg-canvas border border-hairline rounded-md p-5 shadow-level-2 flex gap-4 ${ans.correct ? 'border-emerald-500/40 shadow-level-3' : ''}" data-answer-id="${ans.id}">
+            <!-- Vote section -->
+            <div class="flex flex-col items-center gap-1 font-mono min-w-[32px] select-none">
+              <button type="button" class="ans-vote-up-btn text-mute hover:text-link cursor-pointer ${userVote === 'up' ? 'text-link font-bold' : ''}" data-answer-id="${ans.id}">
+                ▲
+              </button>
+              <span class="text-body-sm-strong font-semibold text-ink text-sm">${ans.votes}</span>
+              <button type="button" class="ans-vote-down-btn text-mute hover:text-error cursor-pointer ${userVote === 'down' ? 'text-error font-bold' : ''}" data-answer-id="${ans.id}">
+                ▼
+              </button>
+            </div>
+
+            <!-- Content section -->
+            <div class="flex-1 flex flex-col gap-2">
+              <div class="flex items-center justify-between border-b border-hairline/50 pb-2">
+                <div class="flex items-center gap-2 text-mute text-xs">
+                  <div class="w-5 h-5 rounded-full bg-gradient-to-tr ${author.avatarColor} text-white flex items-center justify-center text-[9px] font-bold">
+                    ${author.displayName.charAt(0)}
+                  </div>
+                  <a href="/profile/${author.username}" class="hover:text-ink hover:underline font-medium">${author.displayName}</a>
+                  <span>&bull;</span>
+                  <span class="font-mono">${dateStr}</span>
+                </div>
+                
+                <div>
+                  ${acceptCta}
+                </div>
+              </div>
+
+              <!-- Body parsed markdown -->
+              <div class="prose prose-sm max-w-none text-body-sm text-ink leading-relaxed space-y-3 font-sans select-text mt-1.5">
+                ${answerParsedContent}
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+
+      attachAnswerActionHandlers();
+    }
+
+    // Attach upvotes / accept triggers to answers
+    function attachAnswerActionHandlers() {
+      const currentUser = getCurrentUser();
+
+      // Answer Upvote
+      document.querySelectorAll('.ans-vote-up-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const target = e.currentTarget as HTMLButtonElement;
+          const ansId = target.getAttribute('data-answer-id');
+          if (!ansId) return;
+
+          db = getDb();
+          const ans = db.answers.find(a => a.id === ansId);
+          if (ans) {
+            if (!ans.votedUserIds) ans.votedUserIds = {};
+            const vote = ans.votedUserIds[currentUser.id];
+
+            if (vote === 'up') {
+              delete ans.votedUserIds[currentUser.id];
+              ans.votes -= 1;
+            } else {
+              if (vote === 'down') ans.votes += 2; // reverse downvote
+              else ans.votes += 1;
+              ans.votedUserIds[currentUser.id] = 'up';
+            }
+
+            saveDb(db);
+            hydrateAnswers();
+          }
+        });
+      });
+
+      // Answer Downvote
+      document.querySelectorAll('.ans-vote-down-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const target = e.currentTarget as HTMLButtonElement;
+          const ansId = target.getAttribute('data-answer-id');
+          if (!ansId) return;
+
+          db = getDb();
+          const ans = db.answers.find(a => a.id === ansId);
+          if (ans) {
+            if (!ans.votedUserIds) ans.votedUserIds = {};
+            const vote = ans.votedUserIds[currentUser.id];
+
+            if (vote === 'down') {
+              delete ans.votedUserIds[currentUser.id];
+              ans.votes += 1;
+            } else {
+              if (vote === 'up') ans.votes -= 2; // reverse upvote
+              else ans.votes -= 1;
+              ans.votedUserIds[currentUser.id] = 'down';
+            }
+
+            saveDb(db);
+            hydrateAnswers();
+          }
+        });
+      });
+
+      // Accept Answer click
+      document.querySelectorAll('.accept-ans-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const target = e.currentTarget as HTMLButtonElement;
+          const ansId = target.getAttribute('data-answer-id');
+          if (!ansId || !currentQ) return;
+
+          db = getDb();
+          
+          // Set all other answers of this question to not correct
+          db.answers.forEach(ans => {
+            if (ans.questionId === currentQ!.id) {
+              ans.correct = (ans.id === ansId);
+            }
+          });
+
+          // Mark question as resolved
+          const qInDb = db.questions.find(q => q.id === currentQ!.id);
+          if (qInDb) {
+            qInDb.resolved = true;
+            currentQ.resolved = true;
+          }
+
+          saveDb(db);
+          
+          // Re-render UI components
+          const statusBadge = document.getElementById('q-status-badge');
+          if (statusBadge) {
+            statusBadge.textContent = 'Resolved';
+            statusBadge.className = "px-2 py-0.5 rounded-sm text-[11px] font-mono font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20";
+          }
+
+          hydrateAnswers();
+        });
+      });
+    }
+
+    // Connect Question Upvote Trigger
+    const qVoteUpBtn = document.getElementById('q-vote-up');
+    if (qVoteUpBtn) {
+      qVoteUpBtn.addEventListener('click', () => {
+        if (!currentQ) return;
+        const currentUser = getCurrentUser();
+
+        db = getDb();
+        const qInDb = db.questions.find(q => q.id === currentQ.id);
+        if (qInDb) {
+          if (!qInDb.votedUserIds) qInDb.votedUserIds = {};
+          const vote = qInDb.votedUserIds[currentUser.id];
+
+          if (vote === 'up') {
+            delete qInDb.votedUserIds[currentUser.id];
+            qInDb.votes -= 1;
+          } else {
+            if (vote === 'down') qInDb.votes += 2;
+            else qInDb.votes += 1;
+            qInDb.votedUserIds[currentUser.id] = 'up';
+          }
+
+          saveDb(db);
+          currentQ.votes = qInDb.votes;
+          currentQ.votedUserIds = qInDb.votedUserIds;
+
+          const countEl = document.getElementById('q-vote-count');
+          if (countEl) countEl.textContent = currentQ.votes.toString();
+
+          hydrateVoteStyles();
+        }
+      });
+    }
+
+    // Connect Question Downvote Trigger
+    const qVoteDownBtn = document.getElementById('q-vote-down');
+    if (qVoteDownBtn) {
+      qVoteDownBtn.addEventListener('click', () => {
+        if (!currentQ) return;
+        const currentUser = getCurrentUser();
+
+        db = getDb();
+        const qInDb = db.questions.find(q => q.id === currentQ.id);
+        if (qInDb) {
+          if (!qInDb.votedUserIds) qInDb.votedUserIds = {};
+          const vote = qInDb.votedUserIds[currentUser.id];
+
+          if (vote === 'down') {
+            delete qInDb.votedUserIds[currentUser.id];
+            qInDb.votes += 1;
+          } else {
+            if (vote === 'up') qInDb.votes -= 2;
+            else qInDb.votes -= 1;
+            qInDb.votedUserIds[currentUser.id] = 'down';
+          }
+
+          saveDb(db);
+          currentQ.votes = qInDb.votes;
+          currentQ.votedUserIds = qInDb.votedUserIds;
+
+          const countEl = document.getElementById('q-vote-count');
+          if (countEl) countEl.textContent = currentQ.votes.toString();
+
+          hydrateVoteStyles();
+        }
+      });
+    }
+
+    // Submit Custom Answer form
+    const answerForm = document.getElementById('new-answer-form');
+    if (answerForm) {
+      answerForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (!currentQ) return;
+
+        const textarea = document.getElementById('new-answer-textarea') as HTMLTextAreaElement;
+        const text = textarea?.value?.trim();
+
+        if (!text) return;
+        const currentUser = getCurrentUser();
+
+        db = getDb();
+        const newAns: Answer = {
+          id: `ans-${Date.now()}`,
+          questionId: currentQ.id,
+          authorId: currentUser.id,
+          content: text,
+          votes: 0,
+          votedUserIds: {},
+          correct: false,
+          createdAt: new Date().toISOString()
+        };
+
+        // Increment question answers counts
+        const qInDb = db.questions.find(q => q.id === currentQ.id);
+        if (qInDb) {
+          qInDb.answersCount = (qInDb.answersCount || 0) + 1;
+          currentQ.answersCount = qInDb.answersCount;
+        }
+
+        db.answers.push(newAns);
+        saveDb(db);
+
+        textarea.value = '';
+        hydrateAnswers();
+      });
+    }
+
+    // AI Question Answering integration
+    const aiAnswerBtn = document.getElementById('ai-answer-btn');
+    const aiQBox = document.getElementById('ai-q-box');
+    const aiQText = document.getElementById('ai-q-text');
+    const aiQClear = document.getElementById('ai-q-clear');
+    const aiQPostBtn = document.getElementById('ai-q-post-btn');
+
+    if (aiAnswerBtn && aiQBox && aiQText) {
+      aiAnswerBtn.addEventListener('click', async () => {
+        if (!currentQ) return;
+
+        const apiKey = localStorage.getItem('GEMINI_API_KEY') || "";
+        if (!apiKey) {
+          alert("Please set your Gemini API key in the 'AI Key' status panel in the navbar first.");
+          return;
+        }
+
+        aiQBox.classList.remove('hidden');
+        aiQBox.classList.add('flex');
+        aiQText.innerHTML = `<span class="italic text-mute">AI is writing a solution...</span>`;
+        if (aiQPostBtn) aiQPostBtn.classList.add('hidden');
+
+        try {
+          const prompt = PROMPTS.answerQuestion(currentQ.title, currentQ.content);
+          const result = await askGemini(prompt, apiKey);
+          lastAiDraft = result;
+
+          // Render formatted markdown draft
+          // @ts-ignore
+          if (typeof marked !== 'undefined') {
+            // @ts-ignore
+            aiQText.innerHTML = marked.parse(result);
+          } else {
+            aiQText.textContent = result;
+          }
+          if (aiQPostBtn) aiQPostBtn.classList.remove('hidden');
+
+        } catch (err: any) {
+          aiQText.innerHTML = `
+            <span class="text-error font-medium">Assistant Error:</span>
+            <span class="text-error-deep block mt-1">${err.message}</span>
+          `;
+        }
+      });
+    }
+
+    // Clear draft card
+    if (aiQClear && aiQBox) {
+      aiQClear.addEventListener('click', () => {
+        aiQBox.classList.add('hidden');
+        aiQBox.classList.remove('flex');
+        lastAiDraft = '';
+      });
+    }
+
+    // Post AI Draft Answer to Forum
+    if (aiQPostBtn) {
+      aiQPostBtn.addEventListener('click', () => {
+        if (!currentQ || !lastAiDraft) return;
+
+        db = getDb();
+        
+        // Ensure the Gemini user exists in database
+        let geminiUser = db.users.find(u => u.username === 'gemini_ai');
+        if (!geminiUser) {
+          geminiUser = {
+            id: 'user-gemini',
+            username: 'gemini_ai',
+            displayName: 'Gemini AI Assistant',
+            bio: 'Google Gemini 1.5 Flash Large Language Model proxying automated forum answers.',
+            reputation: 9999,
+            followers: 432,
+            following: 0,
+            avatarColor: 'from-[#7928ca] to-[#007cf0]'
+          };
+          db.users.push(geminiUser);
+        }
+
+        const newAns: Answer = {
+          id: `ans-ai-${Date.now()}`,
+          questionId: currentQ.id,
+          authorId: geminiUser.id,
+          content: lastAiDraft,
+          votes: 1, // Start with 1 default vote for AI
+          votedUserIds: { 'user-gemini': 'up' },
+          correct: false,
+          createdAt: new Date().toISOString()
+        };
+
+        // Increment Q answers counts
+        const qInDb = db.questions.find(q => q.id === currentQ.id);
+        if (qInDb) {
+          qInDb.answersCount = (qInDb.answersCount || 0) + 1;
+          currentQ.answersCount = qInDb.answersCount;
+        }
+
+        db.answers.push(newAns);
+        saveDb(db);
+
+        // Hide draft card and refresh answers thread
+        if (aiQBox) aiQBox.classList.add('hidden');
+        lastAiDraft = '';
+        hydrateAnswers();
+      });
+    }
+
+    // Startup Execution
+    hydrateQuestion();
+
+    // Astro swap listener
+    document.addEventListener('astro:after-swap', hydrateQuestion);
+  </script>
+</Layout>

@@ -1,0 +1,691 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { MOCK_POSTS, MOCK_USERS } from '../../utils/db';
+
+// Astro static paths for SSG support
+export async function getStaticPaths() {
+  const ids = ['post-1', 'post-2', 'post-3'];
+  // Allocate 10 custom slots for user-created posts
+  for (let i = 1; i <= 10; i++) {
+    ids.push(`custom-${i}`);
+  }
+  return ids.map(id => ({ params: { id } }));
+}
+
+const { id } = Astro.params;
+
+// Find SSR default post for initial render
+const ssrPost = MOCK_POSTS.find(p => p.id === id) || MOCK_POSTS[0];
+const ssrAuthor = MOCK_USERS.find(u => u.id === ssrPost.authorId) || MOCK_USERS[0];
+
+function formatDate(dateStr: string) {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+---
+
+<Layout title={`${ssrPost.title} - Viblo AI`} description={ssrPost.title}>
+  <!-- Sticky Interaction Panel (Floating left on wide screen, top on mobile) -->
+  <div class="flex lg:flex-col items-center justify-between lg:justify-start gap-4 lg:fixed lg:left-[calc(50%-550px)] lg:top-32 bg-canvas border border-hairline px-4 py-3 lg:px-2.5 lg:py-5 rounded-md shadow-level-2 z-10 w-full lg:w-14">
+    <a href="/" class="text-body hover:text-ink hover:bg-canvas-soft-2 p-1.5 rounded-sm transition-all" title="Back to Feed">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+    </a>
+    
+    <hr class="hidden lg:block border-hairline w-8" />
+    
+    <!-- Like Action -->
+    <button 
+      type="button" 
+      id="float-like-btn"
+      class="flex lg:flex-col items-center gap-1.5 text-body hover:text-link transition-colors cursor-pointer"
+      title="Like article"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="float-like-icon">
+        <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+      </svg>
+      <span id="float-like-count" class="text-xs font-mono font-semibold">{ssrPost.likes.length}</span>
+    </button>
+
+    <!-- Bookmark Action -->
+    <button 
+      type="button" 
+      id="float-bookmark-btn"
+      class="text-body hover:text-warning transition-colors cursor-pointer"
+      title="Bookmark article"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="float-bookmark-icon">
+        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Main Article Body -->
+  <div class="lg:pl-16 flex flex-col gap-6" id="article-view-workspace">
+    <article class="bg-canvas border border-hairline rounded-md p-6 md:p-8 shadow-level-2 flex flex-col gap-4">
+      <!-- Article Header -->
+      <div class="flex flex-col gap-3 border-b border-hairline pb-4">
+        <!-- Author info row -->
+        <div class="flex items-center gap-3">
+          <div class={`w-10 h-10 rounded-full bg-gradient-to-tr ${ssrAuthor.avatarColor} text-white flex items-center justify-center font-bold shadow-level-2`} id="post-author-avatar">
+            {ssrAuthor.displayName.charAt(0)}
+          </div>
+          <div class="flex flex-col">
+            <a href={`/profile/${ssrAuthor.username}`} class="text-body-sm-strong font-semibold text-ink hover:underline" id="post-author-name">
+              {ssrAuthor.displayName}
+            </a>
+            <div class="flex items-center gap-1.5 text-xs text-mute font-mono">
+              <span id="post-date">{formatDate(ssrPost.createdAt)}</span>
+              <span>&bull;</span>
+              <span id="post-views">{ssrPost.views} views</span>
+            </div>
+          </div>
+        </div>
+
+        <h1 class="text-display-lg leading-tight font-semibold tracking-tight mt-2 text-ink" id="post-title">
+          {ssrPost.title}
+        </h1>
+
+        <!-- Tags -->
+        <div class="flex flex-wrap gap-2 mt-1" id="post-tags-container">
+          {ssrPost.tags.map(tag => (
+            <a href={`/?tag=${tag}`} class="text-xs font-mono text-mute bg-canvas-soft border border-hairline px-2.5 py-0.5 rounded-sm hover:text-ink transition-colors">
+              #{tag}
+            </a>
+          ))}
+        </div>
+      </div>
+
+      <!-- Article Content (Client-rendered Markdown output replaces this text) -->
+      <div class="prose max-w-none text-body-md text-ink leading-relaxed space-y-4" id="post-markdown-body">
+        {ssrPost.content.split('\n').map(p => <p>{p}</p>)}
+      </div>
+    </article>
+
+    <!-- Comments Section -->
+    <section class="bg-canvas border border-hairline rounded-md p-6 shadow-level-2 flex flex-col gap-6">
+      <h3 class="text-display-sm tracking-tight text-ink font-semibold border-b border-hairline pb-3">
+        Comments (<span id="comments-total-count">{ssrPost.commentsCount}</span>)
+      </h3>
+
+      <!-- Post Comment Form -->
+      <form id="new-comment-form" class="flex flex-col gap-3">
+        <textarea 
+          placeholder="Join the discussion... Supporting markdown." 
+          id="new-comment-textarea"
+          rows="3"
+          class="w-full bg-canvas-soft border border-hairline rounded-sm p-3 text-body-sm text-ink placeholder:text-mute focus:outline-none focus:border-hairline-strong transition-colors"
+        ></textarea>
+        <div class="flex justify-end">
+          <button 
+            type="submit" 
+            class="h-8 px-4 bg-primary text-on-primary rounded-sm text-[13px] font-medium hover:bg-black transition-all cursor-pointer"
+          >
+            Post Comment
+          </button>
+        </div>
+      </form>
+
+      <!-- Comments List -->
+      <div class="flex flex-col gap-4 divide-y divide-hairline" id="comments-list-container">
+        <!-- Dynmically hydrated -->
+      </div>
+    </section>
+  </div>
+
+  <!-- Right Sidebar widgets: AI Explainer -->
+  <Fragment slot="sidebar">
+    <div class="bg-canvas border border-hairline rounded-md p-5 shadow-level-2 flex flex-col gap-4 sticky top-24">
+      <div class="border-b border-hairline pb-2 flex items-center justify-between">
+        <h3 class="text-caption-mono text-violet font-semibold flex items-center gap-1.5">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+            <polyline points="2 17 12 22 22 17"></polyline>
+            <polyline points="2 12 12 17 22 12"></polyline>
+          </svg>
+          AI Post Explainer
+        </h3>
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500" title="AI Ready"></span>
+      </div>
+
+      <p class="text-body-sm text-body leading-relaxed">
+        Let Gemini explain code, summarize concepts, or answer questions about this article.
+      </p>
+
+      <div class="flex flex-col gap-2">
+        <button 
+          type="button" 
+          id="ai-btn-explain"
+          class="ai-quick-btn w-full h-8 border border-hairline hover:border-hairline-strong bg-canvas-soft text-[12px] text-body hover:text-ink font-medium rounded-sm transition-all text-left px-3 flex items-center justify-between"
+        >
+          Explain this article
+          <span class="text-mute font-mono text-[10px]">&rarr;</span>
+        </button>
+        <button 
+          type="button" 
+          id="ai-btn-summarize"
+          class="ai-quick-btn w-full h-8 border border-hairline hover:border-hairline-strong bg-canvas-soft text-[12px] text-body hover:text-ink font-medium rounded-sm transition-all text-left px-3 flex items-center justify-between"
+        >
+          Summarize key points
+          <span class="text-mute font-mono text-[10px]">&rarr;</span>
+        </button>
+      </div>
+
+      <div class="flex flex-col gap-2 border-t border-hairline pt-3">
+        <label for="ai-question-input" class="text-caption-mono text-mute">Ask a custom question</label>
+        <div class="relative">
+          <input 
+            type="text" 
+            id="ai-question-input" 
+            placeholder="What does line 12 do?" 
+            class="w-full h-9 bg-canvas-soft border border-hairline rounded-sm pl-3 pr-10 text-body-sm text-ink placeholder:text-mute focus:outline-none focus:border-hairline-strong transition-colors"
+          />
+          <button 
+            type="button" 
+            id="ai-question-send"
+            class="absolute right-1 top-1 h-7 w-8 bg-primary hover:bg-black text-white rounded-sm flex items-center justify-center transition-colors cursor-pointer"
+            title="Ask AI"
+          >
+            &rarr;
+          </button>
+        </div>
+      </div>
+
+      <!-- AI Response Box (Hidden by default) -->
+      <div id="ai-response-box" class="hidden flex-col bg-canvas-soft-2 border border-hairline rounded-sm p-3.5 gap-2 max-h-[300px] overflow-y-auto">
+        <div class="flex items-center justify-between">
+          <span class="text-[10px] font-mono text-mute uppercase">Gemini Response</span>
+          <button type="button" id="ai-response-clear" class="text-mute hover:text-ink text-xs">&times; Clear</button>
+        </div>
+        <div id="ai-response-text" class="text-body-sm text-body leading-relaxed space-y-2 select-text prose prose-sm font-sans">
+          <!-- Response content -->
+        </div>
+      </div>
+    </div>
+  </Fragment>
+
+  <!-- Load Markdown Parser from CDN dynamically -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" is:inline></script>
+
+  <script>
+    import { getDb, saveDb, getCurrentUser, type Post, type Comment } from '../../utils/db';
+    import { askGemini, PROMPTS } from '../../utils/ai';
+
+    // Parse Post ID from URL
+    const pathParts = window.location.pathname.split('/');
+    const postId = pathParts[pathParts.length - 1] || pathParts[pathParts.length - 2];
+
+    let db = getDb();
+    let currentPost = db.posts.find(p => p.id === postId);
+
+    // Initial check: if post is not found, try reading it from localStorage or fallback
+    if (!currentPost) {
+      // In case we got one of the custom-X placeholder routes, let's look at localStorage DB
+      db = getDb();
+      currentPost = db.posts.find(p => p.id === postId);
+    }
+
+    // Hydrate Page Content
+    function hydratePost() {
+      if (!currentPost) {
+        // Redirect to home if invalid post page is requested
+        window.location.href = '/';
+        return;
+      }
+
+      // Record a view
+      currentPost.views = (currentPost.views || 0) + 1;
+      saveDb(db);
+
+      const author = db.users.find(u => u.id === currentPost.authorId) || db.users[0];
+
+      // Update basic fields
+      const titleEl = document.getElementById('post-title');
+      const authorNameEl = document.getElementById('post-author-name');
+      const authorAvatarEl = document.getElementById('post-author-avatar');
+      const dateEl = document.getElementById('post-date');
+      const viewsEl = document.getElementById('post-views');
+      const tagsContainer = document.getElementById('post-tags-container');
+
+      if (titleEl) titleEl.textContent = currentPost.title;
+      if (authorNameEl) {
+        authorNameEl.textContent = author.displayName;
+        authorNameEl.setAttribute('href', `/profile/${author.username}`);
+      }
+      if (authorAvatarEl) {
+        authorAvatarEl.className = `w-10 h-10 rounded-full bg-gradient-to-tr ${author.avatarColor} text-white flex items-center justify-center font-bold shadow-level-2`;
+        authorAvatarEl.textContent = author.displayName.charAt(0);
+      }
+      if (dateEl) dateEl.textContent = new Date(currentPost.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      if (viewsEl) viewsEl.textContent = `${currentPost.views} views`;
+      
+      if (tagsContainer) {
+        tagsContainer.innerHTML = currentPost.tags.map(tag => `
+          <a href="/?tag=${tag}" class="text-xs font-mono text-mute bg-canvas-soft border border-hairline px-2.5 py-0.5 rounded-sm hover:text-ink transition-colors">
+            #${tag}
+          </a>
+        `).join('');
+      }
+
+      // Parse Markdown Content using global marked library loaded from CDN
+      const bodyEl = document.getElementById('post-markdown-body');
+      if (bodyEl) {
+        // @ts-ignore
+        if (typeof marked !== 'undefined') {
+          // @ts-ignore
+          bodyEl.innerHTML = marked.parse(currentPost.content);
+        } else {
+          // Basic line break fallback if marked failed to load
+          bodyEl.innerHTML = currentPost.content.split('\n').map(line => `<p>${line}</p>`).join('');
+        }
+      }
+
+      hydrateFloatInteractions();
+      hydrateComments();
+    }
+
+    // Hydrate Left Float Panel
+    function hydrateFloatInteractions() {
+      if (!currentPost) return;
+      const currentUser = getCurrentUser();
+
+      const likeCountEl = document.getElementById('float-like-count');
+      const likeIcon = document.getElementById('float-like-icon');
+      const bookmarkIcon = document.getElementById('float-bookmark-icon');
+
+      if (likeCountEl) likeCountEl.textContent = currentPost.likes.length.toString();
+      
+      const hasLiked = currentPost.likes.includes(currentUser.id);
+      if (likeIcon) {
+        likeIcon.setAttribute('fill', hasLiked ? 'currentColor' : 'none');
+        likeIcon.parentElement?.classList.toggle('text-link', hasLiked);
+      }
+
+      const hasBookmarked = currentPost.bookmarks.includes(currentUser.id);
+      if (bookmarkIcon) {
+        bookmarkIcon.setAttribute('fill', hasBookmarked ? 'currentColor' : 'none');
+        bookmarkIcon.parentElement?.classList.toggle('text-warning', hasBookmarked);
+      }
+    }
+
+    // Hydrate Comments lists and tree replies
+    function hydrateComments() {
+      if (!currentPost) return;
+      const container = document.getElementById('comments-list-container');
+      const totalCountEl = document.getElementById('comments-total-count');
+
+      if (!container) return;
+
+      const postComments = db.comments.filter(c => c.postId === currentPost.id);
+      if (totalCountEl) totalCountEl.textContent = postComments.length.toString();
+
+      // Parent Comments
+      const parentComments = postComments.filter(c => c.parentId === null);
+      parentComments.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+      if (parentComments.length === 0) {
+        container.innerHTML = `
+          <div class="py-6 text-center text-mute text-body-sm font-mono">
+            No comments yet. Be the first to share your thoughts!
+          </div>
+        `;
+        return;
+      }
+
+      const currentUser = getCurrentUser();
+
+      container.innerHTML = parentComments.map(c => {
+        const author = db.users.find(u => u.id === c.authorId) || db.users[0];
+        const dateStr = new Date(c.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        const hasLikedComment = c.likes.includes(currentUser.id);
+
+        // Fetch children
+        const childComments = postComments.filter(child => child.parentId === c.id);
+        childComments.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+        const childrenHtml = childComments.map(child => {
+          const childAuthor = db.users.find(u => u.id === child.authorId) || db.users[0];
+          const childDateStr = new Date(child.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+          const hasLikedChild = child.likes.includes(currentUser.id);
+
+          return `
+            <div class="flex gap-3 pl-6 border-l border-hairline/70 mt-4 group/child">
+              <div class="w-6 h-6 rounded-full bg-gradient-to-tr ${childAuthor.avatarColor} text-white flex items-center justify-center text-[10px] font-bold shadow-level-1 mt-0.5">
+                ${childAuthor.displayName.charAt(0)}
+              </div>
+              <div class="flex-1 flex flex-col gap-1 select-text">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-body-sm-strong font-medium text-ink">${childAuthor.displayName}</span>
+                    <span class="text-mute text-[10px]">&bull;</span>
+                    <span class="text-mute text-[10px] font-mono">${childDateStr}</span>
+                  </div>
+                </div>
+                <p class="text-body-sm text-body whitespace-pre-wrap">${child.content}</p>
+                <div class="flex items-center gap-3.5 mt-1 text-[11px] text-mute font-mono">
+                  <button type="button" class="comment-like-btn hover:text-link flex items-center gap-1 cursor-pointer ${hasLikedChild ? 'text-link font-semibold' : ''}" data-comment-id="${child.id}">
+                    👍 <span>${child.likes.length}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <div class="py-5 flex gap-4 group/comment" data-comment-id="${c.id}">
+            <!-- Author avatar -->
+            <div class="w-8 h-8 rounded-full bg-gradient-to-tr ${author.avatarColor} text-white flex items-center justify-center font-bold text-xs shadow-level-2 mt-0.5">
+              ${author.displayName.charAt(0)}
+            </div>
+            
+            <div class="flex-1 flex flex-col gap-1.5 select-text">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="text-body-sm-strong font-semibold text-ink">${author.displayName}</span>
+                  <span class="text-mute text-[10px]">&bull;</span>
+                  <span class="text-mute text-[11px] font-mono">${dateStr}</span>
+                </div>
+              </div>
+
+              <p class="text-body-sm text-body whitespace-pre-wrap leading-relaxed">${c.content}</p>
+
+              <!-- Actions row -->
+              <div class="flex items-center gap-4 mt-1 text-[11px] text-mute font-mono">
+                <button type="button" class="comment-like-btn hover:text-link flex items-center gap-1 cursor-pointer ${hasLikedComment ? 'text-link font-semibold' : ''}" data-comment-id="${c.id}">
+                  👍 <span>${c.likes.length}</span>
+                </button>
+                <button type="button" class="comment-reply-btn hover:text-ink cursor-pointer flex items-center gap-1" data-comment-id="${c.id}">
+                  💬 Reply
+                </button>
+              </div>
+
+              <!-- Inline Reply Form Container -->
+              <div class="reply-form-container mt-3.5 hidden" id="reply-form-for-${c.id}">
+                <div class="flex flex-col gap-2">
+                  <textarea 
+                    placeholder="Write a reply..." 
+                    class="reply-textarea w-full bg-canvas-soft border border-hairline rounded-sm p-2 text-body-sm text-ink placeholder:text-mute focus:outline-none focus:border-hairline-strong transition-colors"
+                    rows="2"
+                  ></textarea>
+                  <div class="flex justify-end gap-2">
+                    <button type="button" class="reply-cancel-btn h-7 px-3 border border-hairline text-body rounded-sm text-xs hover:border-hairline-strong cursor-pointer">Cancel</button>
+                    <button type="button" class="reply-submit-btn h-7 px-3 bg-primary text-on-primary rounded-sm text-xs hover:bg-black cursor-pointer" data-parent-id="${c.id}">Post Reply</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Children Replies Container -->
+              <div class="children-container flex flex-col gap-1.5">
+                ${childrenHtml}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      attachCommentClickHandlers();
+    }
+
+    // Attach Comment action click handlers
+    function attachCommentClickHandlers() {
+      const currentUser = getCurrentUser();
+
+      // Comment Like Click
+      document.querySelectorAll('.comment-like-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const target = e.currentTarget as HTMLButtonElement;
+          const commentId = target.getAttribute('data-comment-id');
+          if (!commentId) return;
+
+          db = getDb();
+          const comment = db.comments.find(c => c.id === commentId);
+          if (comment) {
+            const idx = comment.likes.indexOf(currentUser.id);
+            if (idx === -1) {
+              comment.likes.push(currentUser.id);
+            } else {
+              comment.likes.splice(idx, 1);
+            }
+            saveDb(db);
+            hydrateComments();
+          }
+        });
+      });
+
+      // Reply Button Toggle Click
+      document.querySelectorAll('.comment-reply-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const target = e.currentTarget as HTMLButtonElement;
+          const commentId = target.getAttribute('data-comment-id');
+          const replyForm = document.getElementById(`reply-form-for-${commentId}`);
+          
+          if (replyForm) {
+            replyForm.classList.toggle('hidden');
+            if (!replyForm.classList.contains('hidden')) {
+              const tx = replyForm.querySelector('textarea');
+              if (tx) tx.focus();
+            }
+          }
+        });
+      });
+
+      // Cancel Reply Click
+      document.querySelectorAll('.reply-cancel-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const target = e.currentTarget as HTMLButtonElement;
+          const form = target.closest('.reply-form-container');
+          if (form) form.classList.add('hidden');
+        });
+      });
+
+      // Submit Nested Reply Click
+      document.querySelectorAll('.reply-submit-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const target = e.currentTarget as HTMLButtonElement;
+          const parentId = target.getAttribute('data-parent-id');
+          if (!parentId || !currentPost) return;
+
+          const form = target.closest('.reply-form-container');
+          const textarea = form?.querySelector('textarea') as HTMLTextAreaElement;
+          const text = textarea?.value?.trim();
+
+          if (!text) return;
+
+          db = getDb();
+          const newReply: Comment = {
+            id: `reply-${Date.now()}-${Math.floor(Math.random()*1000)}`,
+            postId: currentPost.id,
+            parentId: parentId,
+            authorId: currentUser.id,
+            content: text,
+            createdAt: new Date().toISOString(),
+            likes: []
+          };
+
+          // Increment comments count on post
+          const postInDb = db.posts.find(p => p.id === currentPost.id);
+          if (postInDb) {
+            postInDb.commentsCount = (postInDb.commentsCount || 0) + 1;
+            currentPost.commentsCount = postInDb.commentsCount;
+          }
+
+          db.comments.push(newReply);
+          saveDb(db);
+          
+          hydrateComments();
+        });
+      });
+    }
+
+    // Connect Left Float Panel Likes Click
+    const floatLikeBtn = document.getElementById('float-like-btn');
+    if (floatLikeBtn) {
+      floatLikeBtn.addEventListener('click', () => {
+        if (!currentPost) return;
+        const currentUser = getCurrentUser();
+
+        db = getDb();
+        const post = db.posts.find(p => p.id === currentPost.id);
+        if (post) {
+          const idx = post.likes.indexOf(currentUser.id);
+          if (idx === -1) {
+            post.likes.push(currentUser.id);
+          } else {
+            post.likes.splice(idx, 1);
+          }
+          saveDb(db);
+          currentPost.likes = post.likes;
+          hydrateFloatInteractions();
+        }
+      });
+    }
+
+    // Connect Left Float Panel Bookmark Click
+    const floatBookmarkBtn = document.getElementById('float-bookmark-btn');
+    if (floatBookmarkBtn) {
+      floatBookmarkBtn.addEventListener('click', () => {
+        if (!currentPost) return;
+        const currentUser = getCurrentUser();
+
+        db = getDb();
+        const post = db.posts.find(p => p.id === currentPost.id);
+        if (post) {
+          const idx = post.bookmarks.indexOf(currentUser.id);
+          if (idx === -1) {
+            post.bookmarks.push(currentUser.id);
+          } else {
+            post.bookmarks.splice(idx, 1);
+          }
+          saveDb(db);
+          currentPost.bookmarks = post.bookmarks;
+          hydrateFloatInteractions();
+        }
+      });
+    }
+
+    // Connect Main Parent Comment Form Submit
+    const newCommentForm = document.getElementById('new-comment-form');
+    if (newCommentForm) {
+      newCommentForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (!currentPost) return;
+
+        const textarea = document.getElementById('new-comment-textarea') as HTMLTextAreaElement;
+        const text = textarea?.value?.trim();
+
+        if (!text) return;
+        const currentUser = getCurrentUser();
+
+        db = getDb();
+        const newComment: Comment = {
+          id: `comment-${Date.now()}`,
+          postId: currentPost.id,
+          parentId: null,
+          authorId: currentUser.id,
+          content: text,
+          createdAt: new Date().toISOString(),
+          likes: []
+        };
+
+        // Increment comments count on post
+        const postInDb = db.posts.find(p => p.id === currentPost.id);
+        if (postInDb) {
+          postInDb.commentsCount = (postInDb.commentsCount || 0) + 1;
+          currentPost.commentsCount = postInDb.commentsCount;
+        }
+
+        db.comments.push(newComment);
+        saveDb(db);
+
+        textarea.value = '';
+        hydrateComments();
+      });
+    }
+
+    // Connect AI Panel Explainer Actions
+    const aiBtnExplain = document.getElementById('ai-btn-explain');
+    const aiBtnSummarize = document.getElementById('ai-btn-summarize');
+    const aiQuestionInput = document.getElementById('ai-question-input') as HTMLInputElement;
+    const aiQuestionSend = document.getElementById('ai-question-send');
+    const aiResponseBox = document.getElementById('ai-response-box');
+    const aiResponseText = document.getElementById('ai-response-text');
+    const aiResponseClear = document.getElementById('ai-response-clear');
+
+    async function handleAiQuery(query: string) {
+      if (!currentPost || !aiResponseBox || !aiResponseText) return;
+
+      // Unhide and show loading
+      aiResponseBox.classList.remove('hidden');
+      aiResponseBox.classList.add('flex');
+      aiResponseText.innerHTML = `<span class="italic text-mute">Gemini is thinking...</span>`;
+
+      const apiKey = localStorage.getItem('GEMINI_API_KEY') || "";
+
+      try {
+        const prompt = PROMPTS.explainPost(currentPost.title, currentPost.content, query);
+        const result = await askGemini(prompt, apiKey);
+        
+        // Render result markdown using marked if available
+        // @ts-ignore
+        if (typeof marked !== 'undefined') {
+          // @ts-ignore
+          aiResponseText.innerHTML = marked.parse(result);
+        } else {
+          aiResponseText.textContent = result;
+        }
+      } catch (err: any) {
+        aiResponseText.innerHTML = `
+          <span class="text-error font-medium">Error:</span>
+          <span class="text-error-deep block mt-1">${err.message}</span>
+        `;
+      }
+    }
+
+    if (aiBtnExplain) {
+      aiBtnExplain.addEventListener('click', () => {
+        handleAiQuery("Explain this entire article in simple, clear technical terms.");
+      });
+    }
+
+    if (aiBtnSummarize) {
+      aiBtnSummarize.addEventListener('click', () => {
+        handleAiQuery("List the 3 most important key takeaways or bullet points from this article.");
+      });
+    }
+
+    if (aiQuestionSend && aiQuestionInput) {
+      aiQuestionSend.addEventListener('click', () => {
+        const q = aiQuestionInput.value.trim();
+        if (q) {
+          handleAiQuery(q);
+          aiQuestionInput.value = '';
+        }
+      });
+      aiQuestionInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          const q = aiQuestionInput.value.trim();
+          if (q) {
+            handleAiQuery(q);
+            aiQuestionInput.value = '';
+          }
+        }
+      });
+    }
+
+    if (aiResponseClear && aiResponseBox) {
+      aiResponseClear.addEventListener('click', () => {
+        aiResponseBox.classList.add('hidden');
+        aiResponseBox.classList.remove('flex');
+      });
+    }
+
+    // Run Startup Hydrations
+    hydratePost();
+
+    // Re-run on client navigation
+    document.addEventListener('astro:after-swap', hydratePost);
+  </script>
+</Layout>

@@ -1,0 +1,296 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { MOCK_TRANSLATIONS, MOCK_USERS } from '../../utils/db';
+
+const defaultTranslations = MOCK_TRANSLATIONS;
+const defaultUsers = MOCK_USERS;
+
+function formatDate(dateStr: string) {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+---
+
+<Layout title="Tech Translations - Viblo AI">
+  
+  <!-- Translations Header -->
+  <div class="flex items-center justify-between border-b border-hairline pb-3">
+    <div>
+      <h1 class="text-display-sm tracking-tight text-ink font-semibold">Tech Translations</h1>
+      <p class="text-body-sm text-body">Read and collaborate on community-translated technical articles.</p>
+    </div>
+    
+    <a 
+      href="/translations/publish"
+      class="h-8 px-4 bg-primary text-on-primary rounded-sm text-[12px] font-medium hover:bg-black transition-all shadow-level-3 flex items-center justify-center"
+    >
+      New Translation
+    </a>
+  </div>
+
+  <!-- Translations Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6" id="translations-list-container">
+    {defaultTranslations.map(t => {
+      const author = defaultUsers.find(u => u.id === t.authorId) || defaultUsers[0];
+      return (
+        <div 
+          class="bg-canvas border border-hairline rounded-md p-5 hover:shadow-level-3 hover:border-hairline-strong transition-all duration-200 shadow-level-2 flex flex-col justify-between gap-3 group"
+          data-translation-id={t.id}
+        >
+          <div class="flex flex-col gap-2">
+            <!-- Header Author metadata -->
+            <div class="flex items-center justify-between gap-2 text-mute text-xs">
+              <div class="flex items-center gap-1.5">
+                <div class={`w-5 h-5 rounded-full bg-gradient-to-tr ${author.avatarColor} text-white flex items-center justify-center text-[9px] font-bold`}>
+                  {author.displayName.charAt(0)}
+                </div>
+                <span>{author.displayName}</span>
+              </div>
+              <span class="px-1.5 py-0.5 rounded-sm bg-violet-soft/20 text-violet font-mono font-medium text-[10px]">
+                TO: {t.targetLang}
+              </span>
+            </div>
+
+            <!-- Title -->
+            <h3 class="text-body-sm-strong font-semibold text-ink group-hover:text-link transition-colors cursor-pointer translation-view-btn" data-translation-id={t.id}>
+              {t.title}
+            </h3>
+
+            <!-- Snippet -->
+            <p class="text-xs text-body line-clamp-2 leading-relaxed">
+              {t.content.substring(0, 150)}...
+            </p>
+          </div>
+
+          <!-- Footer source link & date -->
+          <div class="flex items-center justify-between border-t border-hairline/50 pt-2.5 mt-1 font-mono text-[10px] text-mute">
+            <a 
+              href={t.originalUrl} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              class="hover:text-ink hover:underline flex items-center gap-1 truncate max-w-[150px]"
+            >
+              Original Source &nearr;
+            </a>
+            <span>{formatDate(t.createdAt)}</span>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+
+  <!-- FULL ARTICLE DRAWER VIEW overlay -->
+  <div 
+    id="drawer-overlay" 
+    class="fixed inset-0 z-50 bg-primary/40 backdrop-blur-sm hidden justify-end transition-all duration-300"
+  >
+    <div 
+      class="bg-canvas border-l border-hairline w-full max-w-2xl h-full shadow-level-5 p-6 md:p-8 transform translate-x-full transition-transform duration-300 flex flex-col gap-5 overflow-y-auto"
+      id="drawer-card"
+    >
+      <div class="flex items-center justify-between border-b border-hairline pb-4">
+        <div class="flex flex-col gap-1">
+          <span class="px-2 py-0.5 bg-violet-soft/20 text-violet font-mono font-semibold text-[10px] rounded-xs self-start" id="drawer-lang">
+            TARGET LANG
+          </span>
+          <h2 class="text-display-sm tracking-tight text-ink font-semibold mt-1" id="drawer-title">
+            Translated Article Title
+          </h2>
+        </div>
+        <button 
+          type="button" 
+          id="drawer-close" 
+          class="text-mute hover:text-ink rounded-full w-8 h-8 flex items-center justify-center hover:bg-canvas-soft-2 text-xl transition-all"
+        >
+          &times;
+        </button>
+      </div>
+
+      <!-- Author and link info -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs border-b border-hairline pb-3">
+        <div class="flex items-center gap-2 text-mute">
+          <span>Translated by:</span>
+          <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-[#007cf0] to-[#00dfd8] text-white flex items-center justify-center text-[9px] font-bold" id="drawer-author-avatar">
+            U
+          </div>
+          <span class="font-medium text-ink" id="drawer-author-name">Author Name</span>
+        </div>
+        
+        <a 
+          href="#" 
+          id="drawer-original-url"
+          target="_blank" 
+          rel="noopener noreferrer" 
+          class="text-link hover:underline font-mono"
+        >
+          View original source URL &nearr;
+        </a>
+      </div>
+
+      <!-- Article Translation body content -->
+      <div class="prose max-w-none text-body-md text-ink leading-relaxed space-y-4 font-sans select-text" id="drawer-content-box">
+        <!-- Renders markdown translation -->
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" is:inline></script>
+
+  <script>
+    import { getDb, type Translation } from '../../utils/db';
+
+    let db = getDb();
+
+    // Render lists of translations
+    function renderTranslations() {
+      const container = document.getElementById('translations-list-container');
+      if (!container) return;
+
+      // Sort translations by newest
+      const list = [...db.translations].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-2 bg-canvas border border-hairline border-dashed rounded-md p-10 text-center text-mute text-body-sm font-mono shadow-level-1 py-12">
+            No translations posted yet. Translate a hot tech article now!
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = list.map(t => {
+        const author = db.users.find(u => u.id === t.authorId) || db.users[0];
+        const dateStr = new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+        return `
+          <div 
+            class="bg-canvas border border-hairline rounded-md p-5 hover:shadow-level-3 hover:border-hairline-strong transition-all duration-200 shadow-level-2 flex flex-col justify-between gap-3 group"
+          >
+            <div class="flex flex-col gap-2">
+              <!-- Header Author metadata -->
+              <div class="flex items-center justify-between gap-2 text-mute text-xs">
+                <div class="flex items-center gap-1.5">
+                  <div class="w-5 h-5 rounded-full bg-gradient-to-tr ${author.avatarColor} text-white flex items-center justify-center text-[9px] font-bold">
+                    ${author.displayName.charAt(0)}
+                  </div>
+                  <span>${author.displayName}</span>
+                </div>
+                <span class="px-1.5 py-0.5 rounded-sm bg-violet-soft/20 text-violet font-mono font-medium text-[10px]">
+                  TO: ${t.targetLang}
+                </span>
+              </div>
+
+              <!-- Title -->
+              <h3 class="text-body-sm-strong font-semibold text-ink group-hover:text-link transition-colors cursor-pointer translation-view-btn" data-translation-id="${t.id}">
+                ${t.title}
+              </h3>
+
+              <!-- Snippet -->
+              <p class="text-xs text-body line-clamp-2 leading-relaxed">
+                ${t.content.substring(0, 150)}...
+              </p>
+            </div>
+
+            <!-- Footer source link & date -->
+            <div class="flex items-center justify-between border-t border-hairline/50 pt-2.5 mt-1 font-mono text-[10px] text-mute">
+              <a 
+                href="${t.originalUrl}" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                class="hover:text-ink hover:underline flex items-center gap-1 truncate max-w-[150px]"
+              >
+                Original Source &nearr;
+              </a>
+              <span>${dateStr}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      attachClickListeners();
+    }
+
+    // Modal/Drawer Control UI Elements
+    const overlay = document.getElementById('drawer-overlay');
+    const drawerCard = document.getElementById('drawer-card');
+    const closeBtn = document.getElementById('drawer-close');
+
+    const drawerTitle = document.getElementById('drawer-title');
+    const drawerLang = document.getElementById('drawer-lang');
+    const drawerAuthorName = document.getElementById('drawer-author-name');
+    const drawerAuthorAvatar = document.getElementById('drawer-author-avatar');
+    const drawerOriginalUrl = document.getElementById('drawer-original-url') as HTMLAnchorElement;
+    const drawerContentBox = document.getElementById('drawer-content-box');
+
+    function openDrawer(transId: string) {
+      db = getDb();
+      const translation = db.translations.find(t => t.id === transId);
+      if (!translation || !overlay || !drawerCard) return;
+
+      const author = db.users.find(u => u.id === translation.authorId) || db.users[0];
+
+      // Hydrate drawer details
+      if (drawerTitle) drawerTitle.textContent = translation.title;
+      if (drawerLang) drawerLang.textContent = `TARGET LANGUAGE: ${translation.targetLang.toUpperCase()}`;
+      if (drawerAuthorName) drawerAuthorName.textContent = author.displayName;
+      if (drawerAuthorAvatar) {
+        drawerAuthorAvatar.textContent = author.displayName.charAt(0);
+        drawerAuthorAvatar.className = `w-5 h-5 rounded-full bg-gradient-to-tr ${author.avatarColor} text-white flex items-center justify-center text-[9px] font-bold`;
+      }
+      if (drawerOriginalUrl) {
+        drawerOriginalUrl.setAttribute('href', translation.originalUrl);
+        drawerOriginalUrl.textContent = `Source Link: ${translation.originalUrl} ↗`;
+      }
+
+      // Render Markdown content inside details box
+      if (drawerContentBox) {
+        // @ts-ignore
+        if (typeof marked !== 'undefined') {
+          // @ts-ignore
+          drawerContentBox.innerHTML = marked.parse(translation.content);
+        } else {
+          drawerContentBox.innerHTML = translation.content.split('\n').map(l => `<p>${l}</p>`).join('');
+        }
+      }
+
+      // Show overlay and slide drawer in
+      overlay.classList.remove('hidden');
+      overlay.classList.add('flex');
+      setTimeout(() => {
+        drawerCard.classList.remove('translate-x-full');
+        drawerCard.classList.add('translate-x-0');
+      }, 10);
+    }
+
+    function closeDrawer() {
+      if (!overlay || !drawerCard) return;
+
+      drawerCard.classList.remove('translate-x-0');
+      drawerCard.classList.add('translate-x-full');
+      setTimeout(() => {
+        overlay.classList.add('hidden');
+        overlay.classList.remove('flex');
+      }, 300);
+    }
+
+    function attachClickListeners() {
+      document.querySelectorAll('.translation-view-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const target = e.currentTarget as HTMLElement;
+          const transId = target.getAttribute('data-translation-id');
+          if (transId) openDrawer(transId);
+        });
+      });
+    }
+
+    if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
+    if (overlay) {
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeDrawer();
+      });
+    }
+
+    // Startup Execution
+    renderTranslations();
+  </script>
+</Layout>

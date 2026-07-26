@@ -1,0 +1,3 @@
+export const MEDICAL_DISCLAIMER = "For general reference only — not a clinical growth chart evaluation. Consult a pediatrician for medical growth assessment.";
+export const GROWTH_PLATE_DISCLAIMER = "Final adult height depends on when growth plates close, which can only be confirmed with a clinical bone-age X-ray. We use statistical averages, not your actual growth plate status.";
+export const PREDICTION_METHODOLOGY_DISCLAIMER = "This method calculates an estimated adult height based on parental heights, current height, age, and sex. It represents a statistical average and incorporates a 95% confidence range.";

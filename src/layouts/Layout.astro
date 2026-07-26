@@ -1,0 +1,395 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  wide?: boolean;
+  noSidebars?: boolean;
+}
+
+const { 
+  title = "Viblo AI - Tech Sharing & AI Assistant Community", 
+  description = "A stark developer technical platform matching Vercel's design language, powered by Astro and Google Gemini AI.",
+  wide = false,
+  noSidebars = false
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    
+    <!-- Load Inter/Geist fonts from Google Fonts fallback -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  </head>
+  <body class="bg-canvas-soft text-ink selection:bg-primary selection:text-canvas overflow-x-hidden font-sans">
+    <!-- Atmospheric Mesh Gradient behind hero/top area -->
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1400px] h-[350px] overflow-hidden pointer-events-none z-0">
+      <div class="mesh-gradient-bg w-full h-full"></div>
+    </div>
+
+    <!-- Main Navigation Bar -->
+    <header class="sticky top-0 z-40 w-full bg-canvas/80 backdrop-blur-md border-b border-hairline h-16 transition-all duration-200">
+      <div class="max-w-[1400px] mx-auto h-full px-4 md:px-6 flex items-center justify-between gap-4">
+        <!-- Logo / Brand -->
+        <a href="/" class="flex items-center gap-2.5 z-10 group" id="nav-logo-link">
+          <!-- Stark Logo Emblem (Arrow pointing up representing growth) -->
+          <div class="w-8 h-8 bg-primary rounded-md flex items-center justify-center transition-transform group-hover:scale-105 duration-200 shadow-level-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="19" x2="12" y2="5"></line>
+              <polyline points="5 12 12 5 19 12"></polyline>
+            </svg>
+          </div>
+          <div class="flex flex-col">
+            <span class="text-body-sm-strong font-semibold tracking-tight text-ink">Just<span class="bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 to-cyan-500">Tall</span></span>
+            <span class="text-[10px] font-mono text-mute leading-none tracking-widest uppercase">Growth Planner</span>
+          </div>
+        </a>
+
+        <!-- Middle space (removed search bar) -->
+        <div class="hidden md:flex flex-1"></div>
+
+        <!-- Right Side Nav Actions -->
+        <div class="flex items-center gap-2.5">
+          <!-- API Key Status Pill -->
+          <button 
+            type="button" 
+            id="api-settings-trigger"
+            class="flex items-center gap-2 h-8 px-3 rounded-pill-sm border border-hairline bg-canvas hover:border-hairline-strong transition-all duration-200 shadow-level-2 group"
+          >
+            <span class="relative flex h-2 w-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" id="api-indicator-ping"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500" id="api-indicator-dot"></span>
+            </span>
+            <span class="text-[12px] font-mono text-body group-hover:text-ink">AI Engine: <span id="api-indicator-text" class="text-red-500 font-semibold">Offline</span></span>
+          </button>
+
+          <!-- Action Button -->
+          <button 
+            type="button" 
+            id="nav-log-btn"
+            class="flex items-center justify-center h-8 px-3 bg-primary text-on-primary rounded-sm text-[13px] font-medium hover:bg-black transition-colors duration-200 shadow-level-3"
+          >
+            Log Height
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="max-w-[1400px] mx-auto px-4 md:px-6 py-6 md:py-8 relative z-10 min-h-[calc(100vh-64px)] flex flex-col">
+      <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <!-- Left Sidebar Navigation -->
+        {!noSidebars && (
+          <aside class="lg:col-span-2 hidden lg:flex flex-col gap-6" id="left-sidebar">
+            <nav class="flex flex-col gap-1">
+              <a 
+                href="/" 
+                class="flex items-center gap-3 px-3 py-2 text-body hover:text-ink hover:bg-canvas-soft-2 rounded-sm text-body-sm transition-colors duration-150"
+                id="menu-feed"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 19h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2z"></path>
+                  <path d="M12 11h4"></path>
+                  <path d="M12 15h4"></path>
+                  <path d="M8 11h.01"></path>
+                  <path d="M8 15h.01"></path>
+                </svg>
+                Post Feed
+              </a>
+              <a 
+                href="/questions" 
+                class="flex items-center gap-3 px-3 py-2 text-body hover:text-ink hover:bg-canvas-soft-2 rounded-sm text-body-sm transition-colors duration-150"
+                id="menu-questions"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                Q&A Forum
+              </a>
+              <a 
+                href="/translations" 
+                class="flex items-center gap-3 px-3 py-2 text-body hover:text-ink hover:bg-canvas-soft-2 rounded-sm text-body-sm transition-colors duration-150"
+                id="menu-translations"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                  <path d="M8 9h8"></path>
+                  <path d="M8 13h6"></path>
+                </svg>
+                Translations
+              </a>
+              <a 
+                href="/ai-assistant" 
+                class="flex items-center gap-3 px-3 py-2 text-violet hover:text-violet-deep hover:bg-violet-soft/20 rounded-sm text-body-sm-strong transition-colors duration-150 font-medium"
+                id="menu-ai"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                  <polyline points="2 17 12 22 22 17"></polyline>
+                  <polyline points="2 12 17 22 12"></polyline>
+                </svg>
+                AI Assistant
+              </a>
+              <a 
+                href="/justtall" 
+                class="flex items-center gap-3 px-3 py-2 text-body hover:text-ink hover:bg-canvas-soft-2 rounded-sm text-body-sm transition-colors duration-150"
+                id="menu-justtall"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="3" x2="6" y2="21"></line>
+                  <line x1="14" y1="3" x2="14" y2="21"></line>
+                  <line x1="10" y1="3" x2="10" y2="21"></line>
+                </svg>
+                JustTall
+              </a>
+              <hr class="border-hairline my-3" />
+              <button 
+                type="button"
+                id="menu-key-btn"
+                class="flex items-center gap-3 px-3 py-2 text-mute hover:text-ink rounded-sm text-[13px] text-left w-full transition-colors duration-150 font-mono"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                Config API Key
+              </button>
+            </nav>
+          </aside>
+        )}
+
+        <!-- Main Workspace Area -->
+        <main class={`${noSidebars ? 'lg:col-span-12' : (wide ? 'lg:col-span-10' : 'lg:col-span-7')} min-w-0 flex flex-col gap-6`}>
+          <slot />
+        </main>
+
+        <!-- Right Sidebar Widgets -->
+        {!noSidebars && !wide && (
+          <aside class="lg:col-span-3 hidden lg:flex flex-col gap-6" id="right-sidebar">
+            <!-- Sidebar Widgets get injected here on pages -->
+            <slot name="sidebar" />
+          </aside>
+        )}
+      </div>
+
+      <!-- Footer Bar -->
+      <footer class="mt-auto pt-16 pb-8 border-t border-hairline flex flex-col md:flex-row items-center justify-between gap-4 text-caption text-mute font-mono">
+        <div>
+          <span>&copy; 2026 JustTall. Science-backed growth optimization. Inspired by Vercel Design.</span>
+        </div>
+        <div class="flex items-center gap-4">
+          <a href="#" class="hover:text-ink transition-colors">Methodology</a>
+          <span>&bull;</span>
+          <a href="#" class="hover:text-ink transition-colors">Privacy Policy</a>
+          <span>&bull;</span>
+          <button type="button" class="hover:text-ink transition-colors text-left" id="reset-db-btn">Reset Application Data</button>
+        </div>
+      </footer>
+    </div>
+
+    <!-- API CONFIG MODAL -->
+    <div 
+      id="api-modal-overlay" 
+      class="fixed inset-0 z-50 bg-primary/40 backdrop-blur-sm hidden items-center justify-center p-4 transition-all duration-300"
+    >
+      <div 
+        class="bg-canvas border border-hairline w-full max-w-md rounded-lg shadow-level-5 p-6 transform scale-95 transition-all duration-300 flex flex-col gap-4"
+        id="api-modal-card"
+      >
+        <div class="flex items-center justify-between border-b border-hairline pb-3">
+          <h2 class="text-display-sm tracking-tight text-ink font-semibold flex items-center gap-2">
+            <svg class="text-violet" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            API Configurations
+          </h2>
+          <button 
+            type="button" 
+            id="api-modal-close" 
+            class="text-mute hover:text-ink rounded-full w-6 h-6 flex items-center justify-center hover:bg-canvas-soft-2 transition-all"
+          >
+            &times;
+          </button>
+        </div>
+        
+        <p class="text-body-sm text-body leading-relaxed">
+          Enter your <strong class="text-ink">Google Gemini API Key</strong> below to activate personalized wellness, exercise coaching, and nutritional advice.
+        </p>
+        
+        <div class="flex flex-col gap-2">
+          <label for="gemini-key-input" class="text-caption-mono text-mute font-medium">Gemini API Key</label>
+          <div class="relative">
+            <input 
+              type="password" 
+              id="gemini-key-input" 
+              placeholder="AIzaSy..." 
+              class="w-full h-10 bg-canvas-soft border border-hairline rounded-sm px-3 pr-10 text-body-sm text-ink placeholder:text-mute focus:outline-none focus:border-hairline-strong transition-colors"
+            />
+            <button 
+              type="button" 
+              id="toggle-key-visibility" 
+              class="absolute right-3 top-3 text-mute hover:text-body text-xs font-mono select-none"
+            >
+              SHOW
+            </button>
+          </div>
+          <span class="text-[11px] text-mute font-mono">
+            Stored locally in your browser cache. Never shared or sent to third parties.
+          </span>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-3 border-t border-hairline mt-2">
+          <button 
+            type="button" 
+            id="clear-api-key"
+            class="h-9 px-4 rounded-pill border border-hairline text-body text-[13px] font-medium hover:border-error hover:text-error transition-all"
+          >
+            Clear Key
+          </button>
+          <button 
+            type="button" 
+            id="save-api-key"
+            class="h-9 px-4 bg-primary text-on-primary rounded-pill text-[13px] font-medium hover:bg-black transition-all"
+          >
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Client-Side Key Management Script -->
+    <script>
+      function initApiKeyStatus() {
+        const key = localStorage.getItem('GEMINI_API_KEY');
+        const indicators = {
+          ping: document.getElementById('api-indicator-ping'),
+          dot: document.getElementById('api-indicator-dot'),
+          text: document.getElementById('api-indicator-text')
+        };
+        const keyInput = document.getElementById('gemini-key-input') as HTMLInputElement;
+
+        if (key && key.trim().length > 0) {
+          if (indicators.ping) indicators.ping.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75";
+          if (indicators.dot) indicators.dot.className = "relative inline-flex rounded-full h-2 w-2 bg-emerald-500";
+          if (indicators.text) {
+            indicators.text.textContent = "Active";
+            indicators.text.className = "text-emerald-500 font-semibold";
+          }
+          if (keyInput) keyInput.value = key;
+        } else {
+          if (indicators.ping) indicators.ping.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75";
+          if (indicators.dot) indicators.dot.className = "relative inline-flex rounded-full h-2 w-2 bg-red-500";
+          if (indicators.text) {
+            indicators.text.textContent = "Offline";
+            indicators.text.className = "text-red-500 font-semibold";
+          }
+          if (keyInput) keyInput.value = "";
+        }
+      }
+
+      const trigger = document.getElementById('api-settings-trigger');
+      const overlay = document.getElementById('api-modal-overlay');
+      const closeBtn = document.getElementById('api-modal-close');
+      const saveBtn = document.getElementById('save-api-key');
+      const clearBtn = document.getElementById('clear-api-key');
+      const keyInput = document.getElementById('gemini-key-input') as HTMLInputElement;
+      const toggleVis = document.getElementById('toggle-key-visibility');
+
+      function openModal() {
+        if (overlay) {
+          overlay.classList.remove('hidden');
+          overlay.classList.add('flex');
+          const key = localStorage.getItem('GEMINI_API_KEY') || "";
+          if (keyInput) keyInput.value = key;
+        }
+      }
+
+      function closeModal() {
+        if (overlay) {
+          overlay.classList.add('hidden');
+          overlay.classList.remove('flex');
+        }
+      }
+
+      if (trigger) trigger.addEventListener('click', openModal);
+      if (closeBtn) closeBtn.addEventListener('click', closeModal);
+      if (overlay) {
+        overlay.addEventListener('click', (e) => {
+          if (e.target === overlay) closeModal();
+        });
+      }
+
+      if (toggleVis && keyInput) {
+        toggleVis.addEventListener('click', () => {
+          if (keyInput.type === 'password') {
+            keyInput.type = 'text';
+            toggleVis.textContent = 'HIDE';
+          } else {
+            keyInput.type = 'password';
+            toggleVis.textContent = 'SHOW';
+          }
+        });
+      }
+
+      if (saveBtn && keyInput) {
+        saveBtn.addEventListener('click', () => {
+          const val = keyInput.value.trim();
+          if (val) {
+            localStorage.setItem('GEMINI_API_KEY', val);
+          } else {
+            localStorage.removeItem('GEMINI_API_KEY');
+          }
+          initApiKeyStatus();
+          closeModal();
+          window.dispatchEvent(new Event('api-key-updated'));
+        });
+      }
+
+      if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+          localStorage.removeItem('GEMINI_API_KEY');
+          if (keyInput) keyInput.value = "";
+          initApiKeyStatus();
+          closeModal();
+          window.dispatchEvent(new Event('api-key-updated'));
+        });
+      }
+
+      const resetDbBtn = document.getElementById('reset-db-btn');
+      if (resetDbBtn) {
+        resetDbBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          if (confirm('Are you sure you want to reset all JustTall application data? This will clear your metrics, height logs, and active streaks.')) {
+            localStorage.removeItem('justtall_profile');
+            localStorage.removeItem('justtall_logs');
+            localStorage.removeItem('justtall_habits');
+            window.location.reload();
+          }
+        });
+      }
+
+      const logHeightBtn = document.getElementById('nav-log-btn');
+      if (logHeightBtn) {
+        logHeightBtn.addEventListener('click', () => {
+          window.dispatchEvent(new CustomEvent('open-log-height-dialog'));
+        });
+      }
+
+      initApiKeyStatus();
+      document.addEventListener('astro:after-swap', initApiKeyStatus);
+    </script>
+  </body>
+</html>

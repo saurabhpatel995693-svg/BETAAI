@@ -1,0 +1,15 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+.astro/
+
+# logs & temp files
+*.log
+.DS_Store
+
+# external projects / sibling folders
+supoclip/
+OpenManus/
+CL4R1T4S/
