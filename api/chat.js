@@ -48,19 +48,13 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: { message: 'Method not allowed' } });
 
-  // Parse the request body — Vercel may or may not auto-parse req.body
+  // Parse the request body — Vercel auto-parses JSON for POST requests
   let payload;
   try {
-    if (req.body && typeof req.body === 'object' && Object.keys(req.body).length > 0) {
-      payload = req.body;
+    if (req.body) {
+      payload = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
     } else {
-      const raw = await new Promise((resolve, reject) => {
-        let data = '';
-        req.on('data', chunk => { data += chunk; });
-        req.on('end', () => resolve(data));
-        req.on('error', reject);
-      });
-      payload = JSON.parse(raw || '{}');
+      payload = {};
     }
   } catch (e) {
     return res.status(400).json({ error: { message: 'Invalid JSON body' } });
