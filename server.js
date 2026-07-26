@@ -102,47 +102,71 @@ const server = http.createServer(async (req, res) => {
 
     const targets = [];
 
-    if (customBase || customKey) {
-      let baseUrl = (customBase || 'https://openrouter.ai/api/v1').replace(/\/$/, '');
-      if (!baseUrl.endsWith('/chat/completions')) {
-        baseUrl = `${baseUrl}/chat/completions`;
+    if (customKey || customBase || customModel) {
+      let baseUrl = customBase ? customBase.trim().replace(/\/$/, '') : '';
+      let targetModel = customModel || rawModel;
+
+      if (!baseUrl) {
+        if (customKey.startsWith('AIza')) {
+          baseUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
+          if (!targetModel) targetModel = 'gemini-2.5-flash';
+        } else if (customKey.startsWith('gsk_')) {
+          baseUrl = 'https://api.groq.com/openai/v1/chat/completions';
+          if (!targetModel) targetModel = 'llama-3.3-70b-versatile';
+        } else if (customKey.startsWith('xai-')) {
+          baseUrl = 'https://api.x.ai/v1/chat/completions';
+          if (!targetModel) targetModel = 'grok-3-mini';
+        } else if (customKey.startsWith('nvapi-')) {
+          baseUrl = 'https://integrate.api.nvidia.com/v1/chat/completions';
+          if (!targetModel) targetModel = 'meta/llama-3.1-70b-instruct';
+        } else {
+          baseUrl = 'https://openrouter.ai/api/v1/chat/completions';
+          if (!targetModel) targetModel = isCodingMode ? 'google/gemini-2.5-flash:free' : 'meta-llama/llama-3.3-70b-instruct:free';
+        }
+      } else {
+        if (!baseUrl.endsWith('/chat/completions') && !baseUrl.includes('/generateContent')) {
+          baseUrl += '/chat/completions';
+        }
       }
+
       targets.push({
-        name: 'custom-provider',
+        name: 'User-Custom',
         url: baseUrl,
-        key: customKey || clientOpenRouterKey || clientGeminiKey,
-        model: customModel || rawModel || (isCodingMode ? 'google/gemini-2.5-flash:free' : 'meta-llama/llama-3.3-70b-instruct:free')
+        key: customKey,
+        model: targetModel || (isCodingMode ? 'google/gemini-2.5-flash:free' : 'meta-llama/llama-3.3-70b-instruct:free')
       });
-      const grokKey = clientGrokKey || process.env.GROQ_KEY || process.env.GROK_KEY || '';
-      if (grokKey) {
-        targets.push({
-          name: 'Grok-Groq-Primary',
-          url: grokKey.startsWith('xai-') ? 'https://api.x.ai/v1/chat/completions' : 'https://api.groq.com/openai/v1/chat/completions',
-          key: grokKey,
-          model: 'llama-3.3-70b-versatile'
-        });
-      }
+    }
 
-      const geminiKey = clientGeminiKey || process.env.GEMINI_KEY || '';
-      if (geminiKey) {
-        targets.push({
-          name: 'Gemini-Flash-Primary',
-          url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
-          key: geminiKey,
-          model: 'gemini-2.5-flash'
-        });
-      }
+    const grokKey = clientGrokKey || process.env.GROQ_KEY || process.env.GROK_KEY || '';
+    if (grokKey) {
+      targets.push({
+        name: 'Grok-Groq-Primary',
+        url: grokKey.startsWith('xai-') ? 'https://api.x.ai/v1/chat/completions' : 'https://api.groq.com/openai/v1/chat/completions',
+        key: grokKey,
+        model: 'llama-3.3-70b-versatile'
+      });
+    }
 
-      const openRouterKey = clientOpenRouterKey || process.env.OPENROUTER_KEY || '';
-      if (openRouterKey) {
-        targets.push({
-          name: 'OpenRouter-Primary',
-          url: 'https://openrouter.ai/api/v1/chat/completions',
-          key: openRouterKey,
-          model: isCodingMode ? 'qwen/qwen-2.5-coder-32b-instruct:free' : 'google/gemini-2.5-flash:free',
-          headers: { 'X-Title': 'BETAAI' }
-        });
-      }
+    const geminiKey = clientGeminiKey || process.env.GEMINI_KEY || '';
+    if (geminiKey) {
+      targets.push({
+        name: 'Gemini-Flash-Primary',
+        url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+        key: geminiKey,
+        model: 'gemini-2.5-flash'
+      });
+    }
+
+    const openRouterKey = clientOpenRouterKey || process.env.OPENROUTER_KEY || '';
+    if (openRouterKey) {
+      targets.push({
+        name: 'OpenRouter-Primary',
+        url: 'https://openrouter.ai/api/v1/chat/completions',
+        key: openRouterKey,
+        model: isCodingMode ? 'qwen/qwen-2.5-coder-32b-instruct:free' : 'google/gemini-2.5-flash:free',
+        headers: { 'X-Title': 'BETAAI' }
+      });
+    }
 
     for (const target of targets) {
       try {

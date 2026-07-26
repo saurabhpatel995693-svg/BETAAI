@@ -288,48 +288,40 @@ export default async function handler(req, res) {
 
   const targets = [];
 
-  // TIER 1: Custom user key (highest priority — Settings modal)
-  if (clientCustomKey) {
-    let baseUrl = (clientCustomBase || 'https://openrouter.ai/api/v1').replace(/\/$/, '');
-    if (!baseUrl.endsWith('/chat/completions')) baseUrl += '/chat/completions';
+  // TIER 1: Custom user key & endpoint (highest priority — Settings modal)
+  if (clientCustomKey || clientCustomBase || clientCustomModel) {
+    let baseUrl = clientCustomBase ? clientCustomBase.trim().replace(/\/$/, '') : '';
+    let targetModel = clientCustomModel || rawModel;
+
+    if (!baseUrl) {
+      if (clientCustomKey.startsWith('AIza')) {
+        baseUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
+        if (!targetModel) targetModel = 'gemini-2.5-flash';
+      } else if (clientCustomKey.startsWith('gsk_')) {
+        baseUrl = 'https://api.groq.com/openai/v1/chat/completions';
+        if (!targetModel) targetModel = 'llama-3.3-70b-versatile';
+      } else if (clientCustomKey.startsWith('xai-')) {
+        baseUrl = 'https://api.x.ai/v1/chat/completions';
+        if (!targetModel) targetModel = 'grok-3-mini';
+      } else if (clientCustomKey.startsWith('nvapi-')) {
+        baseUrl = 'https://integrate.api.nvidia.com/v1/chat/completions';
+        if (!targetModel) targetModel = 'meta/llama-3.1-70b-instruct';
+      } else {
+        baseUrl = 'https://openrouter.ai/api/v1/chat/completions';
+        if (!targetModel) targetModel = isCodingMode ? 'google/gemini-2.5-flash:free' : 'meta-llama/llama-3.3-70b-instruct:free';
+      }
+    } else {
+      if (!baseUrl.endsWith('/chat/completions') && !baseUrl.includes('/generateContent')) {
+        baseUrl += '/chat/completions';
+      }
+    }
+
     targets.push({
       name: 'User-Custom',
       url: baseUrl,
       key: clientCustomKey,
-      model: clientCustomModel || (isCodingMode ? 'google/gemini-2.5-flash:free' : 'meta-llama/llama-3.3-70b-instruct:free')
+      model: targetModel || (isCodingMode ? 'google/gemini-2.5-flash:free' : 'meta-llama/llama-3.3-70b-instruct:free')
     });
-  }
-
-  // ── TIER 1b: Pollinations AI — ALWAYS active, zero API key, real AI ──
-  // Try this FIRST before keyed providers so all users get real responses
-  try {
-    const pollRes = await tryPollinationsAI(messages, isCodingMode, wantsStream);
-    if (wantsStream && pollRes.body) {
-      res.setHeader('Content-Type', 'text/event-stream');
-      res.setHeader('Cache-Control', 'no-cache, no-transform');
-      res.setHeader('Connection', 'keep-alive');
-      try {
-        if (typeof Readable.fromWeb === 'function') {
-          Readable.fromWeb(pollRes.body).pipe(res);
-          return;
-        }
-      } catch (_) {}
-      const reader = pollRes.body.getReader();
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        res.write(value);
-      }
-      res.end();
-      return;
-    }
-    const pollData = await pollRes.json();
-    if (pollData?.choices?.[0]?.message?.content) {
-      return res.status(200).json(pollData);
-    }
-  } catch (pollErr) {
-    console.warn('[BETAAI] Pollinations primary attempt failed:', pollErr.message);
-    // Continue to keyed providers below
   }
 
   // TIER 2: Groq (GROQ_KEY env or xai key) — fastest free responses

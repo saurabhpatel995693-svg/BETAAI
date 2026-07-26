@@ -787,16 +787,19 @@ window.toggleKeyVisibility = toggleKeyVisibility;
 let repoKnowledge = {};
 
 function getValidKey(userKey, defaultKey) {
-  if (userKey && typeof userKey === 'string' && userKey.trim().length > 5) {
-    const k = userKey.trim();
-    if (k.startsWith('sk-or-v1-') || k.startsWith('nvapi-')) return k;
+  if (userKey && typeof userKey === 'string' && userKey.trim().length > 0) {
+    return userKey.trim();
   }
-  return defaultKey;
+  return defaultKey || '';
 }
 
 let isVibeChat = false;
 
-function getCustomKey() { return document.getElementById('custom-api-key')?.value?.trim() || localStorage.getItem('betaai_custom_key') || ''; }
+function getCustomKey() {
+  const elVal = document.getElementById('custom-api-key')?.value?.trim();
+  if (elVal) return elVal;
+  return localStorage.getItem('betaai_custom_key') || localStorage.getItem('GEMINI_API_KEY') || '';
+}
 function getCustomBase() { return document.getElementById('custom-api-base')?.value?.trim() || localStorage.getItem('betaai_custom_base') || ''; }
 function getCustomModel() { return document.getElementById('custom-api-model')?.value?.trim() || localStorage.getItem('betaai_custom_model') || ''; }
 
@@ -2284,8 +2287,12 @@ document.getElementById('save-settings').onclick = () => {
   const customBase = document.getElementById('custom-api-base')?.value?.trim() || '';
   const customModel = document.getElementById('custom-api-model')?.value?.trim() || '';
 
-  if (customKey) localStorage.setItem('betaai_custom_key', customKey);
-  else localStorage.removeItem('betaai_custom_key');
+  if (customKey) {
+    localStorage.setItem('betaai_custom_key', customKey);
+    localStorage.setItem('GEMINI_API_KEY', customKey);
+  } else {
+    localStorage.removeItem('betaai_custom_key');
+  }
 
   if (customBase) localStorage.setItem('betaai_custom_base', customBase);
   else localStorage.removeItem('betaai_custom_base');
@@ -2306,7 +2313,7 @@ document.getElementById('save-settings').onclick = () => {
 
 // Load saved settings
 (function() {
-  const k = localStorage.getItem('betaai_custom_key');
+  const k = localStorage.getItem('betaai_custom_key') || localStorage.getItem('GEMINI_API_KEY');
   const b = localStorage.getItem('betaai_custom_base');
   const m = localStorage.getItem('betaai_custom_model');
   if (k && document.getElementById('custom-api-key')) document.getElementById('custom-api-key').value = k;
