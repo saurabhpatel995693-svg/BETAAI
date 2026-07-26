@@ -21,24 +21,30 @@ async function fetchWithTimeout(url, options, timeoutMs = 10000) {
 }
 
 // ─── FREE providers that work WITHOUT any API key ─────────────────
-async function tryPollinationsAI(messages, model = 'openai') {
-  // Pollinations AI — completely free, no API key required
-  try {
-    const res = await fetchWithTimeout('https://text.pollinations.ai/openai', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messages,
-        model,
-        temperature: 0.7,
-        max_tokens: 2048
-      })
-    }, 12000);
-    if (!res.ok) throw new Error(`Pollinations: ${res.status}`);
-    return await res.json();
-  } catch (err) {
-    throw new Error(`Pollinations failed: ${err.message}`);
+// Pollinations AI: completely free, no registration, real GPT-4o & Claude responses
+async function tryPollinationsAI(messages, isCoding = false, wantsStream = false) {
+  // Model selection: use openai (GPT-4o) for chat, openai for coding too
+  const model = isCoding ? 'openai' : 'openai';
+  const body = JSON.stringify({
+    messages,
+    model,
+    temperature: 0.7,
+    max_tokens: 4096,
+    stream: wantsStream,
+    seed: Math.floor(Math.random() * 99999)
+  });
+
+  const res = await fetchWithTimeout('https://text.pollinations.ai/openai', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': wantsStream ? 'text/event-stream' : 'application/json' },
+    body
+  }, 20000);
+
+  if (!res.ok) {
+    const txt = await res.text().catch(() => '');
+    throw new Error(`Pollinations (${res.status}): ${txt.substring(0, 100)}`);
   }
+  return res; // return raw Response so caller can handle stream or json
 }
 
 // ─── Built-in Smart Synthesis Engine (always works as final fallback) ──
@@ -294,6 +300,38 @@ export default async function handler(req, res) {
     });
   }
 
+  // ── TIER 1b: Pollinations AI — ALWAYS active, zero API key, real AI ──
+  // Try this FIRST before keyed providers so all users get real responses
+  try {
+    const pollRes = await tryPollinationsAI(messages, isCodingMode, wantsStream);
+    if (wantsStream && pollRes.body) {
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache, no-transform');
+      res.setHeader('Connection', 'keep-alive');
+      try {
+        if (typeof Readable.fromWeb === 'function') {
+          Readable.fromWeb(pollRes.body).pipe(res);
+          return;
+        }
+      } catch (_) {}
+      const reader = pollRes.body.getReader();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        res.write(value);
+      }
+      res.end();
+      return;
+    }
+    const pollData = await pollRes.json();
+    if (pollData?.choices?.[0]?.message?.content) {
+      return res.status(200).json(pollData);
+    }
+  } catch (pollErr) {
+    console.warn('[BETAAI] Pollinations primary attempt failed:', pollErr.message);
+    // Continue to keyed providers below
+  }
+
   // TIER 2: Groq (GROQ_KEY env or xai key) — fastest free responses
   if (grokKey) {
     const isXai = grokKey.startsWith('xai-');
@@ -400,16 +438,15 @@ export default async function handler(req, res) {
     }
   }
 
-  // TIER 7: Pollinations AI — always-free, no key required
-  if (targets.length === 0 || lastErr) {
-    try {
-      const data = await tryPollinationsAI(messages, isCodingMode ? 'openai' : 'openai');
-      if (data?.choices?.[0]?.message?.content) {
-        return res.status(200).json(data);
-      }
-    } catch (pollErr) {
-      console.warn('[BETAAI] Pollinations failed:', pollErr.message);
+  // TIER 7: Pollinations AI — retry as final keyed fallback
+  try {
+    const pollRes2 = await tryPollinationsAI(messages, isCodingMode, false);
+    const pollData2 = await pollRes2.json();
+    if (pollData2?.choices?.[0]?.message?.content) {
+      return res.status(200).json(pollData2);
     }
+  } catch (pollErr2) {
+    console.warn('[BETAAI] Pollinations retry failed:', pollErr2.message);
   }
 
   // TIER 8: Built-in synthesis engine — guaranteed response
