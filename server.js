@@ -20,6 +20,13 @@ const MIME_TYPES = {
 
 const PROVIDERS = [
   {
+    name: 'groq',
+    url: 'https://api.groq.com/openai/v1/chat/completions',
+    key: process.env.GROQ_KEY || process.env.GROK_KEY || '',
+    models: ['llama-3.3-70b-versatile', 'llama3-8b-8192'],
+    timeout: 3500
+  },
+  {
     name: 'openrouter',
     url: 'https://openrouter.ai/api/v1/chat/completions',
     key: process.env.OPENROUTER_KEY || process.env.GEMINI_KEY || '',
@@ -33,13 +40,6 @@ const PROVIDERS = [
     key: process.env.NVIDIA_KEY || '',
     models: ['meta/llama-3.1-70b-instruct', 'meta/llama-3.1-8b-instruct'],
     timeout: 4000
-  },
-  {
-    name: 'coding',
-    url: process.env.CODING_API_URL || 'https://api.siliconflow.cn/v1/chat/completions',
-    key: process.env.CODING_API_KEY || '',
-    models: ['Qwen/Qwen2.5-Coder-32B-Instruct', 'deepseek-ai/DeepSeek-V3'],
-    timeout: 5000
   }
 ];
 

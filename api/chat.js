@@ -1,9 +1,13 @@
-// BETAAI Vercel Serverless AI Proxy
-// Multi-tier failover: NVIDIA NIM -> OpenRouter -> SiliconFlow/other
-// Supports streaming (SSE) and non-streaming responses.
-
 const PROVIDERS = [
-  // Tier 1: OpenRouter (Instant streaming, ultra-low latency)
+  // Tier 1: Groq LPU Engine (Ultra-fast 500+ tok/sec for Chat & Notebooks)
+  {
+    name: 'groq',
+    url: 'https://api.groq.com/openai/v1/chat/completions',
+    key: process.env.GROQ_KEY || process.env.GROK_KEY || '',
+    models: ['llama-3.3-70b-versatile', 'llama3-8b-8192'],
+    timeout: 3500
+  },
+  // Tier 2: OpenRouter (Instant streaming)
   {
     name: 'openrouter',
     url: 'https://openrouter.ai/api/v1/chat/completions',
@@ -12,21 +16,13 @@ const PROVIDERS = [
     timeout: 4000,
     extraHeaders: { 'X-Title': 'BETAAI' }
   },
-  // Tier 2: NVIDIA NIM (Fast secondary fallback)
+  // Tier 3: NVIDIA NIM
   {
     name: 'nvidia',
     url: 'https://integrate.api.nvidia.com/v1/chat/completions',
     key: process.env.NVIDIA_KEY || '',
     models: ['meta/llama-3.1-70b-instruct', 'meta/llama-3.1-8b-instruct'],
     timeout: 4000
-  },
-  // Tier 3: Coding provider
-  {
-    name: 'coding',
-    url: process.env.CODING_API_URL || 'https://api.siliconflow.cn/v1/chat/completions',
-    key: process.env.CODING_API_KEY || '',
-    models: ['Qwen/Qwen2.5-Coder-32B-Instruct', 'deepseek-ai/DeepSeek-V3'],
-    timeout: 5000
   }
 ];
 
