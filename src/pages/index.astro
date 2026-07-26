@@ -611,35 +611,27 @@ import '../styles/global.css';
       <h3 class="text-display-sm text-themed-ink">Settings.</h3>
       <button id="close-settings" class="text-themed-mute hover:text-themed-ink text-lg">✕</button>
     </div>
-    <!-- BYOK Section -->
+    <!-- Single Custom API Key & Provider Settings -->
     <div class="surface-card2 rounded-md p-4 border border-themed space-y-3">
       <div class="border-b border-themed pb-2">
         <div class="flex items-center justify-between">
-          <h4 class="text-xs font-semibold text-themed-ink uppercase tracking-wider flex items-center gap-1.5">🔑 Personal API Key Fallback (Optional)</h4>
+          <h4 class="text-xs font-semibold text-themed-ink uppercase tracking-wider flex items-center gap-1.5">🔑 Personal API Key & Model Endpoint (Optional)</h4>
           <span class="text-[10px] font-mono text-cyan">Quota Protection</span>
         </div>
-        <p class="text-[11px] text-themed-mute mt-1">BETAAI uses built-in keys by default. If quota limits are reached, enter your personal API key here to continue uninterrupted.</p>
+        <p class="text-[11px] text-themed-mute mt-1">BETAAI works out-of-the-box using built-in keys. If quota limits are reached, enter your personal API key or custom provider endpoint here.</p>
       </div>
-      <div class="grid gap-2 text-xs">
+      <div class="grid gap-2.5 text-xs">
         <div>
-          <label class="block text-[11px] font-medium mb-1 text-themed-ink">Gemini API Key</label>
-          <input type="password" id="byok-gemini" placeholder="AIzaSy..." class="w-full h-8 px-2.5 surface-card border border-themed rounded-sm text-xs font-mono text-themed-ink focus:outline-none"/>
+          <label class="block text-[11px] font-medium mb-1 text-themed-ink">API Key</label>
+          <input type="password" id="custom-api-key" placeholder="sk-... or AIzaSy... or gsk_..." class="w-full h-8 px-2.5 surface-card border border-themed rounded-sm text-xs font-mono text-themed-ink focus:outline-none"/>
         </div>
         <div>
-          <label class="block text-[11px] font-medium mb-1 text-themed-ink">Grok / Groq API Key</label>
-          <input type="password" id="byok-grok" placeholder="gsk_... or xai-..." class="w-full h-8 px-2.5 surface-card border border-themed rounded-sm text-xs font-mono text-themed-ink focus:outline-none"/>
+          <label class="block text-[11px] font-medium mb-1 text-themed-ink">Base URL (Optional)</label>
+          <input type="text" id="custom-api-base" placeholder="https://openrouter.ai/api/v1 (or your proxy / Ollama endpoint)" class="w-full h-8 px-2.5 surface-card border border-themed rounded-sm text-xs font-mono text-themed-ink focus:outline-none"/>
         </div>
         <div>
-          <label class="block text-[11px] font-medium mb-1 text-themed-ink">OpenRouter API Key</label>
-          <input type="password" id="byok-openrouter" placeholder="sk-or-v1-..." class="w-full h-8 px-2.5 surface-card border border-themed rounded-sm text-xs font-mono text-themed-ink focus:outline-none"/>
-        </div>
-        <div>
-          <label class="block text-[11px] font-medium mb-1 text-themed-ink">NVIDIA NIM Key</label>
-          <input type="password" id="byok-nvidia" placeholder="nvapi-..." class="w-full h-8 px-2.5 surface-card border border-themed rounded-sm text-xs font-mono text-themed-ink focus:outline-none"/>
-        </div>
-        <div>
-          <label class="block text-[11px] font-medium mb-1 text-themed-ink">Ollama Host URL</label>
-          <input type="text" id="byok-ollama" placeholder="http://localhost:11434" class="w-full h-8 px-2.5 surface-card border border-themed rounded-sm text-xs font-mono text-themed-ink focus:outline-none"/>
+          <label class="block text-[11px] font-medium mb-1 text-themed-ink">Model ID (Optional)</label>
+          <input type="text" id="custom-api-model" placeholder="google/gemini-2.5-flash:free or llama-3.3-70b" class="w-full h-8 px-2.5 surface-card border border-themed rounded-sm text-xs font-mono text-themed-ink focus:outline-none"/>
         </div>
       </div>
     </div>
@@ -802,19 +794,16 @@ function getValidKey(userKey, defaultKey) {
 
 let isVibeChat = false;
 
-function getBYOK(provider) {
-  const elem = document.getElementById(`byok-${provider}`);
-  if (elem && elem.value.trim()) return elem.value.trim();
-  const byokObj = JSON.parse(localStorage.getItem('betaai_byok') || '{}');
-  return byokObj[provider] || '';
-}
+function getCustomKey() { return document.getElementById('custom-api-key')?.value?.trim() || localStorage.getItem('betaai_custom_key') || ''; }
+function getCustomBase() { return document.getElementById('custom-api-base')?.value?.trim() || localStorage.getItem('betaai_custom_base') || ''; }
+function getCustomModel() { return document.getElementById('custom-api-model')?.value?.trim() || localStorage.getItem('betaai_custom_model') || ''; }
 
 function getAPIKey() {
-  const userEnteredKey = getBYOK('openrouter') || document.getElementById('s-api-key')?.value;
+  const userEnteredKey = getCustomKey() || document.getElementById('s-api-key')?.value;
   return getValidKey(userEnteredKey, DEFAULT_API_KEY);
 }
-function getModel() { return document.getElementById('model-select').value; }
-function getApiBaseUrl() { return document.getElementById('s-api-base')?.value?.trim() || localStorage.getItem('betaai_api_base') || 'https://openrouter.ai/api/v1'; }
+function getModel() { return getCustomModel() || document.getElementById('model-select').value; }
+function getApiBaseUrl() { return getCustomBase() || document.getElementById('s-api-base')?.value?.trim() || localStorage.getItem('betaai_api_base') || 'https://openrouter.ai/api/v1'; }
 
 /* ═══════════════════════════════════════════════════
    High-Availability API Key Failover Core
@@ -826,14 +815,12 @@ async function fetchChatCompletion(config, bodyParams, signal = null) {
     : config.base + '/chat/completions';
 
   const headers = {
-    'Authorization': 'Bearer ' + apiKey,
+    'Authorization': 'Bearer ' + (getCustomKey() || apiKey),
     'Content-Type': 'application/json',
     'X-Title': 'BETAAI',
-    'x-gemini-key': getBYOK('gemini'),
-    'x-grok-key': getBYOK('grok'),
-    'x-openrouter-key': getBYOK('openrouter'),
-    'x-nvidia-key': getBYOK('nvidia'),
-    'x-ollama-host': getBYOK('ollama') || 'http://localhost:11434'
+    'x-custom-key': getCustomKey(),
+    'x-custom-base': getCustomBase(),
+    'x-custom-model': getCustomModel()
   };
 
   const res = await fetch(endpoint, {
@@ -843,11 +830,9 @@ async function fetchChatCompletion(config, bodyParams, signal = null) {
     body: JSON.stringify({
       key: apiKey,
       model: config.model,
-      geminiKey: getBYOK('gemini'),
-      grokKey: getBYOK('grok'),
-      openrouterKey: getBYOK('openrouter'),
-      nvidiaKey: getBYOK('nvidia'),
-      ollamaHost: getBYOK('ollama'),
+      customKey: getCustomKey(),
+      customBase: getCustomBase(),
+      customModel: getCustomModel(),
       mode: (isVibeChat || config.mode === 'code') ? 'code' : 'general',
       ...bodyParams
     })
@@ -2155,14 +2140,18 @@ document.getElementById('settings-modal').onclick = e => { if(e.target===e.curre
 document.getElementById('s-temperature').oninput = function() { document.getElementById('temp-val').textContent = this.value; };
 
 document.getElementById('save-settings').onclick = () => {
-  const byok = {
-    gemini: document.getElementById('byok-gemini')?.value || '',
-    grok: document.getElementById('byok-grok')?.value || '',
-    openrouter: document.getElementById('byok-openrouter')?.value || '',
-    nvidia: document.getElementById('byok-nvidia')?.value || '',
-    ollama: document.getElementById('byok-ollama')?.value || 'http://localhost:11434'
-  };
-  localStorage.setItem('betaai_byok', JSON.stringify(byok));
+  const customKey = document.getElementById('custom-api-key')?.value?.trim() || '';
+  const customBase = document.getElementById('custom-api-base')?.value?.trim() || '';
+  const customModel = document.getElementById('custom-api-model')?.value?.trim() || '';
+
+  if (customKey) localStorage.setItem('betaai_custom_key', customKey);
+  else localStorage.removeItem('betaai_custom_key');
+
+  if (customBase) localStorage.setItem('betaai_custom_base', customBase);
+  else localStorage.removeItem('betaai_custom_base');
+
+  if (customModel) localStorage.setItem('betaai_custom_model', customModel);
+  else localStorage.removeItem('betaai_custom_model');
 
   localStorage.setItem('betaai_settings', JSON.stringify({
     githubToken: document.getElementById('s-github-token')?.value || '',
@@ -2171,18 +2160,18 @@ document.getElementById('save-settings').onclick = () => {
     maxTokens: document.getElementById('s-max-tokens')?.value || '4096',
     model: getModel()
   }));
-  toast('Settings & BYOK keys saved locally!','success');
+  toast('Settings saved successfully!','success');
   document.getElementById('settings-modal').classList.add('hidden');
 };
 
-// Load saved settings & BYOK
+// Load saved settings
 (function() {
-  const byok = JSON.parse(localStorage.getItem('betaai_byok') || '{}');
-  if (byok.gemini && document.getElementById('byok-gemini')) document.getElementById('byok-gemini').value = byok.gemini;
-  if (byok.grok && document.getElementById('byok-grok')) document.getElementById('byok-grok').value = byok.grok;
-  if (byok.openrouter && document.getElementById('byok-openrouter')) document.getElementById('byok-openrouter').value = byok.openrouter;
-  if (byok.nvidia && document.getElementById('byok-nvidia')) document.getElementById('byok-nvidia').value = byok.nvidia;
-  if (byok.ollama && document.getElementById('byok-ollama')) document.getElementById('byok-ollama').value = byok.ollama;
+  const k = localStorage.getItem('betaai_custom_key');
+  const b = localStorage.getItem('betaai_custom_base');
+  const m = localStorage.getItem('betaai_custom_model');
+  if (k && document.getElementById('custom-api-key')) document.getElementById('custom-api-key').value = k;
+  if (b && document.getElementById('custom-api-base')) document.getElementById('custom-api-base').value = b;
+  if (m && document.getElementById('custom-api-model')) document.getElementById('custom-api-model').value = m;
 
   const s = JSON.parse(localStorage.getItem('betaai_settings') || '{}');
   if (s.githubToken && document.getElementById('s-github-token')) document.getElementById('s-github-token').value = s.githubToken;

@@ -72,177 +72,118 @@ async function tryProvider(provider, model, body, wantsStream) {
 const server = http.createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-gemini-key, x-grok-key, x-openrouter-key, x-nvidia-key, x-ollama-host');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-custom-key, x-custom-base, x-custom-model, x-gemini-key, x-grok-key, x-openrouter-key, x-nvidia-key, x-ollama-host');
 
   if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
 
   if (req.url === '/api/chat' && req.method === 'POST') {
-    let body = '';
-    req.on('data', chunk => { body += chunk; });
-    req.on('end', async () => {
-      let payload;
-      try { payload = JSON.parse(body || '{}'); } catch (e) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: { message: 'Invalid JSON' } }));
-        return;
+    let payload = {};
+    try {
+      let bodyStr = '';
+      req.on('data', chunk => { bodyStr += chunk; });
+      await new Promise(resolve => req.on('end', resolve));
+      if (bodyStr) payload = JSON.parse(bodyStr);
+    } catch (e) { payload = {}; }
+
+    const messages = payload.messages || [];
+    const rawModel = payload.model || '';
+    const wantsStream = payload.stream === true;
+    let lastErr = '';
+
+    const customKey = req.headers['x-custom-key'] || payload.customKey || req.headers['authorization']?.replace(/^Bearer\s+/i, '').trim() || '';
+    let customBase = req.headers['x-custom-base'] || payload.customBase || '';
+    const customModel = req.headers['x-custom-model'] || payload.customModel || '';
+
+    const clientGeminiKey = req.headers['x-gemini-key'] || payload.geminiKey || process.env.GEMINI_KEY || '';
+    const clientGrokKey = req.headers['x-grok-key'] || payload.grokKey || process.env.GROK_KEY || process.env.GROQ_KEY || '';
+    const clientOpenRouterKey = req.headers['x-openrouter-key'] || payload.openrouterKey || process.env.OPENROUTER_KEY || '';
+
+    const isCodingMode = payload.mode === 'code' || rawModel.includes('coder') || rawModel.includes('coding');
+
+    const targets = [];
+
+    if (customBase || customKey) {
+      let baseUrl = (customBase || 'https://openrouter.ai/api/v1').replace(/\/$/, '');
+      if (!baseUrl.endsWith('/chat/completions')) {
+        baseUrl = `${baseUrl}/chat/completions`;
       }
+      targets.push({
+        name: 'custom-provider',
+        url: baseUrl,
+        key: customKey || clientOpenRouterKey || clientGeminiKey,
+        model: customModel || rawModel || (isCodingMode ? 'google/gemini-2.5-flash:free' : 'meta-llama/llama-3.3-70b-instruct:free')
+      });
+    }
 
-      try {
-        const messages = payload.messages || [];
-        const rawModel = payload.model || '';
-        const wantsStream = payload.stream === true;
-        let lastErr = null;
+    if (clientGrokKey) {
+      targets.push({
+        name: 'groq',
+        url: clientGrokKey.startsWith('xai-') ? 'https://api.x.ai/v1/chat/completions' : 'https://api.groq.com/openai/v1/chat/completions',
+        key: clientGrokKey,
+        model: 'llama-3.3-70b-versatile'
+      });
+    }
 
-        const clientGeminiKey = req.headers['x-gemini-key'] || payload.geminiKey || process.env.GEMINI_KEY || '';
-        const clientGrokKey = req.headers['x-grok-key'] || payload.grokKey || process.env.GROK_KEY || process.env.GROQ_KEY || '';
-        const clientOpenRouterKey = req.headers['x-openrouter-key'] || payload.openrouterKey || process.env.OPENROUTER_KEY || '';
-        const clientNvidiaKey = req.headers['x-nvidia-key'] || payload.nvidiaKey || process.env.NVIDIA_KEY || '';
-        const clientOllamaHost = req.headers['x-ollama-host'] || payload.ollamaHost || 'http://localhost:11434';
+    if (clientGeminiKey) {
+      targets.push({
+        name: 'gemini',
+        url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+        key: clientGeminiKey,
+        model: 'gemini-2.5-flash'
+      });
+    }
 
-        const authHeader = req.headers['authorization'] || '';
-        const clientKey = authHeader.replace(/^Bearer\s+/i, '').trim() || payload.key;
-        const cleanModel = rawModel.replace(/^(search|coding|notebook|nvidia|openrouter|groq|grok|gemini|ollama)\//i, '').trim();
-
-        const isCodingMode = payload.mode === 'code' || rawModel.includes('coder') || rawModel.includes('coding');
-
-        const activeProviders = [];
-        if (cleanModel.startsWith('ollama') || rawModel.includes('ollama')) {
-          activeProviders.push({
-            name: 'ollama',
-            url: `${clientOllamaHost.replace(/\/$/, '')}/v1/chat/completions`,
-            key: 'ollama',
-            models: [cleanModel || 'llama3', 'qwen2.5-coder', 'mistral'],
-            timeout: 10000
-          });
-        }
-        if (clientGrokKey) {
-          activeProviders.push({
-            name: 'groq',
-            url: clientGrokKey.startsWith('xai-') ? 'https://api.x.ai/v1/chat/completions' : 'https://api.groq.com/openai/v1/chat/completions',
-            key: clientGrokKey,
-            models: ['llama-3.3-70b-versatile', 'grok-beta', 'llama3-8b-8192'],
-            timeout: 6000
-          });
-        }
-        if (clientGeminiKey) {
-          activeProviders.push({
-            name: 'gemini',
-            url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
-            key: clientGeminiKey,
-            models: ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'],
-            timeout: 7000
-          });
-        }
-        if (clientOpenRouterKey || clientKey) {
-          activeProviders.push({
-            name: 'openrouter',
-            url: 'https://openrouter.ai/api/v1/chat/completions',
-            key: clientOpenRouterKey || clientKey,
-            models: ['google/gemini-2.5-flash:free', 'meta-llama/llama-3.3-70b-instruct:free', 'qwen/qwen-2.5-coder-32b-instruct:free', 'deepseek/deepseek-r1:free'],
-            timeout: 7000,
-            extraHeaders: { 'X-Title': 'BETAAI' }
-          });
-        }
-        if (clientNvidiaKey) {
-          activeProviders.push({
-            name: 'nvidia',
-            url: 'https://integrate.api.nvidia.com/v1/chat/completions',
-            key: clientNvidiaKey,
-            models: ['meta/llama-3.1-70b-instruct', 'meta/llama-3.1-8b-instruct'],
-            timeout: 7000
-          });
-        }
-
-        if (activeProviders.length === 0) {
-          activeProviders.push({
-            name: 'openrouter',
-            url: 'https://openrouter.ai/api/v1/chat/completions',
-            key: clientOpenRouterKey || clientGeminiKey || clientKey || '',
-            models: isCodingMode ? ['google/gemini-2.5-flash:free', 'qwen/qwen-2.5-coder-32b-instruct:free'] : ['meta-llama/llama-3.3-70b-instruct:free', 'google/gemini-2.5-flash:free', 'deepseek/deepseek-r1:free'],
-            timeout: 10000,
-            extraHeaders: { 'X-Title': 'BETAAI' }
-          });
-        }
-
-        function mapOpenRouterModel(m) {
-          if (!m) return isCodingMode ? 'google/gemini-2.5-flash:free' : 'meta-llama/llama-3.3-70b-instruct:free';
-          if (m.includes(':free')) return m;
-          const lower = m.toLowerCase();
-          if (lower.includes('llama')) return 'meta-llama/llama-3.3-70b-instruct:free';
-          if (lower.includes('qwen') || lower.includes('coder')) return 'qwen/qwen-2.5-coder-32b-instruct:free';
-          if (lower.includes('deepseek')) return 'deepseek/deepseek-r1:free';
-          if (lower.includes('gemini')) return 'google/gemini-2.5-flash:free';
-          return isCodingMode ? 'google/gemini-2.5-flash:free' : 'meta-llama/llama-3.3-70b-instruct:free';
-        }
-
-        for (const provider of activeProviders) {
-          let modelsToTry = [...provider.models];
-          if (cleanModel) {
-            const normalized = provider.name === 'openrouter' ? mapOpenRouterModel(cleanModel) : cleanModel;
-            if (!modelsToTry.includes(normalized)) {
-              modelsToTry.unshift(normalized);
-            }
-          }
-
-          for (const model of modelsToTry) {
-            try {
-              const body = { messages, temperature: payload.temperature || 0.3, max_tokens: payload.max_tokens || 4096 };
-              const apiRes = await tryProvider(provider, model, body, wantsStream);
-
-              if (wantsStream && apiRes.body) {
-                res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' });
-                const reader = apiRes.body.getReader();
-                try { while (true) { const { done, value } = await reader.read(); if (done) break; res.write(value); } } catch (e) {}
-                res.end();
-                return;
-              }
-
-              const data = await apiRes.json();
-              res.writeHead(200, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify(data));
-              return;
-            } catch (e) { lastErr = `${provider.name}/${model}: ${e.message}`; }
-          }
-        }
-
-        // Ultimate Failover Tier: OpenRouter Public Free Tier
-        try {
-          const fallbackRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-Title': 'BETAAI' },
-            body: JSON.stringify({
-              model: isCodingMode ? 'google/gemini-2.5-flash:free' : 'meta-llama/llama-3.3-70b-instruct:free',
-              messages,
-              temperature: payload.temperature || 0.3,
-              max_tokens: payload.max_tokens || 4096,
-              stream: wantsStream
-            })
-          });
-
-          if (fallbackRes.ok) {
-            if (wantsStream && fallbackRes.body) {
-              res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' });
-              const reader = fallbackRes.body.getReader();
-              try { while (true) { const { done, value } = await reader.read(); if (done) break; res.write(value); } } catch (e) {}
-              res.end();
-              return;
-            }
-            const data = await fallbackRes.json();
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify(data));
-            return;
-          }
-        } catch (e) {
-          console.warn('[Ultimate Failover] Failed:', e.message);
-        }
-
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ choices: [{ message: { content: "BETAAI response ready. Please check your API keys in Settings if needed." } }] }));
-      } catch (e) {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ choices: [{ message: { content: `BETAAI Notice: ${e.message}` } }] }));
-      }
+    targets.push({
+      name: 'openrouter-free',
+      url: 'https://openrouter.ai/api/v1/chat/completions',
+      key: clientOpenRouterKey || clientGeminiKey || '',
+      model: isCodingMode ? 'google/gemini-2.5-flash:free' : 'meta-llama/llama-3.3-70b-instruct:free',
+      headers: { 'X-Title': 'BETAAI' }
     });
+
+    for (const target of targets) {
+      try {
+        const headers = { 'Content-Type': 'application/json', ...(target.headers || {}) };
+        if (target.key) headers['Authorization'] = `Bearer ${target.key}`;
+
+        const requestBody = {
+          model: target.model,
+          messages,
+          temperature: payload.temperature || 0.3,
+          max_tokens: payload.max_tokens || 4096,
+          stream: wantsStream
+        };
+
+        const apiRes = await fetchWithTimeout(target.url, { method: 'POST', headers, body: JSON.stringify(requestBody) }, 10000);
+        if (!apiRes.ok) {
+          const text = await apiRes.text().catch(() => '');
+          lastErr = `${target.name} (${apiRes.status}): ${text.substring(0, 100)}`;
+          continue;
+        }
+
+        if (wantsStream && apiRes.body) {
+          res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' });
+          const reader = apiRes.body.getReader();
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            res.write(value);
+          }
+          res.end();
+          return;
+        }
+
+        const data = await apiRes.json();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(data));
+        return;
+      } catch (err) {
+        lastErr = `${target.name}: ${err.message}`;
+      }
+    }
+
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ choices: [{ message: { content: `BETAAI is active! (${lastErr})` } }] }));
     return;
   }
 
