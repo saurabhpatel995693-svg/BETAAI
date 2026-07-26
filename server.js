@@ -132,6 +132,38 @@ const server = http.createServer(async (req, res) => {
         res.end(JSON.stringify({ error: { message: e.message } }));
       }
     });
+  if (req.url.startsWith('/api/image')) {
+    const urlObj = new URL(req.url, `http://${req.headers.host}`);
+    const prompt = urlObj.searchParams.get('prompt') || 'Abstract Digital Art';
+    const width = urlObj.searchParams.get('width') || '1024';
+    const height = urlObj.searchParams.get('height') || '1024';
+    const seed = urlObj.searchParams.get('seed') || Math.floor(Math.random() * 1000000);
+    const cleanPrompt = encodeURIComponent(prompt);
+
+    const targetUrl = `https://image.pollinations.ai/prompt/${cleanPrompt}?width=${width}&height=${height}&seed=${seed}&nologo=true`;
+    try {
+      const apiRes = await fetchWithTimeout(targetUrl, {}, 15000);
+      if (apiRes.ok) {
+        const buffer = await apiRes.arrayBuffer();
+        res.writeHead(200, { 'Content-Type': apiRes.headers.get('content-type') || 'image/jpeg', 'Cache-Control': 'public, max-age=86400' });
+        res.end(Buffer.from(buffer));
+        return;
+      }
+    } catch (e) {}
+
+    const fallbackUrl = `https://picsum.photos/seed/${seed}/${width}/${height}`;
+    try {
+      const apiRes = await fetchWithTimeout(fallbackUrl, {}, 10000);
+      if (apiRes.ok) {
+        const buffer = await apiRes.arrayBuffer();
+        res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+        res.end(Buffer.from(buffer));
+        return;
+      }
+    } catch (e) {}
+
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: { message: 'Image proxy failed' } }));
     return;
   }
 
