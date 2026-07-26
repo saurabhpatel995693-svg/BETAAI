@@ -72,9 +72,10 @@ export default async function handler(req, res) {
 
   const cleanPrompt = encodeURIComponent(prompt);
   const targets = [
-    `https://image.pollinations.ai/prompt/${cleanPrompt}?width=${width}&height=${height}&seed=${seed}&nologo=true`,
+    `https://image.pollinations.ai/prompt/${cleanPrompt}?width=${width}&height=${height}&seed=${seed}&nologo=true&enhance=true`,
     `https://image.pollinations.ai/prompt/${cleanPrompt}?width=${width}&height=${height}&seed=${seed}&model=flux`,
-    `https://picsum.photos/seed/${seed}/${width}/${height}`
+    `https://image.pollinations.ai/prompt/${cleanPrompt}?width=${width}&height=${height}&seed=${seed}&model=turbo`,
+    `https://image.pollinations.ai/prompt/${cleanPrompt}?width=${width}&height=${height}&seed=${seed}&model=artistic`
   ];
 
   for (const targetUrl of targets) {

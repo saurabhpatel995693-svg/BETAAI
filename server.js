@@ -140,27 +140,23 @@ const server = http.createServer(async (req, res) => {
     const seed = urlObj.searchParams.get('seed') || Math.floor(Math.random() * 1000000);
     const cleanPrompt = encodeURIComponent(prompt);
 
-    const targetUrl = `https://image.pollinations.ai/prompt/${cleanPrompt}?width=${width}&height=${height}&seed=${seed}&nologo=true`;
-    try {
-      const apiRes = await fetchWithTimeout(targetUrl, {}, 15000);
-      if (apiRes.ok) {
-        const buffer = await apiRes.arrayBuffer();
-        res.writeHead(200, { 'Content-Type': apiRes.headers.get('content-type') || 'image/jpeg', 'Cache-Control': 'public, max-age=86400' });
-        res.end(Buffer.from(buffer));
-        return;
-      }
-    } catch (e) {}
+    const targets = [
+      `https://image.pollinations.ai/prompt/${cleanPrompt}?width=${width}&height=${height}&seed=${seed}&nologo=true&enhance=true`,
+      `https://image.pollinations.ai/prompt/${cleanPrompt}?width=${width}&height=${height}&seed=${seed}&model=flux`,
+      `https://image.pollinations.ai/prompt/${cleanPrompt}?width=${width}&height=${height}&seed=${seed}&model=turbo`
+    ];
 
-    const fallbackUrl = `https://picsum.photos/seed/${seed}/${width}/${height}`;
-    try {
-      const apiRes = await fetchWithTimeout(fallbackUrl, {}, 10000);
-      if (apiRes.ok) {
-        const buffer = await apiRes.arrayBuffer();
-        res.writeHead(200, { 'Content-Type': 'image/jpeg' });
-        res.end(Buffer.from(buffer));
-        return;
-      }
-    } catch (e) {}
+    for (const targetUrl of targets) {
+      try {
+        const apiRes = await fetchWithTimeout(targetUrl, {}, 12000);
+        if (apiRes.ok) {
+          const buffer = await apiRes.arrayBuffer();
+          res.writeHead(200, { 'Content-Type': apiRes.headers.get('content-type') || 'image/jpeg', 'Cache-Control': 'public, max-age=86400' });
+          res.end(Buffer.from(buffer));
+          return;
+        }
+      } catch (e) {}
+    }
 
     res.writeHead(500, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: { message: 'Image proxy failed' } }));
