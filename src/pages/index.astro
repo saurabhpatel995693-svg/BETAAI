@@ -1341,21 +1341,54 @@ async function sendChat() {
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      buf += dec.decode(value, { stream: true });
-      const lines = buf.split('\n'); buf = lines.pop();
+      const chunkText = dec.decode(value, { stream: true });
+      buf += chunkText;
+
+      const lines = buf.split('\n');
+      buf = lines.pop() || '';
+
       for (const line of lines) {
-        if (!line.startsWith('data: ') || line === 'data: [DONE]') continue;
-        try {
-          const d = JSON.parse(line.slice(6));
-          const c = d.choices?.[0]?.delta?.content;
-          if (c) { full += c; mdBox.innerHTML = marked.parse(full); }
-        } catch(e) {}
+        const trimmed = line.trim();
+        if (!trimmed || trimmed === 'data: [DONE]') continue;
+
+        if (trimmed.startsWith('data: ')) {
+          try {
+            const d = JSON.parse(trimmed.slice(6));
+            const c = d.choices?.[0]?.delta?.content || d.choices?.[0]?.message?.content;
+            if (c) { full += c; mdBox.innerHTML = marked.parse(full); }
+          } catch(e) {}
+        } else {
+          try {
+            const d = JSON.parse(trimmed);
+            const c = d.choices?.[0]?.delta?.content || d.choices?.[0]?.message?.content;
+            if (c) { full += c; mdBox.innerHTML = marked.parse(full); }
+            else if (typeof d.content === 'string') { full += d.content; mdBox.innerHTML = marked.parse(full); }
+          } catch(e) {
+            full += trimmed + ' ';
+            mdBox.innerHTML = marked.parse(full);
+          }
+        }
       }
       scrollToBottom(list);
     }
+
+    if (!full.trim() && buf.trim()) {
+      try {
+        const d = JSON.parse(buf.trim());
+        full = d.choices?.[0]?.message?.content || d.choices?.[0]?.delta?.content || buf.trim();
+      } catch(e) {
+        full = buf.trim();
+      }
+      mdBox.innerHTML = marked.parse(full);
+    }
+
+    if (!full.trim()) {
+      full = "BETAAI response ready. Please try asking again.";
+      mdBox.innerHTML = marked.parse(full);
+    }
+
     conv.msgs.push({ role: 'assistant', content: full });
     conv.title = conv.msgs[0].content.substring(0,50);
-    document.getElementById('model-pill-text').textContent = getModel().split('/').pop();
     saveConvs(); renderHistory();
 
     // Highlight code blocks
