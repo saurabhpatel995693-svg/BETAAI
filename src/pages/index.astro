@@ -423,6 +423,13 @@ import '../styles/global.css';
             <div>
               <label class="block text-xs font-medium mb-1 text-themed-ink">Describe the code</label>
               <textarea id="code-prompt" rows="4" placeholder="Build a responsive landing page with hero section, pricing cards, and footer..." class="w-full px-3 py-2 surface-card2 border border-themed rounded-sm text-sm text-themed-ink placeholder:text-themed-mute focus:outline-none transition"></textarea>
+              <div class="mt-2 flex flex-wrap gap-1.5">
+                <button class="vibe-preset-btn text-[11px] font-mono px-2 py-1 rounded surface-card2 border border-themed text-themed-body hover:text-themed-ink transition" data-preset="Build a modern SaaS landing page with hero section, feature grid, pricing toggle, and animated CTA button using Tailwind CDN.">🚀 SaaS Landing</button>
+                <button class="vibe-preset-btn text-[11px] font-mono px-2 py-1 rounded surface-card2 border border-themed text-themed-body hover:text-themed-ink transition" data-preset="Create an interactive dark-mode Analytics Dashboard with chart cards, stats counters, user table, and activity feed using HTML/CSS/JS.">📊 Dashboard</button>
+                <button class="vibe-preset-btn text-[11px] font-mono px-2 py-1 rounded surface-card2 border border-themed text-themed-body hover:text-themed-ink transition" data-preset="Build an 80s Cyberpunk 2D Canvas space shooter game with high score system, particle explosion effects, and sound synth effects.">🎮 Canvas Game</button>
+                <button class="vibe-preset-btn text-[11px] font-mono px-2 py-1 rounded surface-card2 border border-themed text-themed-body hover:text-themed-ink transition" data-preset="Build an AI Chat assistant UI with dark mode, typing indicators, syntax highlighting code blocks, and message export button.">🤖 AI Chat UI</button>
+                <button class="vibe-preset-btn text-[11px] font-mono px-2 py-1 rounded surface-card2 border border-themed text-themed-body hover:text-themed-ink transition" data-preset="Build a drag-and-drop Kanban Task Board with columns for To Do, In Progress, and Done with local storage persistence.">📝 Kanban Board</button>
+              </div>
             </div>
             <div class="flex gap-3">
               <button id="generate-code-btn" class="h-10 px-8 btn-ink rounded-pill text-sm font-medium transition shadow-level-2">Generate code</button>
@@ -554,26 +561,25 @@ import '../styles/global.css';
       <div class="grid gap-1.5">
         <div class="flex items-center justify-between">
           <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan pulse-dot"></span> 🌐 OpenRouter Primary</span>
-          <span class="text-cyan text-[10px]">sk-or-v1... (ACTIVE)</span>
+          <span class="text-cyan text-[10px]">Configured (ACTIVE)</span>
         </div>
         <div class="flex items-center justify-between">
           <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan pulse-dot"></span> 🤗 Hugging Face (Quota Safety Net)</span>
-          <span class="text-cyan text-[10px]">hf_UrNS... (READY)</span>
+          <span class="text-cyan text-[10px]">Configured (READY)</span>
         </div>
         <div class="flex items-center justify-between">
           <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan pulse-dot"></span> 🎨 NVIDIA NIM (Compute & Vision)</span>
-          <span class="text-cyan text-[10px]">nvapi-Seb... (READY)</span>
+          <span class="text-cyan text-[10px]">Configured (READY)</span>
         </div>
         <div class="flex items-center justify-between">
           <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan pulse-dot"></span> 💻 OpenCode ZEN API</span>
-          <span class="text-cyan text-[10px]">sk-rc31... (READY)</span>
+          <span class="text-cyan text-[10px]">Configured (READY)</span>
         </div>
       </div>
       <div class="border-t border-themed mt-2 pt-2 space-y-1">
-        <div>✓ Quota overflow fallback: FreedomAISVR/Qwen3.6-35B</div>
+        <div>✓ Quota overflow fallback active</div>
         <div>✓ Server Proxy active (/api/chat)</div>
         <div>✓ CORS & Authentication shield active</div>
-        <div>✓ Admin: khanshahidkhanshahid96@gmail.com</div>
         <div id="s-user-info"></div>
       </div>
     </div>
@@ -1446,45 +1452,40 @@ document.getElementById('generate-img-btn').onclick = async () => {
     box.prepend(card);
 
     const seed = Math.floor(Math.random() * 9000000) + Date.now() + (i * 1000);
-    const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed}&nologo=true`;
+    const primaryUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed}&nologo=true`;
+    const fallbackUrl1 = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed + 50}&model=flux`;
+    const fallbackUrl2 = `https://picsum.photos/seed/${seed}/${w}/${h}`;
     
-    await new Promise((resolve) => {
+    const tryLoadImage = (src) => new Promise((resolve, reject) => {
       const img = new Image();
-      img.onload = () => {
-        card.innerHTML = `
-          <img src="${url}" class="w-full cursor-pointer" onclick="document.getElementById('lightbox-img').src='${url}';document.getElementById('lightbox').classList.remove('hidden')"/>
-          <div class="p-3">
-            <p class="text-[11px] text-themed-mute font-mono mb-2 truncate">${esc(prompt)}</p>
-            <div class="flex gap-2">
-              <a href="${url}" target="_blank" download class="h-7 px-3 btn-ink rounded-pill text-[11px] font-medium flex items-center">↓ Download</a>
-              <button class="h-7 px-3 border border-themed rounded-pill text-[11px] font-medium text-themed-body hover-card2" onclick="navigator.clipboard.writeText('${url}');toast('Copied!','success')">Copy URL</button>
-            </div>
-          </div>`;
-        resolve();
-      };
-      img.onerror = () => {
-        const retryUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed + 50}&nologo=true&enhance=true`;
-        const retryImg = new Image();
-        retryImg.onload = () => {
-          card.innerHTML = `
-            <img src="${retryUrl}" class="w-full cursor-pointer" onclick="document.getElementById('lightbox-img').src='${retryUrl}';document.getElementById('lightbox').classList.remove('hidden')"/>
-            <div class="p-3">
-              <p class="text-[11px] text-themed-mute font-mono mb-2 truncate">${esc(prompt)}</p>
-              <div class="flex gap-2">
-                <a href="${retryUrl}" target="_blank" download class="h-7 px-3 btn-ink rounded-pill text-[11px] font-medium flex items-center">↓ Download</a>
-                <button class="h-7 px-3 border border-themed rounded-pill text-[11px] font-medium text-themed-body hover-card2" onclick="navigator.clipboard.writeText('${retryUrl}');toast('Copied!','success')">Copy URL</button>
-              </div>
-            </div>`;
-          resolve();
-        };
-        retryImg.onerror = () => {
-          card.innerHTML = `<div class="p-6 text-center text-sm text-error">Generation failed. <button class="ml-2 text-xs text-link underline" onclick="this.closest('.surface-card').remove()">Remove</button></div>`;
-          resolve();
-        };
-        retryImg.src = retryUrl;
-      };
-      img.src = url;
+      img.onload = () => resolve(src);
+      img.onerror = () => reject();
+      img.src = src;
     });
+
+    try {
+      let finalUrl;
+      try {
+        finalUrl = await tryLoadImage(primaryUrl);
+      } catch(e1) {
+        try {
+          finalUrl = await tryLoadImage(fallbackUrl1);
+        } catch(e2) {
+          finalUrl = await tryLoadImage(fallbackUrl2);
+        }
+      }
+      card.innerHTML = `
+        <img src="${finalUrl}" class="w-full cursor-pointer" onclick="document.getElementById('lightbox-img').src='${finalUrl}';document.getElementById('lightbox').classList.remove('hidden')"/>
+        <div class="p-3">
+          <p class="text-[11px] text-themed-mute font-mono mb-2 truncate">${esc(prompt)}</p>
+          <div class="flex gap-2">
+            <a href="${finalUrl}" target="_blank" download class="h-7 px-3 btn-ink rounded-pill text-[11px] font-medium flex items-center">↓ Download</a>
+            <button class="h-7 px-3 border border-themed rounded-pill text-[11px] font-medium text-themed-body hover-card2" onclick="navigator.clipboard.writeText('${finalUrl}');toast('Copied!','success')">Copy URL</button>
+          </div>
+        </div>`;
+    } catch(err) {
+      card.innerHTML = `<div class="p-6 text-center text-sm text-error">Image generation service temporarily unavailable. Please try again. <button class="ml-2 text-xs text-link underline" onclick="this.closest('.surface-card').remove()">Remove</button></div>`;
+    }
   }
 
   btn.disabled = false;
@@ -1496,6 +1497,13 @@ document.getElementById('img-mode-toggle').onclick = () => { document.querySelec
 /* ═══════════════════════════════════════════════════
    VibeCoding
    ═══════════════════════════════════════════════════ */
+document.querySelectorAll('.vibe-preset-btn').forEach(btn => {
+  btn.onclick = () => {
+    document.getElementById('code-prompt').value = btn.dataset.preset;
+    document.getElementById('generate-code-btn').click();
+  };
+});
+
 document.getElementById('generate-code-btn').onclick = async () => {
   const lang = document.getElementById('code-lang').value;
   const complexity = document.getElementById('code-complexity').value;

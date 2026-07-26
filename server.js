@@ -29,7 +29,7 @@ const PROVIDERS = [
   {
     name: 'openrouter',
     url: 'https://openrouter.ai/api/v1/chat/completions',
-    key: process.env.OPENROUTER_KEY || '',
+    key: process.env.OPENROUTER_KEY || process.env.GEMINI_KEY || '',
     models: ['google/gemini-2.5-flash:free', 'meta-llama/llama-3.3-70b-instruct:free', 'qwen/qwen-2.5-coder-32b-instruct:free'],
     timeout: 12000,
     extraHeaders: { 'X-Title': 'BETAAI' }
