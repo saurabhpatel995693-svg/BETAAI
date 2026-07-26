@@ -251,17 +251,27 @@ import '../styles/global.css';
         </div>
       </div>
       <div class="flex items-center gap-1.5">
-        <select id="model-select" class="hidden h-7 px-2 rounded-sm surface-card2 border border-themed text-[11px] font-mono text-themed-ink focus:outline-none">
-          <option value="nvidia/nemotron-3-ultra-550b-a55b:free" selected>nemotron-3-ultra:free</option>
-          <option value="free02/glm5.1:part1">free02/glm5.1:part1</option>
-          <option value="poolside/laguna-xs-2.1:free">poolside/laguna-xs-2.1:free</option>
-          <option value="google/gemini-2.5-flash:free">gemini-2.5-flash:free</option>
-          <option value="meta-llama/llama-4-maverick:free">llama-4-maverick:free</option>
-          <option value="deepseek/deepseek-chat-v3-0324:free">deepseek-v3:free</option>
-          <option value="qwen/qwen3-235b-a22b:free">qwen3-235b:free</option>
-          <option value="mistralai/mistral-small-3.2-24b-instruct:free">mistral-small:free</option>
-          <option value="openai/gpt-4o-mini">gpt-4o-mini</option>
-          <option value="anthropic/claude-sonnet-4">claude-sonnet-4</option>
+        <button id="byok-btn" class="h-7 px-2.5 rounded-sm surface-card2 border border-themed text-[11px] font-mono text-themed-ink hover:text-cyan transition flex items-center gap-1" title="Bring Your Own API Key">🔑 BYOK Keys</button>
+        <select id="model-select" class="h-7 px-2 rounded-sm surface-card2 border border-themed text-[11px] font-mono text-themed-ink focus:outline-none">
+          <optgroup label="🌟 Gemini & Grok">
+            <option value="gemini/gemini-2.5-flash" selected>Gemini 2.5 Flash</option>
+            <option value="groq/llama-3.3-70b-versatile">Grok / Groq 70B</option>
+          </optgroup>
+          <optgroup label="🌐 OpenRouter (Free)">
+            <option value="google/gemini-2.5-flash:free">google/gemini-2.5-flash:free</option>
+            <option value="meta-llama/llama-3.3-70b-instruct:free">llama-3.3-70b-instruct:free</option>
+            <option value="qwen/qwen-2.5-coder-32b-instruct:free">qwen-2.5-coder-32b:free</option>
+            <option value="deepseek/deepseek-r1:free">deepseek-r1:free</option>
+          </optgroup>
+          <optgroup label="💻 Ollama (Local AI)">
+            <option value="ollama/llama3">Ollama / Llama3</option>
+            <option value="ollama/qwen2.5-coder">Ollama / Qwen Coder</option>
+            <option value="ollama/mistral">Ollama / Mistral</option>
+          </optgroup>
+          <optgroup label="🎨 NVIDIA NIM">
+            <option value="nvidia/meta/llama-3.1-70b-instruct">NVIDIA Llama 3.1 70B</option>
+            <option value="nvidia/meta/llama-3.1-8b-instruct">NVIDIA Llama 3.1 8B</option>
+          </optgroup>
         </select>
         <button id="settings-btn" class="w-8 h-8 rounded-sm border border-themed flex items-center justify-center text-themed-body hover:text-themed-ink transition">⚙</button>
         <button id="export-btn" class="w-8 h-8 rounded-sm border border-themed flex items-center justify-center text-themed-body hover:text-themed-ink transition" title="Export chat">↓</button>
@@ -269,85 +279,120 @@ import '../styles/global.css';
     </header>
 
     <!-- ═══════════ VIEW: CHAT ═══════════ -->
-    <div id="view-chat" class="flex-1 flex flex-col overflow-hidden">
-      <!-- Welcome -->
-      <div id="chat-welcome" class="flex-1 flex items-center justify-center p-6">
-        <div class="max-w-lg text-center animate-fade-up">
-          <div class="w-20 h-20 rounded-xl mesh-gradient mx-auto mb-6 flex items-center justify-center text-white text-3xl font-semibold shadow-level-4">β</div>
-          <h2 class="text-display-lg text-themed-ink mb-2">What can I help with?</h2>
-          <p class="text-themed-body text-sm mb-8">AI assistant by <strong class="text-themed-ink">SAURABH</strong> — chat, generate images, code, and study.</p>
-          <!-- Suggestion Grid -->
-          <div class="grid grid-cols-2 gap-3 text-left">
-            <button class="suggest-btn p-4 rounded-md surface-card border border-themed shadow-level-2 hover:shadow-level-3 transition text-left animate-fade-up" style="animation-delay:0s">
-              <div class="text-xs font-medium mb-1 text-themed-ink">💬 Explain quantum computing</div>
-              <div class="text-[11px] text-themed-mute">In simple terms</div>
-            </button>
-            <button class="suggest-btn p-4 rounded-md surface-card border border-themed shadow-level-2 hover:shadow-level-3 transition text-left animate-fade-up" style="animation-delay:.05s">
-              <div class="text-xs font-medium mb-1 text-themed-ink">🐍 Write a Python script</div>
-              <div class="text-[11px] text-themed-mute">API data fetcher</div>
-            </button>
-            <button class="suggest-btn p-4 rounded-md surface-card border border-themed shadow-level-2 hover:shadow-level-3 transition text-left animate-fade-up" style="animation-delay:.1s">
-              <div class="text-xs font-medium mb-1 text-themed-ink">🎨 Generate an image</div>
-              <div class="text-[11px] text-themed-mute">Futuristic city at sunset</div>
-            </button>
-            <button class="suggest-btn p-4 rounded-md surface-card border border-themed shadow-level-2 hover:shadow-level-3 transition text-left animate-fade-up" style="animation-delay:.15s">
-              <div class="text-xs font-medium mb-1 text-themed-ink">📝 Write a blog post</div>
-              <div class="text-[11px] text-themed-mute">About AI in education</div>
-            </button>
+    <div id="view-chat" class="flex-1 flex overflow-hidden">
+      <!-- Main Chat Area -->
+      <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+        <!-- Welcome -->
+        <div id="chat-welcome" class="flex-1 flex items-center justify-center p-6">
+          <div class="max-w-lg text-center animate-fade-up">
+            <div class="w-20 h-20 rounded-xl mesh-gradient mx-auto mb-6 flex items-center justify-center text-white text-3xl font-semibold shadow-level-4">β</div>
+            <h2 class="text-display-lg text-themed-ink mb-2">What can I help with?</h2>
+            <p class="text-themed-body text-sm mb-8">AI assistant by <strong class="text-themed-ink">SAURABH</strong> — chat, generate images, code, and study.</p>
+            <!-- Suggestion Grid -->
+            <div class="grid grid-cols-2 gap-3 text-left">
+              <button class="suggest-btn p-4 rounded-md surface-card border border-themed shadow-level-2 hover:shadow-level-3 transition text-left animate-fade-up" style="animation-delay:0s">
+                <div class="text-xs font-medium mb-1 text-themed-ink">💬 Explain quantum computing</div>
+                <div class="text-[11px] text-themed-mute">In simple terms</div>
+              </button>
+              <button class="suggest-btn p-4 rounded-md surface-card border border-themed shadow-level-2 hover:shadow-level-3 transition text-left animate-fade-up" style="animation-delay:.05s">
+                <div class="text-xs font-medium mb-1 text-themed-ink">⚡ Build a VibeCoding App</div>
+                <div class="text-[11px] text-themed-mute">Directly code in Chat</div>
+              </button>
+              <button class="suggest-btn p-4 rounded-md surface-card border border-themed shadow-level-2 hover:shadow-level-3 transition text-left animate-fade-up" style="animation-delay:.1s">
+                <div class="text-xs font-medium mb-1 text-themed-ink">🎨 Generate an image</div>
+                <div class="text-[11px] text-themed-mute">Futuristic city at sunset</div>
+              </button>
+              <button class="suggest-btn p-4 rounded-md surface-card border border-themed shadow-level-2 hover:shadow-level-3 transition text-left animate-fade-up" style="animation-delay:.15s">
+                <div class="text-xs font-medium mb-1 text-themed-ink">📝 Write a blog post</div>
+                <div class="text-[11px] text-themed-mute">About AI in education</div>
+              </button>
+            </div>
+            <!-- Persona selector -->
+            <div class="mt-6">
+              <div class="text-[11px] font-mono text-themed-mute uppercase mb-2 tracking-wide">Select persona</div>
+              <div class="flex flex-wrap justify-center gap-2">
+                <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="default">🤖 Default</button>
+                <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="coder">💻 Coder</button>
+                <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="teacher">📚 Teacher</button>
+                <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="creative">🎭 Creative</button>
+                <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="analyst">📊 Analyst</button>
+              </div>
+            </div>
           </div>
-          <!-- Persona selector -->
-          <div class="mt-6">
-            <div class="text-[11px] font-mono text-themed-mute uppercase mb-2 tracking-wide">Select persona</div>
-            <div class="flex flex-wrap justify-center gap-2">
-              <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="default">🤖 Default</button>
-              <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="coder">💻 Coder</button>
-              <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="teacher">📚 Teacher</button>
-              <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="creative">🎭 Creative</button>
-              <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="analyst">📊 Analyst</button>
+        </div>
+        <!-- Messages -->
+        <div id="chat-messages" class="flex-1 overflow-y-auto px-4 py-6 hidden">
+          <div id="messages-list" class="max-w-[760px] mx-auto space-y-5"></div>
+        </div>
+        <!-- Input Area -->
+        <div class="p-3 border-t border-themed surface-card shrink-0">
+          <div class="max-w-[760px] mx-auto">
+            <div class="surface-card border border-themed rounded-lg shadow-level-2 focus-within:shadow-level-4 transition p-3" id="drop-zone">
+              <div id="file-attach-preview" class="hidden mb-2 flex items-center gap-2 px-2 py-1 rounded-sm surface-card2 border border-themed">
+                <span class="text-[11px] font-mono text-themed-mute" id="attach-name"></span>
+                <button id="remove-attach" class="text-themed-mute hover:text-error text-xs">✕</button>
+              </div>
+              <textarea id="chat-input" rows="1" placeholder="Message BETAAI or ask to code..." class="w-full bg-transparent text-sm text-themed-ink placeholder:text-themed-mute focus:outline-none resize-none max-h-[160px]"></textarea>
+              <div class="flex items-center justify-between pt-2">
+                <div class="flex items-center gap-1">
+                  <label class="h-7 px-2 rounded-sm text-[11px] font-mono text-themed-mute border border-themed hover-card2 transition flex items-center gap-1 cursor-pointer" title="Attach file">
+                    📎 <input type="file" id="chat-file-input" class="hidden" accept=".txt,.md,.json,.csv,.py,.js,.html,.css"/>
+                  </label>
+                  <button id="voice-btn" class="h-7 px-2 rounded-sm text-[11px] font-mono text-themed-mute border border-themed hover-card2 transition" title="Voice input (V)">🎤</button>
+                  <button id="img-mode-toggle" class="h-7 px-2 rounded-sm text-[11px] font-mono text-themed-mute border border-themed hover-card2 transition">🎨 Image</button>
+                  <button id="vibe-chat-toggle" class="h-7 px-2 rounded-sm text-[11px] font-mono text-themed-mute border border-themed hover-card2 transition" title="VibeCoding in Chat">⚡ VibeCoding</button>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span id="char-count" class="text-[10px] font-mono text-themed-mute">0</span>
+                  <div id="voice-indicator" class="hidden flex items-center gap-0.5 h-5">
+                    <div class="voice-bar bg-error" style="height:8px"></div>
+                    <div class="voice-bar bg-error" style="height:12px"></div>
+                    <div class="voice-bar bg-error" style="height:16px"></div>
+                    <div class="voice-bar bg-error" style="height:10px"></div>
+                  </div>
+                  <button id="stop-btn" class="hidden h-7 px-3 rounded-sm bg-error text-white text-xs font-medium transition">Stop</button>
+                  <button id="send-btn" class="h-8 w-8 btn-ink rounded-sm flex items-center justify-center transition shadow-level-2">
+                    <svg class="w-4 h-4 rotate-90" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center justify-between mt-1">
+              <div class="text-[10px] font-mono text-themed-mute">Enter = send · Shift+Enter = line · V = voice · Ctrl+K = new chat</div>
+              <div class="text-[10px] font-mono text-themed-mute">BETAAI by SAURABH</div>
             </div>
           </div>
         </div>
       </div>
-      <!-- Messages -->
-      <div id="chat-messages" class="flex-1 overflow-y-auto px-4 py-6 hidden">
-        <div id="messages-list" class="max-w-[760px] mx-auto space-y-5"></div>
-      </div>
-      <!-- Input Area -->
-      <div class="p-3 border-t border-themed surface-card shrink-0">
-        <div class="max-w-[760px] mx-auto">
-          <div class="surface-card border border-themed rounded-lg shadow-level-2 focus-within:shadow-level-4 transition p-3" id="drop-zone">
-            <div id="file-attach-preview" class="hidden mb-2 flex items-center gap-2 px-2 py-1 rounded-sm surface-card2 border border-themed">
-              <span class="text-[11px] font-mono text-themed-mute" id="attach-name"></span>
-              <button id="remove-attach" class="text-themed-mute hover:text-error text-xs">✕</button>
-            </div>
-            <textarea id="chat-input" rows="1" placeholder="Message BETAAI..." class="w-full bg-transparent text-sm text-themed-ink placeholder:text-themed-mute focus:outline-none resize-none max-h-[160px]"></textarea>
-            <div class="flex items-center justify-between pt-2">
-              <div class="flex items-center gap-1">
-                <label class="h-7 px-2 rounded-sm text-[11px] font-mono text-themed-mute border border-themed hover-card2 transition flex items-center gap-1 cursor-pointer" title="Attach file">
-                  📎 <input type="file" id="chat-file-input" class="hidden" accept=".txt,.md,.json,.csv,.py,.js,.html,.css"/>
-                </label>
-                <button id="voice-btn" class="h-7 px-2 rounded-sm text-[11px] font-mono text-themed-mute border border-themed hover-card2 transition" title="Voice input (V)">🎤</button>
-                <button id="img-mode-toggle" class="h-7 px-2 rounded-sm text-[11px] font-mono text-themed-mute border border-themed hover-card2 transition">🎨 Image</button>
-              </div>
-              <div class="flex items-center gap-2">
-                <span id="char-count" class="text-[10px] font-mono text-themed-mute">0</span>
-                <div id="voice-indicator" class="hidden flex items-center gap-0.5 h-5">
-                  <div class="voice-bar bg-error" style="height:8px"></div>
-                  <div class="voice-bar bg-error" style="height:12px"></div>
-                  <div class="voice-bar bg-error" style="height:16px"></div>
-                  <div class="voice-bar bg-error" style="height:10px"></div>
-                </div>
-                <button id="stop-btn" class="hidden h-7 px-3 rounded-sm bg-error text-white text-xs font-medium transition">Stop</button>
-                <button id="send-btn" class="h-8 w-8 btn-ink rounded-sm flex items-center justify-center transition shadow-level-2">
-                  <svg class="w-4 h-4 rotate-90" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-                </button>
-              </div>
-            </div>
+
+      <!-- Right Side: VibeCoding Split Canvas Drawer (v0 / Claude Artifacts style) -->
+      <div id="chat-vibe-drawer" class="hidden w-full lg:w-[50%] border-l border-themed surface-card flex flex-col h-full animate-fade-up shrink-0 z-20">
+        <!-- Header -->
+        <div class="h-12 px-4 border-b border-themed flex items-center justify-between surface-card2 shrink-0">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-cyan pulse-dot"></span>
+            <span class="text-xs font-mono font-semibold text-themed-ink uppercase tracking-wider">⚡ VibeCoding Canvas</span>
           </div>
-          <div class="flex items-center justify-between mt-1">
-            <div class="text-[10px] font-mono text-themed-mute">Enter = send · Shift+Enter = line · V = voice · Ctrl+K = new chat</div>
-            <div class="text-[10px] font-mono text-themed-mute">BETAAI by SAURABH</div>
+          <div class="flex items-center gap-2">
+            <button id="drawer-tab-preview" class="px-2.5 py-1 rounded text-xs font-medium btn-ink transition">🌐 Preview</button>
+            <button id="drawer-tab-code" class="px-2.5 py-1 rounded text-xs font-medium text-themed-body hover:text-themed-ink transition">💻 Code</button>
+            <button id="drawer-popout" class="text-xs text-link hover:underline ml-2 font-mono">↗ Popout</button>
+            <button id="drawer-close" class="text-themed-mute hover:text-error text-sm ml-2">✕</button>
           </div>
+        </div>
+        <!-- Canvas Body -->
+        <div class="flex-1 flex flex-col overflow-hidden relative">
+          <div id="drawer-panel-preview" class="flex-1 w-full h-full surface-card">
+            <iframe id="drawer-preview-frame" class="w-full h-full border-0"></iframe>
+          </div>
+          <div id="drawer-panel-code" class="hidden flex-1 overflow-hidden bg-[#171717] p-3">
+            <textarea id="drawer-code-editor" class="w-full h-full bg-transparent text-white focus:outline-none font-mono text-xs leading-relaxed resize-none" spellcheck="false"></textarea>
+          </div>
+        </div>
+        <!-- Footer Controls -->
+        <div class="p-3 border-t border-themed surface-card2 flex items-center gap-2 shrink-0">
+          <input id="drawer-refine-input" placeholder="Refine UI with AI (e.g. Add dark mode, glassmorphic cards)..." class="flex-1 h-9 px-3 surface-card border border-themed rounded-md text-xs text-themed-ink placeholder:text-themed-mute focus:outline-none"/>
+          <button id="drawer-refine-btn" class="h-9 px-4 btn-ink rounded-md text-xs font-medium">✨ Refine UI</button>
         </div>
       </div>
     </div>
@@ -500,16 +545,61 @@ import '../styles/global.css';
       </div>
     </div>
 
-    <!-- ═══════════ VIEW: WEB SEARCH ═══════════ -->
+    <!-- ═══════════ VIEW: DISCOVER & LIVE SEARCH ═══════════ -->
     <div id="view-search" class="flex-1 flex flex-col overflow-hidden hidden">
       <div class="flex-1 overflow-y-auto p-6">
-        <div class="max-w-2xl mx-auto">
-          <h3 class="text-display-md text-themed-ink mb-1">Web search.</h3>
-          <p class="text-themed-body text-sm mb-6">Search the web and get AI-summarized answers with sources.</p>
-          <div class="flex gap-2 mb-6">
-            <input id="search-query" placeholder="Search anything..." class="flex-1 h-12 px-4 surface-card border border-themed rounded-lg text-sm text-themed-ink placeholder:text-themed-mute focus:outline-none shadow-level-2 focus:shadow-level-4 transition"/>
-            <button id="search-go-btn" class="h-12 px-6 btn-ink rounded-lg text-sm font-medium transition shadow-level-2">Search</button>
+        <div class="max-w-3xl mx-auto space-y-6">
+          <div>
+            <h3 class="text-display-md text-themed-ink mb-1">Discover & Live Search.</h3>
+            <p class="text-themed-body text-sm">Real-time web intelligence, live news, and interactive demo search with AI summaries.</p>
           </div>
+
+          <!-- Search Bar -->
+          <div class="surface-card p-3 rounded-lg border border-themed shadow-level-3">
+            <div class="flex gap-2">
+              <input id="search-query" placeholder="Search live news, topics, tech breakthroughs..." class="flex-1 h-12 px-4 surface-card2 border border-themed rounded-md text-sm text-themed-ink placeholder:text-themed-mute focus:outline-none focus:border-link transition"/>
+              <button id="search-go-btn" class="h-12 px-6 btn-ink rounded-md text-sm font-medium transition shadow-level-2">Search Live</button>
+            </div>
+            <!-- Quick Chips -->
+            <div class="flex flex-wrap gap-2 mt-3 pt-3 border-t border-themed">
+              <button class="discover-chip text-[11px] font-mono px-2.5 py-1 rounded-full surface-card2 border border-themed text-themed-body hover:text-themed-ink transition" data-query="Latest AI Breakthroughs & Agent Frameworks 2026">⚡ AI Breakthroughs 2026</button>
+              <button class="discover-chip text-[11px] font-mono px-2.5 py-1 rounded-full surface-card2 border border-themed text-themed-body hover:text-themed-ink transition" data-query="Next.js 15 & Astro v5 Features and Performance Comparison">🚀 Next.js 15 & Astro v5</button>
+              <button class="discover-chip text-[11px] font-mono px-2.5 py-1 rounded-full surface-card2 border border-themed text-themed-body hover:text-themed-ink transition" data-query="Quantum Computing & Superconductors latest news">💻 Quantum Computing</button>
+              <button class="discover-chip text-[11px] font-mono px-2.5 py-1 rounded-full surface-card2 border border-themed text-themed-body hover:text-themed-ink transition" data-query="Web Development Trends & Tailwind CSS v4 Best Practices">🎨 Web Dev Trends</button>
+            </div>
+          </div>
+
+          <!-- Trending Discover Feed -->
+          <div id="discover-feed" class="space-y-4">
+            <div class="flex items-center justify-between">
+              <h4 class="text-xs font-mono font-semibold uppercase tracking-wider text-themed-mute">🔥 Live Trending News & Interactive Examples</h4>
+              <span class="text-[10px] font-mono text-cyan flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-cyan pulse-dot"></span> Real-Time Stream</span>
+            </div>
+            <div class="grid md:grid-cols-2 gap-4">
+              <!-- Live Card 1 -->
+              <div class="surface-card rounded-lg border border-themed shadow-level-2 p-4 hover:shadow-level-3 transition cursor-pointer discover-card" data-query="DeepSeek R1 and Llama 3.3 70B Benchmark Analysis">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan/10 text-cyan border border-cyan/20">AI Intelligence</span>
+                  <span class="text-[10px] font-mono text-themed-mute">Live News</span>
+                </div>
+                <h5 class="text-sm font-semibold text-themed-ink mb-1">DeepSeek R1 & Open Models Revolutionize Local Inference</h5>
+                <p class="text-xs text-themed-body line-clamp-2 mb-3">Open-source models match proprietary performance with ultra-fast LPU inference and reasoning capabilities.</p>
+                <div class="text-[11px] font-mono text-link hover:underline">Explore with AI →</div>
+              </div>
+              <!-- Live Card 2 -->
+              <div class="surface-card rounded-lg border border-themed shadow-level-2 p-4 hover:shadow-level-3 transition cursor-pointer discover-card" data-query="Tailwind CSS v4 Oxide Engine & Modern Web Design Guidelines">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-violet/10 text-violet border border-violet/20">Web Design</span>
+                  <span class="text-[10px] font-mono text-themed-mute">Featured</span>
+                </div>
+                <h5 class="text-sm font-semibold text-themed-ink mb-1">Tailwind CSS v4 & Vercel Design Aesthetics Guide</h5>
+                <p class="text-xs text-themed-body line-clamp-2 mb-3">Learn how to build stark ink-on-canvas interfaces, mesh gradients, and glassmorphic UI components.</p>
+                <div class="text-[11px] font-mono text-link hover:underline">Explore with AI →</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Search Results Box -->
           <div id="search-results" class="space-y-4"></div>
         </div>
       </div>
@@ -526,16 +616,36 @@ import '../styles/global.css';
       <h3 class="text-display-sm text-themed-ink">Settings.</h3>
       <button id="close-settings" class="text-themed-mute hover:text-themed-ink text-lg">✕</button>
     </div>
-    <div>
-      <label class="block text-xs font-medium mb-1 text-themed-ink">OpenRouter API Key</label>
-      <input type="password" id="s-api-key" placeholder="sk-or-v1-..." class="w-full h-10 px-3 surface-card border border-themed rounded-sm text-sm text-themed-ink focus:outline-none"/>
-      <div class="text-[10px] font-mono text-themed-mute mt-1">Leave empty to use built-in key</div>
+    <!-- BYOK Section -->
+    <div class="surface-card2 rounded-md p-4 border border-themed space-y-3">
+      <div class="flex items-center justify-between border-b border-themed pb-2">
+        <h4 class="text-xs font-semibold text-themed-ink uppercase tracking-wider flex items-center gap-1.5">🔑 Bring Your Own API Key (BYOK)</h4>
+        <span class="text-[10px] font-mono text-cyan">Saved Locally</span>
+      </div>
+      <div class="grid gap-2 text-xs">
+        <div>
+          <label class="block text-[11px] font-medium mb-1 text-themed-ink">Gemini API Key</label>
+          <input type="password" id="byok-gemini" placeholder="AIzaSy..." class="w-full h-8 px-2.5 surface-card border border-themed rounded-sm text-xs font-mono text-themed-ink focus:outline-none"/>
+        </div>
+        <div>
+          <label class="block text-[11px] font-medium mb-1 text-themed-ink">Grok / Groq API Key</label>
+          <input type="password" id="byok-grok" placeholder="gsk_... or xai-..." class="w-full h-8 px-2.5 surface-card border border-themed rounded-sm text-xs font-mono text-themed-ink focus:outline-none"/>
+        </div>
+        <div>
+          <label class="block text-[11px] font-medium mb-1 text-themed-ink">OpenRouter API Key</label>
+          <input type="password" id="byok-openrouter" placeholder="sk-or-v1-..." class="w-full h-8 px-2.5 surface-card border border-themed rounded-sm text-xs font-mono text-themed-ink focus:outline-none"/>
+        </div>
+        <div>
+          <label class="block text-[11px] font-medium mb-1 text-themed-ink">NVIDIA NIM Key</label>
+          <input type="password" id="byok-nvidia" placeholder="nvapi-..." class="w-full h-8 px-2.5 surface-card border border-themed rounded-sm text-xs font-mono text-themed-ink focus:outline-none"/>
+        </div>
+        <div>
+          <label class="block text-[11px] font-medium mb-1 text-themed-ink">Ollama Host URL</label>
+          <input type="text" id="byok-ollama" placeholder="http://localhost:11434" class="w-full h-8 px-2.5 surface-card border border-themed rounded-sm text-xs font-mono text-themed-ink focus:outline-none"/>
+        </div>
+      </div>
     </div>
-    <div>
-      <label class="block text-xs font-medium mb-1 text-themed-ink">API Base URL</label>
-      <input type="text" id="s-api-base" placeholder="https://openrouter.ai/api/v1" class="w-full h-10 px-3 surface-card border border-themed rounded-sm text-sm text-themed-ink focus:outline-none"/>
-      <div class="text-[10px] font-mono text-themed-mute mt-1">Default: https://openrouter.ai/api/v1 (or set custom Ollama/SiliconFlow proxy)</div>
-    </div>
+
     <div>
       <label class="block text-xs font-medium mb-1 text-themed-ink">GitHub Personal Access Token (PAT)</label>
       <input type="password" id="s-github-token" placeholder="ghp_..." class="w-full h-10 px-3 surface-card border border-themed rounded-sm text-sm text-themed-ink focus:outline-none"/>
@@ -692,8 +802,17 @@ function getValidKey(userKey, defaultKey) {
   return defaultKey;
 }
 
+let isVibeChat = false;
+
+function getBYOK(provider) {
+  const elem = document.getElementById(`byok-${provider}`);
+  if (elem && elem.value.trim()) return elem.value.trim();
+  const byokObj = JSON.parse(localStorage.getItem('betaai_byok') || '{}');
+  return byokObj[provider] || '';
+}
+
 function getAPIKey() {
-  const userEnteredKey = document.getElementById('s-api-key')?.value;
+  const userEnteredKey = getBYOK('openrouter') || document.getElementById('s-api-key')?.value;
   return getValidKey(userEnteredKey, DEFAULT_API_KEY);
 }
 function getModel() { return document.getElementById('model-select').value; }
@@ -708,17 +827,30 @@ async function fetchChatCompletion(config, bodyParams, signal = null) {
     ? '/api/chat'
     : config.base + '/chat/completions';
 
+  const headers = {
+    'Authorization': 'Bearer ' + apiKey,
+    'Content-Type': 'application/json',
+    'X-Title': 'BETAAI',
+    'x-gemini-key': getBYOK('gemini'),
+    'x-grok-key': getBYOK('grok'),
+    'x-openrouter-key': getBYOK('openrouter'),
+    'x-nvidia-key': getBYOK('nvidia'),
+    'x-ollama-host': getBYOK('ollama') || 'http://localhost:11434'
+  };
+
   const res = await fetch(endpoint, {
     method: 'POST',
     signal: signal,
-    headers: {
-      'Authorization': 'Bearer ' + apiKey,
-      'Content-Type': 'application/json',
-      'X-Title': 'BETAAI'
-    },
+    headers: headers,
     body: JSON.stringify({
       key: apiKey,
       model: config.model,
+      geminiKey: getBYOK('gemini'),
+      grokKey: getBYOK('grok'),
+      openrouterKey: getBYOK('openrouter'),
+      nvidiaKey: getBYOK('nvidia'),
+      ollamaHost: getBYOK('ollama'),
+      mode: (isVibeChat || config.mode === 'code') ? 'code' : 'general',
       ...bodyParams
     })
   });
@@ -1264,6 +1396,15 @@ async function sendChat() {
     mdBox.querySelectorAll('pre code').forEach(block => hljs.highlightElement(block));
     addCopyToCodeBlocks(mdBox);
 
+    // Auto-open VibeCoding canvas if code block is generated or isVibeChat mode is active
+    const codeMatch = full.match(/```(?:html|jsx|javascript|js)?\n([\s\S]*?)```/);
+    if (codeMatch && codeMatch[1]) {
+      const codeText = codeMatch[1].trim();
+      if (isVibeChat || codeText.includes('<html') || codeText.includes('<!DOCTYPE html') || codeText.includes('<div') || codeText.includes('function')) {
+        openVibeDrawer(codeText);
+      }
+    }
+
   } catch(e) {
     if (e.name !== 'AbortError') mdBox.innerHTML = `<span class="text-error">Error: ${esc(e.message)}</span>`;
   }
@@ -1281,7 +1422,6 @@ async function sendChat() {
 }
 
 async function sendChat2(conv, list, text) {
-  // Re-send same message for regeneration
   const aiEl = document.createElement('div');
   aiEl.className = 'flex gap-3 animate-fade-up';
   aiEl.innerHTML = `<div class="w-7 h-7 rounded-lg mesh-gradient flex items-center justify-center text-white text-[11px] font-semibold shrink-0 mt-0.5 shadow-level-2">β</div><div class="flex-1 min-w-0"><div class="surface-card border border-themed rounded-lg rounded-tl-none p-4 shadow-level-2 text-sm markdown-body"><span class="text-themed-mute animate-pulse">Regenerating...</span></div><div class="flex gap-2 mt-1"><button class="copy-ai text-[10px] font-mono text-themed-mute hover:text-themed-ink">copy</button><button class="tts-ai text-[10px] font-mono text-themed-mute hover:text-themed-ink">🔊 speak</button></div></div>`;
@@ -1289,22 +1429,15 @@ async function sendChat2(conv, list, text) {
   const mdBox = aiEl.querySelector('.markdown-body');
 
   try {
-    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method:'POST',
-      headers:{'Authorization':'Bearer '+getAPIKey(),'Content-Type':'application/json'},
-      body: JSON.stringify({ model:getModel(), stream:true, temperature:getTemp()+0.1, max_tokens:getMaxTokens(), messages:[{role:'system',content:getSystemPrompt()}, ...conv.msgs] })
-    });
-    if (!res.ok) {
-      let errMsg = `HTTP error ${res.status}`;
-      try {
-        const errData = await res.json();
-        errMsg = errData.error?.message || errMsg;
-      } catch(e) {}
-      if (res.status === 429 || res.status === 402 || errMsg.toLowerCase().includes('quota') || errMsg.toLowerCase().includes('credit') || errMsg.toLowerCase().includes('exceeded')) {
-        throw new Error('API key quota exceeded. Please configure a new API key in settings or contact the administrator.');
-      }
-      throw new Error(errMsg);
-    }
+    const res = await fetchWithFailover(async (config) => {
+      return await fetchChatCompletion(config, {
+        stream: true,
+        temperature: getTemp() + 0.1,
+        max_tokens: getMaxTokens(),
+        messages: [{ role: 'system', content: getSystemPrompt() }, ...conv.msgs]
+      });
+    }, 'chat');
+
     const reader = res.body.getReader(); const dec = new TextDecoder(); let full='',buf='';
     while(true) { const{done,value}=await reader.read(); if(done)break; buf+=dec.decode(value,{stream:true}); const lines=buf.split('\n'); buf=lines.pop(); for(const line of lines){if(!line.startsWith('data: ')||line==='data: [DONE]')continue; try{const d=JSON.parse(line.slice(6));const c=d.choices?.[0]?.delta?.content;if(c){full+=c;mdBox.innerHTML=marked.parse(full);}}catch(e){}} scrollToBottom(list); }
     conv.msgs.push({role:'assistant',content:full}); saveConvs();
@@ -1334,10 +1467,51 @@ function addCopyToCodeBlocks(container) {
     copyBtn.onclick = () => { navigator.clipboard.writeText(codeText); copyBtn.textContent = '✓'; setTimeout(()=>copyBtn.textContent='copy',1500); };
     btnGroup.appendChild(copyBtn);
 
-    if (codeText.includes('<html') || codeText.includes('<!DOCTYPE html') || codeText.includes('class=') || codeText.includes('function') || codeText.includes('const ') || codeText.includes('import ')) {
+    const isWebCode = codeText.includes('<html') || codeText.includes('<!DOCTYPE html') || codeText.includes('<div') || codeText.includes('class=') || codeText.includes('function');
+
+    if (isWebCode) {
+      // Direct Run Live Preview inside Chat
+      const runBtn = document.createElement('button');
+      runBtn.className = 'px-2 py-0.5 rounded text-[10px] font-mono text-white bg-cyan hover:opacity-90 transition flex items-center gap-1 shadow-level-2';
+      runBtn.innerHTML = '▶ Run Live Preview';
+      runBtn.onclick = () => {
+        let frameWrapper = pre.parentNode.querySelector('.chat-inline-preview');
+        if (frameWrapper) {
+          frameWrapper.remove();
+          return;
+        }
+        frameWrapper = document.createElement('div');
+        frameWrapper.className = 'chat-inline-preview mt-2 border border-themed rounded-lg overflow-hidden surface-card shadow-level-3 animate-fade-up';
+        frameWrapper.innerHTML = `
+          <div class="px-3 py-1.5 surface-card2 border-b border-themed flex items-center justify-between">
+            <span class="text-[11px] font-mono text-cyan flex items-center gap-1">⚡ Live VibeCoding Sandbox</span>
+            <div class="flex items-center gap-2">
+              <button class="fullscreen-preview-btn text-[10px] font-mono text-link hover:underline">↗ Popout</button>
+              <button class="close-preview-btn text-[10px] font-mono text-themed-mute hover:text-error">✕ Close</button>
+            </div>
+          </div>
+          <iframe class="w-full border-0 rounded-b-lg" style="height:360px"></iframe>`;
+        
+        pre.parentNode.insertBefore(frameWrapper, pre.nextSibling);
+        
+        const iframe = frameWrapper.querySelector('iframe');
+        try {
+          const doc = iframe.contentWindow.document || iframe.contentDocument;
+          doc.open();
+          doc.write(codeText);
+          doc.close();
+        } catch(e) {}
+
+        frameWrapper.querySelector('.fullscreen-preview-btn').onclick = () => {
+          const w = window.open(); w.document.write(codeText); w.document.close();
+        };
+        frameWrapper.querySelector('.close-preview-btn').onclick = () => frameWrapper.remove();
+      };
+      btnGroup.appendChild(runBtn);
+
       const launchBtn = document.createElement('button');
       launchBtn.className = 'px-2 py-0.5 rounded text-[10px] font-mono text-cyan bg-cyan/10 hover:bg-cyan/20 transition flex items-center gap-1';
-      launchBtn.innerHTML = '⚡ Launch VibeCoding';
+      launchBtn.innerHTML = '⚡ Edit in VibeCoding';
       launchBtn.onclick = () => {
         document.getElementById('code-prompt').value = codeText;
         document.querySelectorAll('.mode-btn')[2].click();
@@ -1881,44 +2055,152 @@ async function webSearch() {
 }
 
 /* ═══════════════════════════════════════════════════
-   Settings
+   VibeCoding Split Canvas Drawer Engine
    ═══════════════════════════════════════════════════ */
+function openVibeDrawer(code) {
+  const drawer = document.getElementById('chat-vibe-drawer');
+  const editor = document.getElementById('drawer-code-editor');
+  const iframe = document.getElementById('drawer-preview-frame');
+  if (!drawer || !editor || !iframe) return;
+
+  editor.value = code;
+  drawer.classList.remove('hidden');
+
+  setTimeout(() => {
+    try {
+      const doc = iframe.contentWindow.document || iframe.contentDocument;
+      doc.open();
+      doc.write(code);
+      doc.close();
+    } catch(e) {
+      console.error('Drawer preview error:', e);
+    }
+  }, 30);
+}
+
+document.getElementById('drawer-close')?.addEventListener('click', () => {
+  document.getElementById('chat-vibe-drawer')?.classList.add('hidden');
+});
+
+document.getElementById('drawer-tab-preview')?.addEventListener('click', () => {
+  document.getElementById('drawer-panel-preview')?.classList.remove('hidden');
+  document.getElementById('drawer-panel-code')?.classList.add('hidden');
+  document.getElementById('drawer-tab-preview')?.classList.add('btn-ink');
+  document.getElementById('drawer-tab-preview')?.classList.remove('text-themed-body');
+  document.getElementById('drawer-tab-code')?.classList.remove('btn-ink');
+  document.getElementById('drawer-tab-code')?.classList.add('text-themed-body');
+});
+
+document.getElementById('drawer-tab-code')?.addEventListener('click', () => {
+  document.getElementById('drawer-panel-preview')?.classList.add('hidden');
+  document.getElementById('drawer-panel-code')?.classList.remove('hidden');
+  document.getElementById('drawer-tab-code')?.classList.add('btn-ink');
+  document.getElementById('drawer-tab-code')?.classList.remove('text-themed-body');
+  document.getElementById('drawer-tab-preview')?.classList.remove('btn-ink');
+  document.getElementById('drawer-tab-preview')?.classList.add('text-themed-body');
+});
+
+document.getElementById('drawer-popout')?.addEventListener('click', () => {
+  const code = document.getElementById('drawer-code-editor')?.value || '';
+  const w = window.open();
+  w.document.write(code);
+  w.document.close();
+});
+
+document.getElementById('drawer-refine-btn')?.addEventListener('click', () => {
+  const input = document.getElementById('drawer-refine-input');
+  const query = input?.value.trim();
+  if (!query) return;
+  input.value = '';
+  document.getElementById('chat-input').value = `Refine VibeCoding Canvas app: ${query}`;
+  sendChat();
+});
+
+document.getElementById('byok-btn').onclick = () => {
+  document.getElementById('settings-modal').classList.remove('hidden');
+};
+
+const vibeChatBtn = document.getElementById('vibe-chat-toggle');
+if (vibeChatBtn) {
+  vibeChatBtn.onclick = () => {
+    isVibeChat = !isVibeChat;
+    if (isVibeChat) {
+      vibeChatBtn.classList.add('bg-cyan/20', 'text-cyan', 'border-cyan');
+      toast('⚡ VibeCoding mode active in Chat!', 'success');
+      const sampleCode = `<!DOCTYPE html>\n<html>\n<head>\n<script src="https://cdn.tailwindcss.com"><\/script>\n</head>\n<body class="bg-slate-900 text-white min-h-screen flex items-center justify-center p-6">\n<div class="max-w-md w-full bg-slate-800/80 backdrop-blur border border-slate-700 p-8 rounded-2xl shadow-2xl text-center">\n<h1 class="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2">BETAAI VibeCoding Canvas</h1>\n<p class="text-slate-400 text-sm mb-6">Ask anything in chat to render full responsive web apps live on this split canvas.</p>\n<button onclick="alert('⚡ VibeCoding Canvas Ready!')" class="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full text-sm font-medium hover:opacity-90 transition">Test Interactive App</button>\n</div>\n</body>\n</html>`;
+      openVibeDrawer(sampleCode);
+    } else {
+      vibeChatBtn.classList.remove('bg-cyan/20', 'text-cyan', 'border-cyan');
+      document.getElementById('chat-vibe-drawer')?.classList.add('hidden');
+      toast('Chat mode reset to standard assistant', 'info');
+    }
+  };
+}
+
+// Discover Chips and Live Cards
+document.querySelectorAll('.discover-chip').forEach(btn => {
+  btn.onclick = () => {
+    document.getElementById('search-query').value = btn.dataset.query;
+    webSearch();
+  };
+});
+document.querySelectorAll('.discover-card').forEach(card => {
+  card.onclick = () => {
+    document.getElementById('search-query').value = card.dataset.query;
+    webSearch();
+  };
+});
+
 document.getElementById('settings-btn').onclick = () => document.getElementById('settings-modal').classList.remove('hidden');
 document.getElementById('close-settings').onclick = () => document.getElementById('settings-modal').classList.add('hidden');
 document.getElementById('settings-modal').onclick = e => { if(e.target===e.currentTarget) e.currentTarget.classList.add('hidden'); };
 document.getElementById('s-temperature').oninput = function() { document.getElementById('temp-val').textContent = this.value; };
 
 document.getElementById('save-settings').onclick = () => {
+  const byok = {
+    gemini: document.getElementById('byok-gemini')?.value || '',
+    grok: document.getElementById('byok-grok')?.value || '',
+    openrouter: document.getElementById('byok-openrouter')?.value || '',
+    nvidia: document.getElementById('byok-nvidia')?.value || '',
+    ollama: document.getElementById('byok-ollama')?.value || 'http://localhost:11434'
+  };
+  localStorage.setItem('betaai_byok', JSON.stringify(byok));
+
   localStorage.setItem('betaai_settings', JSON.stringify({
-    apiKey: document.getElementById('s-api-key').value,
-    apiBase: document.getElementById('s-api-base').value,
-    githubToken: document.getElementById('s-github-token').value,
-    systemPrompt: document.getElementById('s-system-prompt').value,
-    temperature: document.getElementById('s-temperature').value,
-    maxTokens: document.getElementById('s-max-tokens').value,
+    githubToken: document.getElementById('s-github-token')?.value || '',
+    systemPrompt: document.getElementById('s-system-prompt')?.value || '',
+    temperature: document.getElementById('s-temperature')?.value || '0.7',
+    maxTokens: document.getElementById('s-max-tokens')?.value || '4096',
     model: getModel()
   }));
-  localStorage.setItem('betaai_api_base', document.getElementById('s-api-base').value);
-  toast('Settings saved','success');
+  toast('Settings & BYOK keys saved locally!','success');
   document.getElementById('settings-modal').classList.add('hidden');
 };
 
-// Load saved settings
+// Load saved settings & BYOK
 (function() {
+  const byok = JSON.parse(localStorage.getItem('betaai_byok') || '{}');
+  if (byok.gemini && document.getElementById('byok-gemini')) document.getElementById('byok-gemini').value = byok.gemini;
+  if (byok.grok && document.getElementById('byok-grok')) document.getElementById('byok-grok').value = byok.grok;
+  if (byok.openrouter && document.getElementById('byok-openrouter')) document.getElementById('byok-openrouter').value = byok.openrouter;
+  if (byok.nvidia && document.getElementById('byok-nvidia')) document.getElementById('byok-nvidia').value = byok.nvidia;
+  if (byok.ollama && document.getElementById('byok-ollama')) document.getElementById('byok-ollama').value = byok.ollama;
+
   const s = JSON.parse(localStorage.getItem('betaai_settings') || '{}');
-  if (s.apiKey) document.getElementById('s-api-key').value = s.apiKey;
-  if (s.apiBase) { document.getElementById('s-api-base').value = s.apiBase; localStorage.setItem('betaai_api_base', s.apiBase); }
-  if (s.githubToken) document.getElementById('s-github-token').value = s.githubToken;
-  if (s.systemPrompt) document.getElementById('s-system-prompt').value = s.systemPrompt;
-  if (s.temperature) { document.getElementById('s-temperature').value = s.temperature; document.getElementById('temp-val').textContent = s.temperature; }
-  if (s.maxTokens) document.getElementById('s-max-tokens').value = s.maxTokens;
-  if (s.model) document.getElementById('model-select').value = s.model;
+  if (s.githubToken && document.getElementById('s-github-token')) document.getElementById('s-github-token').value = s.githubToken;
+  if (s.systemPrompt && document.getElementById('s-system-prompt')) document.getElementById('s-system-prompt').value = s.systemPrompt;
+  if (s.temperature && document.getElementById('s-temperature')) { document.getElementById('s-temperature').value = s.temperature; document.getElementById('temp-val').textContent = s.temperature; }
+  if (s.maxTokens && document.getElementById('s-max-tokens')) document.getElementById('s-max-tokens').value = s.maxTokens;
+  if (s.model && document.getElementById('model-select')) document.getElementById('model-select').value = s.model;
 })();
 
 document.getElementById('clear-all-data').onclick = () => {
-  if (confirm('Clear all conversations and settings? This cannot be undone.')) {
-    conversations = []; localStorage.removeItem('betaai_convs'); localStorage.removeItem('betaai_settings');
-    newChat(); renderHistory(); toast('All data cleared');
+  if (confirm('Clear all conversations, BYOK keys, and settings? This cannot be undone.')) {
+    conversations = [];
+    localStorage.removeItem('betaai_convs');
+    localStorage.removeItem('betaai_settings');
+    localStorage.removeItem('betaai_byok');
+    newChat(); renderHistory(); toast('All data & keys cleared');
   }
 };
 

@@ -72,7 +72,7 @@ async function tryProvider(provider, model, body, wantsStream) {
 const server = http.createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-gemini-key, x-grok-key, x-openrouter-key, x-nvidia-key, x-ollama-host');
 
   if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
 
@@ -93,37 +93,73 @@ const server = http.createServer(async (req, res) => {
         const wantsStream = payload.stream === true;
         let lastErr = null;
 
+        const clientGeminiKey = req.headers['x-gemini-key'] || payload.geminiKey || process.env.GEMINI_KEY || '';
+        const clientGrokKey = req.headers['x-grok-key'] || payload.grokKey || process.env.GROK_KEY || process.env.GROQ_KEY || '';
+        const clientOpenRouterKey = req.headers['x-openrouter-key'] || payload.openrouterKey || process.env.OPENROUTER_KEY || '';
+        const clientNvidiaKey = req.headers['x-nvidia-key'] || payload.nvidiaKey || process.env.NVIDIA_KEY || '';
+        const clientOllamaHost = req.headers['x-ollama-host'] || payload.ollamaHost || 'http://localhost:11434';
+
         const authHeader = req.headers['authorization'] || '';
         const clientKey = authHeader.replace(/^Bearer\s+/i, '').trim() || payload.key;
-        const cleanModel = rawModel.replace(/^(search|coding|nvidia|openrouter)\//i, '').trim();
+        const cleanModel = rawModel.replace(/^(search|coding|notebook|nvidia|openrouter|groq|grok|gemini|ollama)\//i, '').trim();
 
         const isCodingMode = payload.mode === 'code' || rawModel.includes('coder') || rawModel.includes('coding');
-        const geminiKey = process.env.GEMINI_KEY || '';
-        const openrouterKey = process.env.OPENROUTER_KEY || '';
 
-        const activeProviders = PROVIDERS.map(p => {
-          let keyToUse = p.key;
-          if (p.name === 'openrouter') {
-            if (isCodingMode && geminiKey) {
-              keyToUse = geminiKey;
-            } else if (openrouterKey) {
-              keyToUse = openrouterKey;
-            } else if (clientKey && clientKey.startsWith('sk-or-v1-')) {
-              keyToUse = clientKey;
-            } else {
-              keyToUse = openrouterKey || geminiKey;
-            }
-          }
-          return { ...p, key: keyToUse };
-        }).filter(p => p.key && p.key.trim().length > 0);
+        const activeProviders = [];
+        if (cleanModel.startsWith('ollama') || rawModel.includes('ollama')) {
+          activeProviders.push({
+            name: 'ollama',
+            url: `${clientOllamaHost.replace(/\/$/, '')}/v1/chat/completions`,
+            key: 'ollama',
+            models: [cleanModel || 'llama3', 'qwen2.5-coder', 'mistral'],
+            timeout: 10000
+          });
+        }
+        if (clientGrokKey) {
+          activeProviders.push({
+            name: 'groq',
+            url: clientGrokKey.startsWith('xai-') ? 'https://api.x.ai/v1/chat/completions' : 'https://api.groq.com/openai/v1/chat/completions',
+            key: clientGrokKey,
+            models: ['llama-3.3-70b-versatile', 'grok-beta', 'llama3-8b-8192'],
+            timeout: 6000
+          });
+        }
+        if (clientGeminiKey) {
+          activeProviders.push({
+            name: 'gemini',
+            url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+            key: clientGeminiKey,
+            models: ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'],
+            timeout: 7000
+          });
+        }
+        if (clientOpenRouterKey || clientKey) {
+          activeProviders.push({
+            name: 'openrouter',
+            url: 'https://openrouter.ai/api/v1/chat/completions',
+            key: clientOpenRouterKey || clientKey,
+            models: ['google/gemini-2.5-flash:free', 'meta-llama/llama-3.3-70b-instruct:free', 'qwen/qwen-2.5-coder-32b-instruct:free', 'deepseek/deepseek-r1:free'],
+            timeout: 7000,
+            extraHeaders: { 'X-Title': 'BETAAI' }
+          });
+        }
+        if (clientNvidiaKey) {
+          activeProviders.push({
+            name: 'nvidia',
+            url: 'https://integrate.api.nvidia.com/v1/chat/completions',
+            key: clientNvidiaKey,
+            models: ['meta/llama-3.1-70b-instruct', 'meta/llama-3.1-8b-instruct'],
+            timeout: 7000
+          });
+        }
 
         if (activeProviders.length === 0) {
           activeProviders.push({
             name: 'openrouter',
             url: 'https://openrouter.ai/api/v1/chat/completions',
-            key: isCodingMode ? (geminiKey || openrouterKey || clientKey) : (openrouterKey || geminiKey || clientKey),
+            key: clientOpenRouterKey || clientGeminiKey || clientKey || '',
             models: isCodingMode ? ['google/gemini-2.5-flash:free', 'qwen/qwen-2.5-coder-32b-instruct:free'] : ['meta-llama/llama-3.3-70b-instruct:free', 'google/gemini-2.5-flash:free', 'deepseek/deepseek-r1:free'],
-            timeout: 12000,
+            timeout: 10000,
             extraHeaders: { 'X-Title': 'BETAAI' }
           });
         }
@@ -207,6 +243,9 @@ const server = http.createServer(async (req, res) => {
         res.end(JSON.stringify({ error: { message: e.message } }));
       }
     });
+    return;
+  }
+
   if (req.url.startsWith('/api/image')) {
     const urlObj = new URL(req.url, `http://${req.headers.host}`);
     const prompt = urlObj.searchParams.get('prompt') || 'Abstract Digital Art';
