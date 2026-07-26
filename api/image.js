@@ -94,11 +94,32 @@ export default async function handler(req, res) {
     }
   }
 
+  // Try Lexica AI Image Engine (instant AI image generation, zero IP queue limits)
+  try {
+    const lexicaRes = await fetch(`https://lexica.art/api/v1/search?q=${cleanPrompt}`);
+    if (lexicaRes.ok) {
+      const data = await lexicaRes.json();
+      if (data.images && data.images.length > 0) {
+        const randomIndex = Math.floor(Math.random() * Math.min(data.images.length, 6));
+        const lexicaImgUrl = data.images[randomIndex]?.src || data.images[0]?.src;
+        if (lexicaImgUrl) {
+          const { buffer, contentType } = await fetchImageWithTimeout(lexicaImgUrl, 10000);
+          if (buffer && buffer.byteLength > 1000) {
+            res.setHeader('Content-Type', contentType);
+            res.setHeader('Cache-Control', 'public, max-age=86400');
+            return res.status(200).send(Buffer.from(buffer));
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[Lexica AI Proxy] Failed:', e.message);
+  }
+
   const targets = [
     `https://image.pollinations.ai/prompt/${cleanPrompt}?width=${width}&height=${height}&seed=${seed}&nologo=true&enhance=true`,
     `https://pollinations.ai/p/${cleanPrompt}?width=${width}&height=${height}&seed=${seed}`,
-    `https://gen.pollinations.ai/image/${cleanPrompt}?width=${width}&height=${height}&seed=${seed}`,
-    `https://image.pollinations.ai/prompt/${cleanPrompt}?width=${width}&height=${height}&seed=${seed}&model=flux`
+    `https://gen.pollinations.ai/image/${cleanPrompt}?width=${width}&height=${height}&seed=${seed}`
   ];
 
   for (const targetUrl of targets) {
