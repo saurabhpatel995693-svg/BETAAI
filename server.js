@@ -20,33 +20,26 @@ const MIME_TYPES = {
 
 const PROVIDERS = [
   {
+    name: 'openrouter',
+    url: 'https://openrouter.ai/api/v1/chat/completions',
+    key: process.env.OPENROUTER_KEY || process.env.GEMINI_KEY || '',
+    models: ['google/gemini-2.5-flash:free', 'meta-llama/llama-3.3-70b-instruct:free', 'qwen/qwen-2.5-coder-32b-instruct:free', 'deepseek/deepseek-r1:free'],
+    timeout: 4000,
+    extraHeaders: { 'X-Title': 'BETAAI' }
+  },
+  {
     name: 'nvidia',
     url: 'https://integrate.api.nvidia.com/v1/chat/completions',
     key: process.env.NVIDIA_KEY || '',
     models: ['meta/llama-3.1-70b-instruct', 'meta/llama-3.1-8b-instruct'],
-    timeout: 12000
-  },
-  {
-    name: 'openrouter',
-    url: 'https://openrouter.ai/api/v1/chat/completions',
-    key: process.env.OPENROUTER_KEY || process.env.GEMINI_KEY || '',
-    models: ['google/gemini-2.5-flash:free', 'meta-llama/llama-3.3-70b-instruct:free', 'qwen/qwen-2.5-coder-32b-instruct:free'],
-    timeout: 12000,
-    extraHeaders: { 'X-Title': 'BETAAI' }
+    timeout: 4000
   },
   {
     name: 'coding',
     url: process.env.CODING_API_URL || 'https://api.siliconflow.cn/v1/chat/completions',
     key: process.env.CODING_API_KEY || '',
-    models: ['Qwen/Qwen2.5-Coder-32B-Instruct', 'deepseek-ai/DeepSeek-V3', 'meta-llama/Llama-3.3-70B-Instruct-Instruct'],
-    timeout: 15000
-  },
-  {
-    name: 'search',
-    url: process.env.SEARCH_API_URL || 'https://api.siliconflow.cn/v1/chat/completions',
-    key: process.env.SEARCH_API_KEY || '',
-    models: ['Qwen/Qwen2.5-72B-Instruct', 'deepseek-ai/DeepSeek-V3', 'meta-llama/Llama-3.3-70B-Instruct-Instruct'],
-    timeout: 15000
+    models: ['Qwen/Qwen2.5-Coder-32B-Instruct', 'deepseek-ai/DeepSeek-V3'],
+    timeout: 5000
   }
 ];
 
