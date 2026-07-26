@@ -71,11 +71,34 @@ export default async function handler(req, res) {
   const seed = query.seed || Math.floor(Math.random() * 1000000);
 
   const cleanPrompt = encodeURIComponent(prompt);
+  const hfToken = query.hf_token || process.env.HF_TOKEN || process.env.HUGGINGFACE_KEY;
+
+  // Try HuggingFace FLUX.1 if token present
+  if (hfToken) {
+    try {
+      const hfRes = await fetch('https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${hfToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inputs: prompt })
+      });
+      if (hfRes.ok) {
+        const buffer = await hfRes.arrayBuffer();
+        if (buffer && buffer.byteLength > 1000) {
+          res.setHeader('Content-Type', 'image/jpeg');
+          res.setHeader('Cache-Control', 'public, max-age=86400');
+          return res.status(200).send(Buffer.from(buffer));
+        }
+      }
+    } catch(e) {
+      console.warn('[HF Image] Failed:', e.message);
+    }
+  }
+
   const targets = [
     `https://image.pollinations.ai/prompt/${cleanPrompt}?width=${width}&height=${height}&seed=${seed}&nologo=true&enhance=true`,
-    `https://image.pollinations.ai/prompt/${cleanPrompt}?width=${width}&height=${height}&seed=${seed}&model=flux`,
-    `https://image.pollinations.ai/prompt/${cleanPrompt}?width=${width}&height=${height}&seed=${seed}&model=turbo`,
-    `https://image.pollinations.ai/prompt/${cleanPrompt}?width=${width}&height=${height}&seed=${seed}&model=artistic`
+    `https://pollinations.ai/p/${cleanPrompt}?width=${width}&height=${height}&seed=${seed}`,
+    `https://gen.pollinations.ai/image/${cleanPrompt}?width=${width}&height=${height}&seed=${seed}`,
+    `https://image.pollinations.ai/prompt/${cleanPrompt}?width=${width}&height=${height}&seed=${seed}&model=flux`
   ];
 
   for (const targetUrl of targets) {

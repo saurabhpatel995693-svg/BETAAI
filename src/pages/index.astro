@@ -1453,24 +1453,33 @@ document.getElementById('generate-img-btn').onclick = async () => {
 
     const seed = Math.floor(Math.random() * 9000000) + Date.now() + (i * 1000);
     const url1 = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed}&nologo=true`;
-    const url2 = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed}&model=flux`;
-    const url3 = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed}&model=turbo`;
+    const url2 = `https://pollinations.ai/p/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed}`;
+    const url3 = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed}&model=flux`;
 
     card.innerHTML = `
-      <div class="relative min-h-[200px] flex items-center justify-center surface-card2">
+      <div class="relative min-h-[220px] flex items-center justify-center surface-card2">
         <img src="${url1}" 
              alt="${esc(prompt)}"
-             class="w-full cursor-pointer block"
+             class="w-full cursor-pointer block rounded-t-lg"
              onclick="document.getElementById('lightbox-img').src=this.src;document.getElementById('lightbox').classList.remove('hidden')"
-             onerror="if (!this.dataset.triedFlux) { this.dataset.triedFlux = 'true'; this.src = '${url2}'; } else if (!this.dataset.triedTurbo) { this.dataset.triedTurbo = 'true'; this.src = '${url3}'; }"/>
+             onerror="if (!this.dataset.triedFallback1) { this.dataset.triedFallback1 = 'true'; this.src = '${url2}'; } else if (!this.dataset.triedFallback2) { this.dataset.triedFallback2 = 'true'; this.src = '${url3}'; }"/>
       </div>
-      <div class="p-3 surface-card">
+      <div class="p-3 surface-card border-t border-themed">
         <p class="text-[11px] text-themed-mute font-mono mb-2 truncate">${esc(prompt)}</p>
         <div class="flex gap-2">
-          <button class="h-7 px-3 btn-ink rounded-pill text-[11px] font-medium flex items-center" onclick="window.open(this.closest('.surface-card border').querySelector('img').src, '_blank')">↓ Download</button>
-          <button class="h-7 px-3 border border-themed rounded-pill text-[11px] font-medium text-themed-body hover-card2" onclick="navigator.clipboard.writeText(this.closest('.surface-card border').querySelector('img').src);toast('Copied!','success')">Copy URL</button>
+          <a href="${url1}" target="_blank" download="betaai_image_${seed}.jpg" class="h-7 px-3 btn-ink rounded-pill text-[11px] font-medium flex items-center gap-1">↓ Download</a>
+          <button class="copy-url-btn h-7 px-3 border border-themed rounded-pill text-[11px] font-medium text-themed-body hover-card2">Copy URL</button>
         </div>
       </div>`;
+
+    const copyBtn = card.querySelector('.copy-url-btn');
+    if (copyBtn) {
+      copyBtn.onclick = () => {
+        const imgSrc = card.querySelector('img')?.src || url1;
+        navigator.clipboard.writeText(imgSrc);
+        toast('Image URL copied!', 'success');
+      };
+    }
   }
 
   btn.disabled = false;
