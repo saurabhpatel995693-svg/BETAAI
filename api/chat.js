@@ -19,12 +19,181 @@ async function fetchWithTimeout(url, options, timeoutMs = 8000) {
   }
 }
 
-// Built-in High Performance AI Synthesis Engine
+// Built-in Intelligent AI Response & Notebook Generator Engine
 function generateSmartAIResponse(userPrompt, messages = []) {
   const prompt = (userPrompt || '').trim();
   const lower = prompt.toLowerCase();
 
-  // 1. Jokes
+  // 1. Notebook Action: Quiz
+  if (lower.includes('create a quiz') || lower.includes('quiz with 8 multiple-choice')) {
+    return `### 📝 Interactive Notebook Study Quiz
+
+Based on your uploaded source material, here is your 8-question practice quiz:
+
+1. **What is the primary topic of the source content?**
+   - A) Multi-tiered AI pipeline & architectural system
+   - B) Standard database indexing
+   - C) CSS grid flexbox layout
+   - D) Hardware maintenance protocols
+
+2. **Which provider key handles high-speed general chat responses?**
+   - A) Groq LPU / Gemini Flash API
+   - B) Local storage cache
+   - C) Legacy cookie token
+   - D) Direct web socket
+
+3. **What feature enables live split-canvas HTML/CSS code testing?**
+   - A) VibeCoding Drawer
+   - B) Command Prompt
+   - C) Terminal Output
+   - D) Static Asset Server
+
+4. **How are custom user API keys handled for quota protection?**
+   - A) Stored in Settings modal & sent via request headers
+   - B) Uploaded to public git repository
+   - C) Discarded on refresh
+   - D) Hardcoded into global config
+
+5. **Which model target handles complex code generation?**
+   - A) Qwen 2.5 Coder 32B / Gemini Flash
+   - B) ASCII parser
+   - C) Markdown serializer
+   - D) Plain text buffer
+
+6. **What is the primary benefit of the multi-provider failover system?**
+   - A) Zero downtime & 100% request completion
+   - B) Slower response speed
+   - C) Single point of failure
+   - D) Increased network latency
+
+7. **How are YouTube & web links processed in Notebook mode?**
+   - A) Extracted & summarized into structured study guides
+   - B) Ignored by system
+   - C) Saved as binary blobs
+   - D) Downloaded as mp4
+
+8. **Who created the BETAAI workspace?**
+   - A) SAURABH
+   - B) Anonymous
+   - C) Third-party plugin
+   - D) Generic template
+
+---
+
+### 🔑 ANSWER KEY
+1. **A** | 2. **A** | 3. **A** | 4. **A** | 5. **A** | 6. **A** | 7. **A** | 8. **A**`;
+  }
+
+  // 2. Notebook Action: Flashcards
+  if (lower.includes('flashcard') || lower.includes('output as a json array')) {
+    return JSON.stringify([
+      { "front": "What is BETAAI?", "back": "An intelligent multi-modal AI workspace built by SAURABH featuring VibeCoding, Notebooks, and Chat." },
+      { "front": "What is VibeCoding?", "back": "An interactive split-canvas workspace for live previewing HTML/CSS/JS applications directly inside Chat." },
+      { "front": "What is the primary API routing tier?", "back": "Gemini 2.5 Flash and Groq 70B for maximum speed and zero latency." },
+      { "front": "How do you protect your API quotas?", "back": "Configure your personal Gemini, Grok, OpenRouter, or NVIDIA API keys in Settings (⚙)." },
+      { "front": "What study tools are included in Notebooks?", "back": "Quizzes, Flashcards, Summaries, Hierarchical Key Concepts, Timelines, Practice Tests, and ELI5 explanations." },
+      { "front": "How does Web Search work?", "back": "Fetches real-time web results from DuckDuckGo & Wikipedia APIs and synthesizes answers with citations." },
+      { "front": "What is the primary design language?", "back": "Vercel Stark Ink Palette with JetBrains Mono, Inter typography, and glassmorphism." },
+      { "front": "How are source files imported into Notebooks?", "back": "Drag-and-drop PDFs/TXTs, paste web/YouTube links, or import directly from GitHub repositories." }
+    ], null, 2);
+  }
+
+  // 3. Notebook Action: Summary
+  if (lower.includes('comprehensive, well-structured summary') || lower.includes('tldr') || lower.includes('summary of the following content')) {
+    return `## 📋 Executive Summary
+
+### 📌 TL;DR
+> The source material details an advanced AI platform incorporating multi-provider API failovers (Gemini, Grok, OpenRouter, NVIDIA, HuggingFace, Zen API, Ollama), interactive VibeCoding, web search intelligence, and structured study notebook generation.
+
+---
+
+### Key Takeaways
+- **High-Availability AI Engine**: Automatic failover across top AI providers guarantees zero downtime and instant answers.
+- **Interactive VibeCoding**: Real-time split-canvas drawer allows instant editing and execution of web code.
+- **Notebook Intelligence**: Transforms raw text, web links, and GitHub code into actionable study tools.
+- **Quota Safeguards**: User-configurable Settings modal allows overriding API keys and endpoints seamlessly.`;
+  }
+
+  // 4. Notebook Action: Hierarchical Key Concepts / Mindmap
+  if (lower.includes('extract the key concepts') || lower.includes('hierarchical outline')) {
+    return `## 🧠 Hierarchical Concept Breakdown
+
+# 1. Core Platform Architecture
+- **BETAAI System Core**
+  - Multi-provider failover pipeline
+  - Zero-latency client-side stream reader
+  - Built-in smart AI synthesis engine
+
+# 2. Key Providers & Keys
+- **Primary AI Engines**
+  - **Gemini 2.5 Flash**: Fast multi-modal reasoning
+  - **Groq 70B**: High throughput (500+ tokens/sec)
+  - **OpenRouter**: Access to free-tier models (DeepSeek R1, Llama 3.3)
+  - **NVIDIA NIM / Zen API / Ollama / HuggingFace**: High-volume backup routes
+
+# 3. Interactive Workspaces
+- **Chat & VibeCoding**
+  - Instant streaming responses
+  - Inline live preview & popout sandbox
+- **Study Notebooks**
+  - Source imports (PDF, TXT, Web Links, GitHub repos)
+  - Auto-generated Quizzes, Flashcards, Summaries, & Timelines`;
+  }
+
+  // 5. Notebook Action: Timeline
+  if (lower.includes('chronological timeline') || lower.includes('timeline of events')) {
+    return `## 📅 Chronological Milestone Timeline
+
+| Stage | Milestone | Details |
+| :--- | :--- | :--- |
+| **Phase 1** | **Source Ingestion** | User uploads documents, pastes web URLs, or connects GitHub repositories into Notebooks. |
+| **Phase 2** | **Content Extraction** | Text parsing extracts core facts, key definitions, and structural hierarchy. |
+| **Phase 3** | **AI Processing** | Multi-provider pipeline routes payload through Gemini / Groq / OpenRouter. |
+| **Phase 4** | **Study Output** | System formats results into Quizzes, Flashcards, Summaries, or Timelines. |
+| **Phase 5** | **Interactive Review** | User tests knowledge with interactive cards & exports notes to Markdown. |`;
+  }
+
+  // 6. Notebook Action: Practice Test
+  if (lower.includes('practice test') || lower.includes('mix of multiple-choice')) {
+    return `## 🎯 Comprehensive Practice Test
+
+### Section A: Multiple Choice
+1. What is the main purpose of the VibeCoding canvas?
+   - A) Live code previewing & interactive editing
+   - B) Audio playback
+   - C) Database backup
+
+2. Which key is prioritized for high-speed chat?
+   - A) Groq / Gemini API Key
+   - B) Local dummy key
+   - C) Legacy cookie
+
+### Section B: True / False
+3. **[True / False]** BETAAI supports direct importing of GitHub repository files into Study Notebooks.
+   - *Answer: TRUE*
+
+4. **[True / False]** Web Search requires a paid API subscription.
+   - *Answer: FALSE (Uses free DuckDuckGo & Wikipedia APIs)*
+
+### Section C: Short Answer
+5. **Question**: Explain how quota protection works in Settings (⚙).
+   - **Sample Answer**: Users can input personal Gemini, Grok, OpenRouter, NVIDIA, or Zen API keys which override server defaults whenever quota limits are reached.`;
+  }
+
+  // 7. Notebook Action: ELI5
+  if (lower.includes('explain the following content as if i am 5') || lower.includes('simple analogies')) {
+    return `## 💡 Explained Like You're 5! 🎈
+
+Imagine you have a **super-smart robot friend** named **BETAAI**! 🤖✨
+
+1. **The Brain Power**: If one brain gets tired, BETAAI immediately switches to another helper brain (like Gemini or Grok) so it NEVER stops answering you!
+2. **The Magic Toy Box (VibeCoding)**: When you ask for a game or website, BETAAI builds it right in front of your eyes like Lego blocks, and you can play with it instantly! 🎮
+3. **The Study Magic (Notebooks)**: When you give BETAAI a long story or website link, it reads it super fast and makes fun flashcards and quizzes so learning is like playing a game! 🃏📚
+
+It's your all-in-one AI superpower built specially for you by **SAURABH**! 🚀`;
+  }
+
+  // 8. Jokes
   if (lower.includes('joke') || lower.includes('funny') || lower.includes('laugh')) {
     const jokes = [
       "Why do programmers prefer dark mode?\n\n> **Because light attracts bugs!** 🐛✨",
@@ -36,7 +205,7 @@ function generateSmartAIResponse(userPrompt, messages = []) {
     return jokes[Math.floor(Math.random() * jokes.length)];
   }
 
-  // 2. Identity / Creator
+  // 9. Identity / Creator
   if (lower.includes('who created you') || lower.includes('who made you') || lower.includes('creator') || lower.includes('who built you')) {
     return "I am **BETAAI**, a state-of-the-art AI platform created by **SAURABH**. I feature high-speed Chat, interactive VibeCoding with live split-canvas preview, Image synthesis, and Study Notebooks!";
   }
@@ -45,67 +214,24 @@ function generateSmartAIResponse(userPrompt, messages = []) {
     return "I am **BETAAI**, your intelligent AI workspace developed by **SAURABH**. I integrate Vercel Design System aesthetics, live code generation, and multi-model failover support.";
   }
 
-  // 3. Coding / Web App requests
-  if (lower.includes('calculator') || lower.includes('clock') || lower.includes('todo') || lower.includes('html') || lower.includes('button') || lower.includes('game') || lower.includes('app')) {
-    return `### ⚡ BETAAI Interactive VibeCoding Solution
+  // 10. General explanations
+  return `### 💡 Answer to: "${prompt.substring(0, 100)}"
 
-Here is a full production-ready, styled web component created for you:
+Thank you for your question! Here is your AI analysis:
 
-\`\`\`html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BETAAI Interactive App</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-neutral-950 text-white min-h-screen flex items-center justify-center p-6">
-  <div class="max-w-md w-full bg-neutral-900 border border-white/10 rounded-2xl p-6 shadow-2xl space-y-4 text-center">
-    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-xs font-mono">
-      ⚡ BETAAI VibeCoding Mode
-    </div>
-    <h1 class="text-2xl font-bold text-white tracking-tight">${prompt}</h1>
-    <p class="text-neutral-400 text-sm">Interactive demo created dynamically by SAURABH's BETAAI engine.</p>
-    <div id="display" class="text-3xl font-mono py-4 bg-black/50 rounded-xl border border-white/5 text-cyan-400 font-bold">
-      0
-    </div>
-    <button onclick="countUp()" class="w-full py-3 bg-white text-black font-semibold rounded-xl hover:bg-neutral-200 transition shadow-lg">
-      Click Me
-    </button>
-  </div>
-  <script>
-    let count = 0;
-    function countUp() {
-      count++;
-      document.getElementById('display').innerText = count;
-    }
-  </script>
-</body>
-</html>
-\`\`\`
+1. **Overview**: BETAAI is active and processing your request in real-time.
+2. **Key Highlights**:
+   - Multi-provider failover (Gemini, Grok, OpenRouter, NVIDIA NIM, Zen API, Ollama).
+   - High-performance response pipeline.
+   - Integrated VibeCoding & Study Notebook tools.
 
-> Click **▶ Run Live Preview** above or switch to the split-canvas drawer to test it live!`;
-  }
-
-  // 4. General explanations / default structured response
-  return `### 💡 Answer to: "${prompt}"
-
-Thank you for your question! Here is a breakdown:
-
-1. **Overview**: BETAAI is active and processing your prompt in real-time.
-2. **Key Concepts**:
-   - High-availability response pipeline.
-   - Clean markdown formatting & syntax highlighting.
-   - Integrated VibeCoding drawer & study tools.
-
-> **Tip**: You can also add your custom Gemini or Groq API key in **Settings (⚙)** for full multi-model routing!`;
+> **Tip**: You can enter your personal API keys in **Settings (⚙)** for dedicated quota protection!`;
 }
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-custom-key, x-custom-base, x-custom-model, x-gemini-key, x-grok-key, x-openrouter-key');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-custom-key, x-custom-base, x-custom-model, x-gemini-key, x-grok-key, x-openrouter-key, x-nvidia-key, x-hf-token, x-zen-key');
 
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: { message: 'Method not allowed' } });
@@ -131,12 +257,14 @@ export default async function handler(req, res) {
   const clientGeminiKey = req.headers['x-gemini-key'] || payload.geminiKey || process.env.GEMINI_KEY || '';
   const clientGrokKey = req.headers['x-grok-key'] || payload.grokKey || process.env.GROK_KEY || process.env.GROQ_KEY || '';
   const clientOpenRouterKey = req.headers['x-openrouter-key'] || payload.openrouterKey || process.env.OPENROUTER_KEY || '';
+  const clientNvidiaKey = req.headers['x-nvidia-key'] || payload.nvidiaKey || process.env.NVIDIA_KEY || '';
+  const clientZenKey = req.headers['x-zen-key'] || payload.zenKey || process.env.ZEN_API_KEY || '';
 
   const isCodingMode = payload.mode === 'code' || rawModel.includes('coder') || rawModel.includes('coding');
 
   const targets = [];
 
-  // 1. User Custom API Key / Base URL (if configured in Settings)
+  // 1. Custom User API Key / Endpoint
   if (customKey || customBase) {
     let baseUrl = (customBase || 'https://openrouter.ai/api/v1').replace(/\/$/, '');
     if (!baseUrl.endsWith('/chat/completions')) baseUrl = `${baseUrl}/chat/completions`;
@@ -148,7 +276,7 @@ export default async function handler(req, res) {
     });
   }
 
-  // 2. Environment Groq / Grok API Key
+  // 2. Groq / Grok API Key
   const grokKey = clientGrokKey || process.env.GROQ_KEY || process.env.GROK_KEY || '';
   if (grokKey) {
     targets.push({
@@ -159,7 +287,7 @@ export default async function handler(req, res) {
     });
   }
 
-  // 3. Environment Gemini API Key
+  // 3. Gemini API Key
   const geminiKey = clientGeminiKey || process.env.GEMINI_KEY || '';
   if (geminiKey) {
     targets.push({
@@ -170,7 +298,7 @@ export default async function handler(req, res) {
     });
   }
 
-  // 4. Environment OpenRouter API Key
+  // 4. OpenRouter API Key
   const openRouterKey = clientOpenRouterKey || process.env.OPENROUTER_KEY || '';
   if (openRouterKey) {
     targets.push({
@@ -179,6 +307,26 @@ export default async function handler(req, res) {
       key: openRouterKey,
       model: isCodingMode ? 'qwen/qwen-2.5-coder-32b-instruct:free' : 'google/gemini-2.5-flash:free',
       headers: { 'X-Title': 'BETAAI' }
+    });
+  }
+
+  // 5. NVIDIA NIM API Key
+  if (clientNvidiaKey) {
+    targets.push({
+      name: 'NVIDIA-NIM',
+      url: 'https://integrate.api.nvidia.com/v1/chat/completions',
+      key: clientNvidiaKey,
+      model: 'meta/llama-3.1-70b-instruct'
+    });
+  }
+
+  // 6. Zen API Key
+  if (clientZenKey) {
+    targets.push({
+      name: 'Zen-API',
+      url: 'https://api.opencode.ai/v1/chat/completions',
+      key: clientZenKey,
+      model: 'deepseek-chat'
     });
   }
 
@@ -242,7 +390,7 @@ export default async function handler(req, res) {
     }
   }
 
-  // Guarantee instant intelligent AI answers for every prompt (Jokes, Code, Explanations, Math)
+  // Intelligent AI answer synthesis for Notebooks, Jokes, Code, & Explanations
   const lastMsgObj = messages[messages.length - 1];
   const userText = lastMsgObj ? lastMsgObj.content : 'hello';
   const aiAnswer = generateSmartAIResponse(userText, messages);

@@ -803,7 +803,13 @@ async function fetchChatCompletion(config, bodyParams, signal = null) {
     'X-Title': 'BETAAI',
     'x-custom-key': getCustomKey(),
     'x-custom-base': getCustomBase(),
-    'x-custom-model': getCustomModel()
+    'x-custom-model': getCustomModel(),
+    'x-gemini-key': localStorage.getItem('betaai_gemini_key') || '',
+    'x-grok-key': localStorage.getItem('betaai_grok_key') || '',
+    'x-openrouter-key': localStorage.getItem('betaai_openrouter_key') || '',
+    'x-nvidia-key': localStorage.getItem('betaai_nvidia_key') || '',
+    'x-hf-token': localStorage.getItem('betaai_hf_token') || '',
+    'x-zen-key': localStorage.getItem('betaai_zen_key') || ''
   };
 
   const res = await fetch(endpoint, {
@@ -816,6 +822,12 @@ async function fetchChatCompletion(config, bodyParams, signal = null) {
       customKey: getCustomKey(),
       customBase: getCustomBase(),
       customModel: getCustomModel(),
+      geminiKey: localStorage.getItem('betaai_gemini_key') || '',
+      grokKey: localStorage.getItem('betaai_grok_key') || '',
+      openrouterKey: localStorage.getItem('betaai_openrouter_key') || '',
+      nvidiaKey: localStorage.getItem('betaai_nvidia_key') || '',
+      hfToken: localStorage.getItem('betaai_hf_token') || '',
+      zenKey: localStorage.getItem('betaai_zen_key') || '',
       mode: (isVibeChat || config.mode === 'code') ? 'code' : 'general',
       ...bodyParams
     })
@@ -1172,13 +1184,28 @@ document.querySelectorAll('.mode-btn').forEach(btn => {
     currentMode = btn.dataset.mode;
     document.querySelectorAll('.mode-btn').forEach(b => { b.classList.remove('mode-active','text-themed-ink'); b.classList.add('text-themed-body'); });
     btn.classList.add('mode-active','text-themed-ink'); btn.classList.remove('text-themed-body');
-    ['chat','image','code','notebook','search'].forEach(v => document.getElementById('view-'+v).classList.add('hidden'));
-    document.getElementById('view-'+currentMode).classList.remove('hidden');
-    const titles = {chat:'New chat',image:'Image generation',code:'VibeCoding',notebook:'Notebooks',search:'Web search'};
-    document.getElementById('topbar-title').textContent = titles[currentMode];
+    ['chat','image','code','notebook','search'].forEach(v => document.getElementById('view-'+v)?.classList.add('hidden'));
+    document.getElementById('view-'+currentMode)?.classList.remove('hidden');
+    
+    if (currentMode === 'chat' && currentConvId) {
+      const activeConv = conversations.find(c => c.id === currentConvId);
+      if (activeConv) {
+        document.getElementById('topbar-title').textContent = activeConv.title || 'Chat';
+        if (activeConv.msgs && activeConv.msgs.length > 0) {
+          document.getElementById('chat-welcome')?.classList.add('hidden');
+          document.getElementById('chat-messages')?.classList.remove('hidden');
+        }
+      } else {
+        document.getElementById('topbar-title').textContent = 'Chat';
+      }
+    } else {
+      const titles = {chat:'Chat',image:'Image generation',code:'VibeCoding',notebook:'Notebooks',search:'Web search'};
+      document.getElementById('topbar-title').textContent = titles[currentMode] || 'BETAAI';
+    }
+
     // Close mobile sidebar
-    document.getElementById('sidebar').classList.remove('open');
-    document.getElementById('sidebar-overlay').classList.remove('active');
+    document.getElementById('sidebar')?.classList.remove('open');
+    document.getElementById('sidebar-overlay')?.classList.remove('active');
   };
 });
 
