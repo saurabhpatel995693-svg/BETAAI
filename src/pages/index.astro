@@ -606,7 +606,10 @@ import '../styles/global.css';
       <div class="grid gap-2.5 text-xs">
         <div>
           <label class="block text-[11px] font-medium mb-1 text-themed-ink">API Key</label>
-          <input type="password" id="custom-api-key" placeholder="sk-... or AIzaSy... or gsk_..." class="w-full h-8 px-2.5 surface-card border border-themed rounded-sm text-xs font-mono text-themed-ink focus:outline-none"/>
+          <div class="relative">
+            <input type="password" id="custom-api-key" placeholder="sk-... or AIzaSy... or gsk_..." class="w-full h-8 pl-2.5 pr-8 surface-card border border-themed rounded-sm text-xs font-mono text-themed-ink focus:outline-none"/>
+            <button type="button" onclick="toggleKeyVisibility('custom-api-key', this)" class="absolute right-2 top-1.5 text-themed-mute hover:text-themed-ink text-xs cursor-pointer" title="Toggle visibility">👁</button>
+          </div>
         </div>
         <div>
           <label class="block text-[11px] font-medium mb-1 text-themed-ink">Base URL (Optional)</label>
@@ -621,7 +624,10 @@ import '../styles/global.css';
 
     <div>
       <label class="block text-xs font-medium mb-1 text-themed-ink">GitHub Personal Access Token (PAT)</label>
-      <input type="password" id="s-github-token" placeholder="ghp_..." class="w-full h-10 px-3 surface-card border border-themed rounded-sm text-sm text-themed-ink focus:outline-none"/>
+      <div class="relative">
+        <input type="password" id="s-github-token" placeholder="ghp_..." class="w-full h-10 pl-3 pr-10 surface-card border border-themed rounded-sm text-sm text-themed-ink focus:outline-none"/>
+        <button type="button" onclick="toggleKeyVisibility('s-github-token', this)" class="absolute right-3 top-2.5 text-themed-mute hover:text-themed-ink text-xs cursor-pointer" title="Toggle visibility">👁</button>
+      </div>
       <div class="text-[10px] font-mono text-themed-mute mt-1">Allows importing private repositories & higher API limits</div>
     </div>
     <div>
@@ -765,6 +771,19 @@ function toast(msg, type='info') {
   document.getElementById('toast-box').appendChild(el);
   setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); }, 3500);
 }
+
+function toggleKeyVisibility(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = '🔒';
+  } else {
+    input.type = 'password';
+    btn.textContent = '👁';
+  }
+}
+window.toggleKeyVisibility = toggleKeyVisibility;
 let repoKnowledge = {};
 
 function getValidKey(userKey, defaultKey) {
