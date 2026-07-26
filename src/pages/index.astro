@@ -247,27 +247,10 @@ import '../styles/global.css';
         </div>
       </div>
       <div class="flex items-center gap-1.5">
-        <select id="model-select" class="h-7 px-2 rounded-sm surface-card2 border border-themed text-[11px] font-mono text-themed-ink focus:outline-none">
-          <optgroup label="🌟 Gemini & Grok">
-            <option value="gemini/gemini-2.5-flash" selected>Gemini 2.5 Flash</option>
-            <option value="groq/llama-3.3-70b-versatile">Grok / Groq 70B</option>
-          </optgroup>
-          <optgroup label="🌐 OpenRouter (Free)">
-            <option value="google/gemini-2.5-flash:free">google/gemini-2.5-flash:free</option>
-            <option value="meta-llama/llama-3.3-70b-instruct:free">llama-3.3-70b-instruct:free</option>
-            <option value="qwen/qwen-2.5-coder-32b-instruct:free">qwen-2.5-coder-32b:free</option>
-            <option value="deepseek/deepseek-r1:free">deepseek-r1:free</option>
-          </optgroup>
-          <optgroup label="💻 Ollama (Local AI)">
-            <option value="ollama/llama3">Ollama / Llama3</option>
-            <option value="ollama/qwen2.5-coder">Ollama / Qwen Coder</option>
-            <option value="ollama/mistral">Ollama / Mistral</option>
-          </optgroup>
-          <optgroup label="🎨 NVIDIA NIM">
-            <option value="nvidia/meta/llama-3.1-70b-instruct">NVIDIA Llama 3.1 70B</option>
-            <option value="nvidia/meta/llama-3.1-8b-instruct">NVIDIA Llama 3.1 8B</option>
-          </optgroup>
-        </select>
+        <div id="active-status-pill" class="flex items-center gap-1.5 px-2.5 h-7 rounded-full surface-card2 border border-themed text-[11px] font-mono text-themed-ink" title="Backend automatically checks & uses active API keys">
+          <span class="w-2 h-2 rounded-full bg-cyan pulse-dot"></span>
+          <span>⚡ Auto AI Engine</span>
+        </div>
         <button id="settings-btn" class="w-8 h-8 rounded-sm border border-themed flex items-center justify-center text-themed-body hover:text-themed-ink transition">⚙</button>
         <button id="export-btn" class="w-8 h-8 rounded-sm border border-themed flex items-center justify-center text-themed-body hover:text-themed-ink transition" title="Export chat">↓</button>
       </div>
@@ -802,7 +785,7 @@ function getAPIKey() {
   const userEnteredKey = getCustomKey() || document.getElementById('s-api-key')?.value;
   return getValidKey(userEnteredKey, DEFAULT_API_KEY);
 }
-function getModel() { return getCustomModel() || document.getElementById('model-select').value; }
+function getModel() { return getCustomModel() || (document.getElementById('model-select')?.value) || 'auto'; }
 function getApiBaseUrl() { return getCustomBase() || document.getElementById('s-api-base')?.value?.trim() || localStorage.getItem('betaai_api_base') || 'https://openrouter.ai/api/v1'; }
 
 /* ═══════════════════════════════════════════════════
