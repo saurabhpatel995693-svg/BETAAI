@@ -6,8 +6,8 @@
  */
 
 export const PRECONFIGURED_KEYS = {
-  openRouter: ['sk-or-v1-361ae09583f07a4aced5fdb0c9cdaa66', '202c854f2ce7f9b73fa16d8d7f9e31d7'].join(''),
-  nvidia: ['nvapi-SeboR-5eKWvmpEeN8ZEOYBcQ9J_S79', 'LG4cwDKuAjEC0l1myowcNv6UjD3cGxoUnm'].join('')
+  openRouter: process.env.OPENROUTER_KEY || '',
+  nvidia: process.env.NVIDIA_KEY || ''
 };
 
 export const DEFAULT_MODEL = "poolside/laguna-xs-2.1:free";

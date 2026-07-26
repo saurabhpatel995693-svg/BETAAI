@@ -9,6 +9,11 @@ dist/
 *.log
 .DS_Store
 
+# environment variables (NEVER commit these)
+.env
+.env.local
+.env.*.local
+
 # external projects / sibling folders
 supoclip/
 OpenManus/

@@ -1,14 +1,14 @@
 // BETAAI Vercel Serverless AI Proxy
-// Primary: NVIDIA NIM (confirmed working)
-// Fallback: OpenRouter (if free models return)
+// Primary: NVIDIA NIM (free tier)  |  Fallback: OpenRouter free models
+// Supports both streaming (SSE) and non-streaming responses.
 
-const NVIDIA_KEY = process.env.NVIDIA_KEY || ['nvapi-SeboR-5eKWvmpEeN8ZEOYBcQ9J_S79', 'LG4cwDKuAjEC0l1myowcNv6UjD3cGxoUnm'].join('');
+const NVIDIA_KEY = process.env.NVIDIA_KEY || '';
 const OPENROUTER_KEYS = [
-  process.env.OPENROUTER_KEY || ['sk-or-v1-197c4f59aae5212099de37a06b376e23', '8d1cdaeb668c2e4599da41aaf1fff866'].join(''),
-  process.env.OPENROUTER_ALT || ['sk-or-v1-361ae09583f07a4aced5fdb0c9cdaa66', '202c854f2ce7f9b73fa16d8d7f9e31d7'].join('')
-];
+  process.env.OPENROUTER_KEY || '',
+  process.env.OPENROUTER_ALT || ''
+].filter(Boolean);
 
-async function fetchWithTimeout(url, options, timeoutMs = 8000) {
+async function fetchWithTimeout(url, options, timeoutMs = 12000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -21,6 +21,25 @@ async function fetchWithTimeout(url, options, timeoutMs = 8000) {
   }
 }
 
+/** Try a single provider+model. Returns the Response if ok, else null. */
+async function tryProvider(name, url, apiKey, body, timeoutMs) {
+  const headers = {
+    'Authorization': `Bearer ${apiKey}`,
+    'Content-Type': 'application/json'
+  };
+  if (name === 'openrouter') headers['X-Title'] = 'BETAAI';
+
+  const apiRes = await fetchWithTimeout(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body)
+  }, timeoutMs);
+
+  if (apiRes.ok) return apiRes;
+  const errText = await apiRes.text().catch(() => '');
+  throw new Error(`${name} ${apiRes.status}: ${errText.substring(0, 200)}`);
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -29,75 +48,118 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: { message: 'Method not allowed' } });
 
+  // Manually parse the request body (Vercel Node.js runtime may not auto-parse)
+  let payload;
   try {
-    const payload = req.body || {};
+    const body = await new Promise((resolve, reject) => {
+      let data = '';
+      req.on('data', chunk => { data += chunk; });
+      req.on('end', () => resolve(data));
+      req.on('error', reject);
+    });
+    payload = JSON.parse(body || '{}');
+  } catch (e) {
+    return res.status(400).json({ error: { message: 'Invalid JSON body' } });
+  }
+
+  try {
     const messages = payload.messages || [];
+    const wantsStream = payload.stream === true;
     let lastErr = null;
 
-    // ═══════════════════════════════════════════════════
-    // TIER 1: NVIDIA NIM — Primary Provider (Confirmed Working)
-    // ═══════════════════════════════════════════════════
-    const nvidiaModels = ['meta/llama-3.1-70b-instruct', 'meta/llama-3.1-8b-instruct'];
-    for (const model of nvidiaModels) {
-      try {
-        const apiRes = await fetchWithTimeout('https://integrate.api.nvidia.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${NVIDIA_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
+    // ── Tier 1: NVIDIA NIM ──────────────────────────────
+    if (NVIDIA_KEY) {
+      const nvidiaModels = ['meta/llama-3.1-70b-instruct', 'meta/llama-3.1-8b-instruct'];
+      for (const model of nvidiaModels) {
+        try {
+          const body = {
             model,
             messages,
             temperature: payload.temperature || 0.3,
             max_tokens: payload.max_tokens || 4096
-          })
-        }, 8000);
+          };
+          if (wantsStream) body.stream = true;
 
-        if (apiRes.ok) {
+          const apiRes = await tryProvider('nvidia', 'https://integrate.api.nvidia.com/v1/chat/completions', NVIDIA_KEY, body, 15000);
+
+          // Forward streaming response as-is
+          if (wantsStream && apiRes.body) {
+            res.setHeader('Content-Type', 'text/event-stream');
+            res.setHeader('Cache-Control', 'no-cache');
+            res.setHeader('Connection', 'keep-alive');
+            const reader = apiRes.body.getReader();
+            const pump = async () => {
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) { res.end(); return; }
+                res.write(value);
+              }
+            };
+            await pump().catch(() => res.end());
+            return;
+          }
+
+          // Non-streaming: return full JSON
           const data = await apiRes.json();
           return res.status(200).json(data);
-        } else {
-          const errText = await apiRes.text();
-          lastErr = `NVIDIA ${model} (${apiRes.status}): ${errText}`;
+        } catch (e) {
+          lastErr = `NVIDIA ${model}: ${e.message}`;
         }
-      } catch (e) {
-        lastErr = `NVIDIA ${model}: ${e.message}`;
       }
+    } else {
+      lastErr = 'NVIDIA_KEY not configured.';
     }
 
-    // ═══════════════════════════════════════════════════
-    // TIER 2: OpenRouter — Fallback (if free models return)
-    // ═══════════════════════════════════════════════════
-    const orModels = [
-      payload.model || 'google/gemini-2.5-flash:free',
-      'meta-llama/llama-3.3-70b-instruct:free',
-      'qwen/qwen-2.5-coder-32b-instruct:free'
-    ];
-    for (const key of OPENROUTER_KEYS) {
-      for (const model of orModels) {
-        try {
-          const apiRes = await fetchWithTimeout('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${key}`,
-              'Content-Type': 'application/json',
-              'X-Title': 'BETAAI'
-            },
-            body: JSON.stringify({ model, messages, temperature: payload.temperature || 0.3 })
-          }, 4000);
+    // ── Tier 2: OpenRouter free models ──────────────────
+    if (OPENROUTER_KEYS.length > 0) {
+      const orModels = [
+        payload.model || 'google/gemini-2.5-flash:free',
+        'meta-llama/llama-3.3-70b-instruct:free',
+        'qwen/qwen-2.5-coder-32b-instruct:free'
+      ];
+      for (const key of OPENROUTER_KEYS) {
+        for (const model of orModels) {
+          try {
+            const body = {
+              model,
+              messages,
+              temperature: payload.temperature || 0.3,
+              max_tokens: payload.max_tokens || 4096
+            };
+            if (wantsStream) body.stream = true;
 
-          if (apiRes.ok) {
+            const apiRes = await tryProvider('openrouter', 'https://openrouter.ai/api/v1/chat/completions', key, body, 12000);
+
+            // Forward streaming response as-is
+            if (wantsStream && apiRes.body) {
+              res.setHeader('Content-Type', 'text/event-stream');
+              res.setHeader('Cache-Control', 'no-cache');
+              res.setHeader('Connection', 'keep-alive');
+              const reader = apiRes.body.getReader();
+              const pump = async () => {
+                while (true) {
+                  const { done, value } = await reader.read();
+                  if (done) { res.end(); return; }
+                  res.write(value);
+                }
+              };
+              await pump().catch(() => res.end());
+              return;
+            }
+
+            // Non-streaming: return full JSON
             const data = await apiRes.json();
             return res.status(200).json(data);
+          } catch (e) {
+            lastErr = `OpenRouter ${model}: ${e.message}`;
           }
-        } catch (e) {
-          lastErr = `OpenRouter: ${e.message}`;
         }
       }
+    } else {
+      lastErr = 'OPENROUTER_KEY not configured. Add OPENROUTER_KEY to Vercel env vars.';
     }
 
-    return res.status(500).json({ error: { message: `All AI providers exhausted. ${lastErr}` } });
+    return res.status(500).json({ error: { message: `All providers exhausted. ${lastErr}` } });
   } catch (e) {
     return res.status(400).json({ error: { message: e.message } });
   }
