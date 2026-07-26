@@ -113,42 +113,36 @@ const server = http.createServer(async (req, res) => {
         key: customKey || clientOpenRouterKey || clientGeminiKey,
         model: customModel || rawModel || (isCodingMode ? 'google/gemini-2.5-flash:free' : 'meta-llama/llama-3.3-70b-instruct:free')
       });
-    }
+      const grokKey = clientGrokKey || process.env.GROQ_KEY || process.env.GROK_KEY || '';
+      if (grokKey) {
+        targets.push({
+          name: 'Grok-Groq-Primary',
+          url: grokKey.startsWith('xai-') ? 'https://api.x.ai/v1/chat/completions' : 'https://api.groq.com/openai/v1/chat/completions',
+          key: grokKey,
+          model: 'llama-3.3-70b-versatile'
+        });
+      }
 
-    if (clientGrokKey) {
-      targets.push({
-        name: 'groq',
-        url: clientGrokKey.startsWith('xai-') ? 'https://api.x.ai/v1/chat/completions' : 'https://api.groq.com/openai/v1/chat/completions',
-        key: clientGrokKey,
-        model: 'llama-3.3-70b-versatile'
-      });
-    }
+      const geminiKey = clientGeminiKey || process.env.GEMINI_KEY || '';
+      if (geminiKey) {
+        targets.push({
+          name: 'Gemini-Flash-Primary',
+          url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+          key: geminiKey,
+          model: 'gemini-2.5-flash'
+        });
+      }
 
-    if (clientGeminiKey) {
-      targets.push({
-        name: 'gemini',
-        url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
-        key: clientGeminiKey,
-        model: 'gemini-2.5-flash'
-      });
-    }
-
-    if (clientOpenRouterKey) {
-      targets.push({
-        name: 'openrouter',
-        url: 'https://openrouter.ai/api/v1/chat/completions',
-        key: clientOpenRouterKey,
-        model: isCodingMode ? 'google/gemini-2.5-flash:free' : 'meta-llama/llama-3.3-70b-instruct:free',
-        headers: { 'X-Title': 'BETAAI' }
-      });
-    }
-
-    targets.push({
-      name: 'Pollinations-Public-AI',
-      url: 'https://text.pollinations.ai/openai',
-      key: '',
-      model: isCodingMode ? 'qwen-coder' : 'openai'
-    });
+      const openRouterKey = clientOpenRouterKey || process.env.OPENROUTER_KEY || '';
+      if (openRouterKey) {
+        targets.push({
+          name: 'OpenRouter-Primary',
+          url: 'https://openrouter.ai/api/v1/chat/completions',
+          key: openRouterKey,
+          model: isCodingMode ? 'qwen/qwen-2.5-coder-32b-instruct:free' : 'google/gemini-2.5-flash:free',
+          headers: { 'X-Title': 'BETAAI' }
+        });
+      }
 
     for (const target of targets) {
       try {

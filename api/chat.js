@@ -22,7 +22,7 @@ async function fetchWithTimeout(url, options, timeoutMs = 12000) {
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-custom-key, x-custom-base, x-custom-model');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-custom-key, x-custom-base, x-custom-model, x-gemini-key, x-grok-key, x-openrouter-key');
 
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: { message: 'Method not allowed' } });
@@ -45,11 +45,15 @@ export default async function handler(req, res) {
   let customBase = req.headers['x-custom-base'] || payload.customBase || '';
   const customModel = req.headers['x-custom-model'] || payload.customModel || '';
 
+  const clientGeminiKey = req.headers['x-gemini-key'] || payload.geminiKey || process.env.GEMINI_KEY || '';
+  const clientGrokKey = req.headers['x-grok-key'] || payload.grokKey || process.env.GROK_KEY || process.env.GROQ_KEY || '';
+  const clientOpenRouterKey = req.headers['x-openrouter-key'] || payload.openrouterKey || process.env.OPENROUTER_KEY || '';
+
   const isCodingMode = payload.mode === 'code' || rawModel.includes('coder') || rawModel.includes('coding');
 
   const targets = [];
 
-  // 1. User Custom API Key / Base URL (from Settings)
+  // 1. User Custom API Key / Base URL (if entered in Settings modal)
   if (customKey || customBase) {
     let baseUrl = (customBase || 'https://openrouter.ai/api/v1').replace(/\/$/, '');
     if (!baseUrl.endsWith('/chat/completions')) baseUrl = `${baseUrl}/chat/completions`;
@@ -61,45 +65,56 @@ export default async function handler(req, res) {
     });
   }
 
-  // 2. Gemini API Key (if provided in process.env)
-  if (process.env.GEMINI_KEY) {
+  // 2. Chat & VibeCoding Primary Target: Groq / Grok 70B API
+  const grokKey = clientGrokKey || process.env.GROQ_KEY || process.env.GROK_KEY || '';
+  if (grokKey) {
     targets.push({
-      name: 'Gemini-API',
-      url: `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`,
-      key: process.env.GEMINI_KEY,
-      model: 'gemini-2.5-flash'
-    });
-  }
-
-  // 3. Grok / Groq API Key (if provided in process.env)
-  if (process.env.GROQ_KEY || process.env.GROK_KEY) {
-    const k = process.env.GROQ_KEY || process.env.GROK_KEY;
-    targets.push({
-      name: 'Grok-Groq-API',
-      url: k.startsWith('xai-') ? 'https://api.x.ai/v1/chat/completions' : 'https://api.groq.com/openai/v1/chat/completions',
-      key: k,
+      name: 'Grok-Groq-Primary',
+      url: grokKey.startsWith('xai-') ? 'https://api.x.ai/v1/chat/completions' : 'https://api.groq.com/openai/v1/chat/completions',
+      key: grokKey,
       model: 'llama-3.3-70b-versatile'
     });
   }
 
-  // 4. OpenRouter API Key (if provided in process.env)
-  if (process.env.OPENROUTER_KEY) {
+  // 3. Chat & VibeCoding Secondary Target: Gemini 2.5 Flash API
+  const geminiKey = clientGeminiKey || process.env.GEMINI_KEY || '';
+  if (geminiKey) {
     targets.push({
-      name: 'OpenRouter-Key-API',
+      name: 'Gemini-Flash-Primary',
+      url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+      key: geminiKey,
+      model: 'gemini-2.5-flash'
+    });
+  }
+
+  // 4. OpenRouter Provider Target (For Notebooks, Discover & Failover)
+  const openRouterKey = clientOpenRouterKey || process.env.OPENROUTER_KEY || '';
+  if (openRouterKey) {
+    targets.push({
+      name: 'OpenRouter-Primary',
       url: 'https://openrouter.ai/api/v1/chat/completions',
-      key: process.env.OPENROUTER_KEY,
+      key: openRouterKey,
       model: isCodingMode ? 'qwen/qwen-2.5-coder-32b-instruct:free' : 'google/gemini-2.5-flash:free',
       headers: { 'X-Title': 'BETAAI' }
     });
   }
 
-  // 5. Pollinations AI (100% Free Public AI Engine - Plain Text / OpenAI Compatible, No Auth Required!)
-  targets.push({
-    name: 'Pollinations-Public-AI',
-    url: 'https://text.pollinations.ai/',
-    isPlainText: true,
-    model: isCodingMode ? 'qwen-coder' : 'openai'
-  });
+  // 5. OpenRouter Free Models Backup Target
+  const freeModels = isCodingMode
+    ? ['google/gemini-2.5-flash:free', 'qwen/qwen-2.5-coder-32b-instruct:free']
+    : ['meta-llama/llama-3.3-70b-instruct:free', 'google/gemini-2.5-flash:free', 'deepseek/deepseek-r1:free'];
+
+  for (const fModel of freeModels) {
+    if (openRouterKey) {
+      targets.push({
+        name: `OpenRouter-Free-${fModel}`,
+        url: 'https://openrouter.ai/api/v1/chat/completions',
+        key: openRouterKey,
+        model: fModel,
+        headers: { 'X-Title': 'BETAAI' }
+      });
+    }
+  }
 
   for (const target of targets) {
     try {
@@ -113,10 +128,10 @@ export default async function handler(req, res) {
 
       const requestBody = {
         messages,
-        model: target.model || 'openai',
+        model: target.model || 'gemini-2.5-flash',
         temperature: payload.temperature || 0.3,
         max_tokens: payload.max_tokens || 4096,
-        stream: target.isPlainText ? false : wantsStream
+        stream: wantsStream
       };
 
       const apiRes = await fetchWithTimeout(target.url, {
@@ -131,37 +146,6 @@ export default async function handler(req, res) {
         continue;
       }
 
-      // Handle Plain Text Response (e.g. Pollinations AI)
-      if (target.isPlainText) {
-        const textContent = await apiRes.text();
-        if (!textContent || textContent.includes('Internal Server Error')) {
-          lastErr = `${target.name}: invalid response`;
-          continue;
-        }
-
-        if (wantsStream) {
-          res.setHeader('Content-Type', 'text/event-stream');
-          res.setHeader('Cache-Control', 'no-cache, no-transform');
-          res.setHeader('Connection', 'keep-alive');
-          const chunk = JSON.stringify({ choices: [{ delta: { content: textContent } }] });
-          res.write(`data: ${chunk}\n\ndata: [DONE]\n\n`);
-          res.end();
-          return;
-        }
-
-        return res.status(200).json({
-          choices: [
-            {
-              message: {
-                role: 'assistant',
-                content: textContent
-              }
-            }
-          ]
-        });
-      }
-
-      // Handle Standard SSE Stream Response
       if (wantsStream && apiRes.body) {
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache, no-transform');
@@ -184,7 +168,6 @@ export default async function handler(req, res) {
         return;
       }
 
-      // Handle Standard JSON Response
       const data = await apiRes.json();
       return res.status(200).json(data);
 
@@ -193,28 +176,13 @@ export default async function handler(req, res) {
     }
   }
 
-  // Graceful Fallback if all external networks hit timeouts
-  const fallbackPrompt = messages[messages.length - 1]?.content || 'Hello';
-  try {
-    const getRes = await fetchWithTimeout('https://text.pollinations.ai/' + encodeURIComponent(fallbackPrompt), { method: 'GET' }, 8000);
-    if (getRes.ok) {
-      const text = await getRes.text();
-      if (wantsStream) {
-        res.setHeader('Content-Type', 'text/event-stream');
-        res.setHeader('Cache-Control', 'no-cache');
-        res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\ndata: [DONE]\n\n`);
-        res.end();
-        return;
-      }
-      return res.status(200).json({ choices: [{ message: { content: text } }] });
-    }
-  } catch (e) {}
-
+  // Final Failover response if no key was passed
   return res.status(200).json({
     choices: [
       {
         message: {
-          content: 'BETAAI Assistant is active! Please ask your question again.'
+          role: 'assistant',
+          content: `BETAAI is active! Note: Please set your Gemini / Grok / OpenRouter API Key in Settings (⚙) for maximum performance.`
         }
       }
     ]
