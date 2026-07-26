@@ -6,7 +6,7 @@ export const config = {
   },
 };
 
-async function fetchWithTimeout(url, options, timeoutMs = 12000) {
+async function fetchWithTimeout(url, options, timeoutMs = 10000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -22,7 +22,7 @@ async function fetchWithTimeout(url, options, timeoutMs = 12000) {
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-custom-key, x-custom-base, x-custom-model, x-gemini-key, x-grok-key, x-openrouter-key, x-nvidia-key, x-ollama-host');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-custom-key, x-custom-base, x-custom-model');
 
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: { message: 'Method not allowed' } });
@@ -41,61 +41,72 @@ export default async function handler(req, res) {
   const wantsStream = payload.stream === true;
   let lastErr = '';
 
-  // Extract single custom API Key, Base URL, Model ID from headers/body
   const customKey = req.headers['x-custom-key'] || payload.customKey || req.headers['authorization']?.replace(/^Bearer\s+/i, '').trim() || '';
   let customBase = req.headers['x-custom-base'] || payload.customBase || '';
   const customModel = req.headers['x-custom-model'] || payload.customModel || '';
-
-  const clientGeminiKey = req.headers['x-gemini-key'] || payload.geminiKey || process.env.GEMINI_KEY || '';
-  const clientGrokKey = req.headers['x-grok-key'] || payload.grokKey || process.env.GROK_KEY || process.env.GROQ_KEY || '';
-  const clientOpenRouterKey = req.headers['x-openrouter-key'] || payload.openrouterKey || process.env.OPENROUTER_KEY || '';
 
   const isCodingMode = payload.mode === 'code' || rawModel.includes('coder') || rawModel.includes('coding');
 
   const targets = [];
 
-  // 1. Single Custom User Provider (if specified in Settings)
-  if (customBase || customKey) {
+  // 1. Custom User Provided Key / Base URL (from Settings modal)
+  if (customKey || customBase) {
     let baseUrl = (customBase || 'https://openrouter.ai/api/v1').replace(/\/$/, '');
     if (!baseUrl.endsWith('/chat/completions')) {
       baseUrl = `${baseUrl}/chat/completions`;
     }
     targets.push({
-      name: 'custom-provider',
+      name: 'User-Custom-API',
       url: baseUrl,
-      key: customKey || clientOpenRouterKey || clientGeminiKey,
-      model: customModel || rawModel || (isCodingMode ? 'google/gemini-2.5-flash:free' : 'meta-llama/llama-3.3-70b-instruct:free')
+      key: customKey,
+      model: customModel || (isCodingMode ? 'google/gemini-2.5-flash:free' : 'meta-llama/llama-3.3-70b-instruct:free')
     });
   }
 
-  // 2. Grok / Groq
-  if (clientGrokKey) {
+  // 2. Environment Keys (Gemini, Groq/Grok, OpenRouter, NVIDIA)
+  if (process.env.GEMINI_KEY) {
     targets.push({
-      name: 'groq',
-      url: clientGrokKey.startsWith('xai-') ? 'https://api.x.ai/v1/chat/completions' : 'https://api.groq.com/openai/v1/chat/completions',
-      key: clientGrokKey,
-      model: 'llama-3.3-70b-versatile'
-    });
-  }
-
-  // 3. Gemini Direct
-  if (clientGeminiKey) {
-    targets.push({
-      name: 'gemini',
+      name: 'Gemini-API',
       url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
-      key: clientGeminiKey,
+      key: process.env.GEMINI_KEY,
       model: 'gemini-2.5-flash'
     });
   }
 
-  // 4. OpenRouter Free Tier Fallback
-  targets.push({
-    name: 'openrouter-free',
-    url: 'https://openrouter.ai/api/v1/chat/completions',
-    key: clientOpenRouterKey || clientGeminiKey || '',
-    model: isCodingMode ? 'google/gemini-2.5-flash:free' : 'meta-llama/llama-3.3-70b-instruct:free',
-    headers: { 'X-Title': 'BETAAI' }
-  });
+  if (process.env.GROQ_KEY || process.env.GROK_KEY) {
+    const k = process.env.GROQ_KEY || process.env.GROK_KEY;
+    targets.push({
+      name: 'Grok-Groq-API',
+      url: k.startsWith('xai-') ? 'https://api.x.ai/v1/chat/completions' : 'https://api.groq.com/openai/v1/chat/completions',
+      key: k,
+      model: 'llama-3.3-70b-versatile'
+    });
+  }
+
+  if (process.env.OPENROUTER_KEY) {
+    targets.push({
+      name: 'OpenRouter-Key-API',
+      url: 'https://openrouter.ai/api/v1/chat/completions',
+      key: process.env.OPENROUTER_KEY,
+      model: isCodingMode ? 'qwen/qwen-2.5-coder-32b-instruct:free' : 'google/gemini-2.5-flash:free',
+      headers: { 'X-Title': 'BETAAI' }
+    });
+  }
+
+  // 3. OpenRouter Free Tier Fallback Models (Public access)
+  const freeModels = isCodingMode
+    ? ['google/gemini-2.5-flash:free', 'qwen/qwen-2.5-coder-32b-instruct:free']
+    : ['meta-llama/llama-3.3-70b-instruct:free', 'google/gemini-2.5-flash:free', 'deepseek/deepseek-r1:free'];
+
+  for (const fModel of freeModels) {
+    targets.push({
+      name: `OpenRouter-Free-${fModel}`,
+      url: 'https://openrouter.ai/api/v1/chat/completions',
+      key: '',
+      model: fModel,
+      headers: { 'X-Title': 'BETAAI' }
+    });
+  }
 
   for (const target of targets) {
     try {
@@ -119,7 +130,7 @@ export default async function handler(req, res) {
         method: 'POST',
         headers,
         body: JSON.stringify(requestBody)
-      }, 10000);
+      }, 9000);
 
       if (!apiRes.ok) {
         const text = await apiRes.text().catch(() => '');
@@ -156,12 +167,12 @@ export default async function handler(req, res) {
     }
   }
 
-  // Guaranteed clean JSON fallback if all external requests hit timeouts or rate limits
+  // Graceful fallback message if all external endpoints hit temporary rate limits
   return res.status(200).json({
     choices: [
       {
         message: {
-          content: `BETAAI is active! Note: Default quota is busy. You can enter your personal API key in Settings (⚙) to ensure maximum speed. (${lastErr})`
+          content: `BETAAI active! (${lastErr})`
         }
       }
     ]
