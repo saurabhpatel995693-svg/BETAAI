@@ -815,9 +815,18 @@ function getApiBaseUrl() { return getCustomBase() || document.getElementById('s-
    ═══════════════════════════════════════════════════ */
 async function fetchChatCompletion(config, bodyParams, signal = null) {
   const apiKey = getValidKey(config.key, DEFAULT_API_KEY);
-  const endpoint = (config.base && config.base.startsWith('/api'))
-    ? '/api/chat'
-    : config.base + '/chat/completions';
+  let endpoint = '';
+  if (config.isDirectCustom && config.base) {
+    let b = config.base.trim().replace(/\/$/, '');
+    if (!b.endsWith('/chat/completions') && !b.includes('/generateContent')) {
+      b += '/chat/completions';
+    }
+    endpoint = b;
+  } else if (config.base && config.base.startsWith('/api')) {
+    endpoint = '/api/chat';
+  } else {
+    endpoint = (config.base || 'https://openrouter.ai/api/v1').replace(/\/$/, '') + '/chat/completions';
+  }
 
   const headers = {
     'Authorization': 'Bearer ' + (getCustomKey() || apiKey),
@@ -834,32 +843,40 @@ async function fetchChatCompletion(config, bodyParams, signal = null) {
     'x-zen-key': localStorage.getItem('betaai_zen_key') || ''
   };
 
+  const payloadData = config.isDirectCustom ? {
+    model: config.model || getCustomModel() || 'gpt-4o',
+    messages: bodyParams.messages || [],
+    temperature: bodyParams.temperature || 0.7,
+    max_tokens: bodyParams.max_tokens || 4096,
+    stream: bodyParams.stream || false
+  } : {
+    key: apiKey,
+    model: config.model,
+    customKey: getCustomKey(),
+    customBase: getCustomBase(),
+    customModel: getCustomModel(),
+    geminiKey: localStorage.getItem('betaai_gemini_key') || '',
+    grokKey: localStorage.getItem('betaai_grok_key') || '',
+    openrouterKey: localStorage.getItem('betaai_openrouter_key') || '',
+    nvidiaKey: localStorage.getItem('betaai_nvidia_key') || '',
+    hfToken: localStorage.getItem('betaai_hf_token') || '',
+    zenKey: localStorage.getItem('betaai_zen_key') || '',
+    mode: (isVibeChat || config.mode === 'code') ? 'code' : 'general',
+    ...bodyParams
+  };
+
   const res = await fetch(endpoint, {
     method: 'POST',
     signal: signal,
     headers: headers,
-    body: JSON.stringify({
-      key: apiKey,
-      model: config.model,
-      customKey: getCustomKey(),
-      customBase: getCustomBase(),
-      customModel: getCustomModel(),
-      geminiKey: localStorage.getItem('betaai_gemini_key') || '',
-      grokKey: localStorage.getItem('betaai_grok_key') || '',
-      openrouterKey: localStorage.getItem('betaai_openrouter_key') || '',
-      nvidiaKey: localStorage.getItem('betaai_nvidia_key') || '',
-      hfToken: localStorage.getItem('betaai_hf_token') || '',
-      zenKey: localStorage.getItem('betaai_zen_key') || '',
-      mode: (isVibeChat || config.mode === 'code') ? 'code' : 'general',
-      ...bodyParams
-    })
+    body: JSON.stringify(payloadData)
   });
 
   if (!res.ok) {
     let errMsg = `HTTP error ${res.status}`;
     try {
       const errData = await res.json();
-      errMsg = errData.error?.message || errMsg;
+      errMsg = errData.error?.message || errData.message || errMsg;
     } catch(e) {}
     throw new Error(errMsg);
   }
@@ -867,21 +884,28 @@ async function fetchChatCompletion(config, bodyParams, signal = null) {
 }
 
 async function fetchWithFailover(apiCallFn, mode = 'general') {
-  const userEnteredKey = document.getElementById('s-api-key')?.value;
+  const userEnteredKey = getCustomKey() || document.getElementById('s-api-key')?.value;
+  const customBase = getCustomBase();
   const selectedModel = getModel();
 
-  // ALL requests go through /api/chat server proxy which handles:
-  // TIER 1: NVIDIA NIM (meta/llama-3.1-70b-instruct) — confirmed working
-  // TIER 2: OpenRouter multi-key failover (if free models return)
-  // This eliminates CORS, auth header, and timeout issues
-  let attempts = [
-    {
-      label: 'BETAAI Server Proxy (NVIDIA + Failover)',
+  let attempts = [];
+
+  if (customBase && (customBase.startsWith('http://') || customBase.startsWith('https://'))) {
+    attempts.push({
+      label: 'Direct Custom Endpoint (' + customBase + ')',
       key: getValidKey(userEnteredKey, DEFAULT_API_KEY),
-      base: '/api',
-      model: selectedModel
-    }
-  ];
+      base: customBase,
+      model: selectedModel,
+      isDirectCustom: true
+    });
+  }
+
+  attempts.push({
+    label: 'BETAAI Server Proxy (Custom / Failover)',
+    key: getValidKey(userEnteredKey, DEFAULT_API_KEY),
+    base: '/api',
+    model: selectedModel
+  });
 
   let lastError = null;
   for (let i = 0; i < attempts.length; i++) {

@@ -399,6 +399,18 @@ export default async function handler(req, res) {
         const txt = await apiRes.text().catch(() => '');
         lastErr = `${target.name} (${apiRes.status}): ${txt.substring(0, 120)}`;
         console.warn('[BETAAI]', lastErr);
+        if (target.name === 'User-Custom') {
+          let customErrMsg = txt.substring(0, 300) || apiRes.statusText;
+          try {
+            const parsed = JSON.parse(txt);
+            customErrMsg = parsed.error?.message || parsed.message || customErrMsg;
+          } catch(e) {}
+          return res.status(apiRes.status).json({
+            error: {
+              message: `Provided Custom API/Endpoint Error (${apiRes.status}): ${customErrMsg}`
+            }
+          });
+        }
         continue;
       }
 

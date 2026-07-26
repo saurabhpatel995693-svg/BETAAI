@@ -185,6 +185,16 @@ const server = http.createServer(async (req, res) => {
         if (!apiRes.ok) {
           const text = await apiRes.text().catch(() => '');
           lastErr = `${target.name} (${apiRes.status}): ${text.substring(0, 100)}`;
+          if (target.name === 'User-Custom') {
+            let customErrMsg = text.substring(0, 300) || apiRes.statusText;
+            try {
+              const parsed = JSON.parse(text);
+              customErrMsg = parsed.error?.message || parsed.message || customErrMsg;
+            } catch(e) {}
+            res.writeHead(apiRes.status, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: { message: `Provided Custom API/Endpoint Error (${apiRes.status}): ${customErrMsg}` } }));
+            return;
+          }
           continue;
         }
 
