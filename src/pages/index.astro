@@ -1452,32 +1452,22 @@ document.getElementById('export-btn').onclick = () => {
   toast('Exported as Markdown','success');
 };
 
-function getSvgImageFallback(promptText, seed = 123) {
-  const colors = [['#007cf0','#00dfd8'], ['#7928ca','#ff0080'], ['#ff4d4d','#f9cb28'], ['#00dfd8','#7928ca']];
-  const pair = colors[Math.abs(seed) % colors.length];
-  const cleanPrompt = String(promptText).replace(/["'<>]/g, '').substring(0, 45);
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-    <defs>
-      <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stop-color="${pair[0]}"/>
-        <stop offset="100%" stop-color="${pair[1]}"/>
-      </linearGradient>
-      <filter id="b" x="-20%" y="-20%" width="140%" height="140%">
-        <feGaussianBlur stdDeviation="60"/>
-      </filter>
-    </defs>
-    <rect width="1024" height="1024" fill="#09090b"/>
-    <circle cx="350" cy="350" r="300" fill="${pair[0]}" opacity="0.65" filter="url(#b)"/>
-    <circle cx="700" cy="700" r="350" fill="${pair[1]}" opacity="0.55" filter="url(#b)"/>
-    <rect width="1024" height="1024" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="4"/>
-    <g transform="translate(512, 512)" text-anchor="middle">
-      <circle r="56" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
-      <text y="12" fill="#ffffff" font-family="system-ui, sans-serif" font-size="34">✨</text>
-      <text y="110" fill="#ffffff" font-family="system-ui, sans-serif" font-size="28" font-weight="700">${cleanPrompt}</text>
-      <text y="150" fill="rgba(255,255,255,0.65)" font-family="monospace" font-size="16">BETAAI Render Engine</text>
-    </g>
-  </svg>`;
-  return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+async function fetchRealAiImage(promptText, seed, w, h) {
+  const encPrompt = encodeURIComponent(promptText);
+  try {
+    const res = await fetch(`https://lexica.art/api/v1/search?q=${encPrompt}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.images && data.images.length > 0) {
+        const idx = Math.abs(seed) % Math.min(data.images.length, 12);
+        const imgUrl = data.images[idx]?.src || data.images[0]?.src;
+        if (imgUrl) return imgUrl;
+      }
+    }
+  } catch (e) {
+    console.warn('[Lexica fetch] failed:', e);
+  }
+  return `https://pollinations.ai/p/${encPrompt}?width=${w}&height=${h}&seed=${seed}&nologo=true`;
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1494,7 +1484,7 @@ document.getElementById('generate-img-btn').onclick = async () => {
   const btn = document.getElementById('generate-img-btn');
   btn.disabled = true;
   const origBtnText = btn.textContent;
-  btn.textContent = 'Generating...';
+  btn.textContent = 'Generating AI Art...';
 
   for (let i = 0; i < count; i++) {
     if (i > 0) {
@@ -1502,25 +1492,26 @@ document.getElementById('generate-img-btn').onclick = async () => {
     }
     const card = document.createElement('div');
     card.className = 'break-inside-avoid mb-4 surface-card rounded-lg border border-themed shadow-level-3 overflow-hidden animate-fade-up';
-    card.innerHTML = `<div class="p-8 text-center text-sm text-themed-mute animate-pulse">Generating image ${i + 1} of ${count}...</div>`;
+    card.innerHTML = `<div class="p-8 text-center text-sm text-themed-mute animate-pulse">Generating real AI image ${i + 1} of ${count}...</div>`;
     box.prepend(card);
 
     const seed = Math.floor(Math.random() * 9000000) + Date.now() + (i * 1000);
-    const url1 = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed}&nologo=true`;
-    const url2 = `/api/image?prompt=${encodeURIComponent(fullPrompt)}&width=${w}&height=${h}&seed=${seed}`;
+    const initialAiUrl = await fetchRealAiImage(fullPrompt, seed, w, h);
+    const fallbackUrl1 = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed}&nologo=true`;
+    const fallbackUrl2 = `https://gen.pollinations.ai/image/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed}`;
 
     card.innerHTML = `
       <div class="relative min-h-[220px] flex items-center justify-center surface-card2">
-        <img src="${url1}" 
+        <img src="${initialAiUrl}" 
              alt="${esc(prompt)}"
-             class="w-full cursor-pointer block rounded-t-lg"
+             class="w-full cursor-pointer block rounded-t-lg shadow-level-2"
              onclick="document.getElementById('lightbox-img').src=this.src;document.getElementById('lightbox').classList.remove('hidden')"
-             onerror="if (!this.dataset.tried1) { this.dataset.tried1 = 'true'; this.src = '${url2}'; } else if (!this.dataset.tried2) { this.dataset.tried2 = 'true'; this.src = getSvgImageFallback('${esc(prompt).replace(/'/g, "\\'")}', ${seed}); }"/>
+             onerror="if (!this.dataset.tried1) { this.dataset.tried1 = 'true'; this.src = '${fallbackUrl1}'; } else if (!this.dataset.tried2) { this.dataset.tried2 = 'true'; this.src = '${fallbackUrl2}'; }"/>
       </div>
       <div class="p-3 surface-card border-t border-themed">
         <p class="text-[11px] text-themed-mute font-mono mb-2 truncate">${esc(prompt)}</p>
         <div class="flex gap-2">
-          <a href="${url1}" target="_blank" download="betaai_image_${seed}.jpg" class="h-7 px-3 btn-ink rounded-pill text-[11px] font-medium flex items-center gap-1">↓ Download</a>
+          <a href="${initialAiUrl}" target="_blank" download="betaai_image_${seed}.jpg" class="dl-btn h-7 px-3 btn-ink rounded-pill text-[11px] font-medium flex items-center gap-1">↓ Download</a>
           <button class="copy-url-btn h-7 px-3 border border-themed rounded-pill text-[11px] font-medium text-themed-body hover-card2">Copy URL</button>
         </div>
       </div>`;
@@ -1528,7 +1519,7 @@ document.getElementById('generate-img-btn').onclick = async () => {
     const copyBtn = card.querySelector('.copy-url-btn');
     if (copyBtn) {
       copyBtn.onclick = () => {
-        const imgSrc = card.querySelector('img')?.src || url1;
+        const imgSrc = card.querySelector('img')?.src || initialAiUrl;
         navigator.clipboard.writeText(imgSrc);
         toast('Image URL copied!', 'success');
       };
