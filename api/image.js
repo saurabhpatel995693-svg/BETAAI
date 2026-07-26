@@ -68,7 +68,8 @@ export default async function handler(req, res) {
   const prompt = query.prompt || query.p || 'Abstract Digital Art';
   const width = parseInt(query.width || query.w) || 1024;
   const height = parseInt(query.height || query.h) || 1024;
-  const seed = query.seed || Math.floor(Math.random() * 1000000);
+  const rawSeed = Math.abs(parseInt(query.seed) || 0);
+  const seed = (rawSeed > 0 && rawSeed <= 2147483647) ? rawSeed : (Math.floor(Math.random() * 2000000000) + 1);
 
   const cleanPrompt = encodeURIComponent(prompt);
   const hfToken = query.hf_token || process.env.HF_TOKEN || process.env.HUGGINGFACE_KEY;

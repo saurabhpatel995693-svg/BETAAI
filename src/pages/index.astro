@@ -1495,7 +1495,7 @@ document.getElementById('generate-img-btn').onclick = async () => {
     card.innerHTML = `<div class="p-8 text-center text-sm text-themed-mute animate-pulse">Generating real AI image ${i + 1} of ${count}...</div>`;
     box.prepend(card);
 
-    const seed = Math.floor(Math.random() * 9000000) + Date.now() + (i * 1000);
+    const seed = Math.floor(Math.random() * 2000000000) + 1;
     const initialAiUrl = await fetchRealAiImage(fullPrompt, seed, w, h);
     const fallbackUrl1 = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed}&nologo=true`;
     const fallbackUrl2 = `https://gen.pollinations.ai/image/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed}`;
