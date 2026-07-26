@@ -99,17 +99,42 @@ export default async function handler(req, res) {
 
   try {
     const messages = payload.messages || [];
-    const clientModel = payload.model;
+    const rawModel = payload.model || '';
     const wantsStream = payload.stream === true;
     let lastErr = null;
 
-    // Try each provider tier
-    for (const provider of PROVIDERS) {
-      // Pick models to try
-      let modelsToTry = provider.models;
-      if (clientModel && !clientModel.includes(':free')) {
-        // Client requested a specific non-free model, try it first
-        modelsToTry = [clientModel, ...provider.models];
+    // Extract authorization header or body key if supplied
+    const authHeader = req.headers['authorization'] || '';
+    const clientKey = authHeader.replace(/^Bearer\s+/i, '').trim() || payload.key;
+
+    // Clean model string (strip prefixes like search/ or coding/)
+    const cleanModel = rawModel.replace(/^(search|coding|nvidia|openrouter)\//i, '').trim();
+
+    // Dynamically build provider list with user/env keys
+    const activeProviders = PROVIDERS.map(p => {
+      let keyToUse = p.key;
+      if (p.name === 'openrouter' && clientKey && clientKey.startsWith('sk-or-v1-')) {
+        keyToUse = clientKey;
+      }
+      return { ...p, key: keyToUse };
+    }).filter(p => p.key && p.key.trim().length > 0);
+
+    // If no active providers, default to OpenRouter free Tier with public fallback
+    if (activeProviders.length === 0) {
+      activeProviders.push({
+        name: 'openrouter',
+        url: 'https://openrouter.ai/api/v1/chat/completions',
+        key: clientKey || process.env.OPENROUTER_KEY || process.env.GEMINI_KEY || '',
+        models: ['google/gemini-2.5-flash:free', 'meta-llama/llama-3.3-70b-instruct:free', 'deepseek/deepseek-r1:free', 'qwen/qwen-2.5-coder-32b-instruct:free'],
+        timeout: 12000,
+        extraHeaders: { 'X-Title': 'BETAAI' }
+      });
+    }
+
+    for (const provider of activeProviders) {
+      let modelsToTry = [...provider.models];
+      if (cleanModel && !modelsToTry.includes(cleanModel)) {
+        modelsToTry.unshift(cleanModel);
       }
 
       for (const model of modelsToTry) {
@@ -122,7 +147,6 @@ export default async function handler(req, res) {
 
           const apiRes = await tryProvider(provider, model, body, wantsStream);
 
-          // Stream response back to client
           if (wantsStream && apiRes.body) {
             res.setHeader('Content-Type', 'text/event-stream');
             res.setHeader('Cache-Control', 'no-cache');
@@ -134,16 +158,16 @@ export default async function handler(req, res) {
                 if (done) break;
                 res.write(value);
               }
-            } catch (e) { /* stream ended */ }
+            } catch (e) { /* stream end */ }
             res.end();
             return;
           }
 
-          // Non-streaming: return full JSON
           const data = await apiRes.json();
           return res.status(200).json(data);
         } catch (e) {
-          lastErr = `${provider.name}: ${e.message}`;
+          lastErr = `${provider.name}/${model}: ${e.message}`;
+          console.warn(`[AI Failover] ${provider.name}/${model} failed:`, e.message);
         }
       }
     }

@@ -96,13 +96,38 @@ const server = http.createServer(async (req, res) => {
 
       try {
         const messages = payload.messages || [];
-        const clientModel = payload.model;
+        const rawModel = payload.model || '';
         const wantsStream = payload.stream === true;
         let lastErr = null;
 
-        for (const provider of PROVIDERS) {
-          let modelsToTry = provider.models;
-          if (clientModel && !clientModel.includes(':free')) modelsToTry = [clientModel, ...provider.models];
+        const authHeader = req.headers['authorization'] || '';
+        const clientKey = authHeader.replace(/^Bearer\s+/i, '').trim() || payload.key;
+        const cleanModel = rawModel.replace(/^(search|coding|nvidia|openrouter)\//i, '').trim();
+
+        const activeProviders = PROVIDERS.map(p => {
+          let keyToUse = p.key;
+          if (p.name === 'openrouter' && clientKey && clientKey.startsWith('sk-or-v1-')) {
+            keyToUse = clientKey;
+          }
+          return { ...p, key: keyToUse };
+        }).filter(p => p.key && p.key.trim().length > 0);
+
+        if (activeProviders.length === 0) {
+          activeProviders.push({
+            name: 'openrouter',
+            url: 'https://openrouter.ai/api/v1/chat/completions',
+            key: clientKey || process.env.OPENROUTER_KEY || process.env.GEMINI_KEY || '',
+            models: ['google/gemini-2.5-flash:free', 'meta-llama/llama-3.3-70b-instruct:free', 'deepseek/deepseek-r1:free', 'qwen/qwen-2.5-coder-32b-instruct:free'],
+            timeout: 12000,
+            extraHeaders: { 'X-Title': 'BETAAI' }
+          });
+        }
+
+        for (const provider of activeProviders) {
+          let modelsToTry = [...provider.models];
+          if (cleanModel && !modelsToTry.includes(cleanModel)) {
+            modelsToTry.unshift(cleanModel);
+          }
 
           for (const model of modelsToTry) {
             try {
@@ -121,7 +146,7 @@ const server = http.createServer(async (req, res) => {
               res.writeHead(200, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify(data));
               return;
-            } catch (e) { lastErr = `${provider.name}: ${e.message}`; }
+            } catch (e) { lastErr = `${provider.name}/${model}: ${e.message}`; }
           }
         }
 
