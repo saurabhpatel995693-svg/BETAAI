@@ -1452,8 +1452,11 @@ document.getElementById('generate-img-btn').onclick = async () => {
     box.prepend(card);
 
     const seed = Math.floor(Math.random() * 9000000) + Date.now() + (i * 1000);
-    const proxyUrl = `/api/image?prompt=${encodeURIComponent(fullPrompt)}&width=${w}&height=${h}&seed=${seed}`;
-    const directUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed}&nologo=true`;
+    const candidateUrls = [
+      `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed}&nologo=true`,
+      `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed}&model=flux`,
+      `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed}&model=turbo`
+    ];
     
     const tryLoadImage = (src) => new Promise((resolve, reject) => {
       const img = new Image();
@@ -1463,12 +1466,15 @@ document.getElementById('generate-img-btn').onclick = async () => {
     });
 
     try {
-      let finalUrl;
-      try {
-        finalUrl = await tryLoadImage(proxyUrl);
-      } catch(e1) {
-        finalUrl = await tryLoadImage(directUrl);
+      let finalUrl = null;
+      for (const targetUrl of candidateUrls) {
+        try {
+          finalUrl = await tryLoadImage(targetUrl);
+          if (finalUrl) break;
+        } catch(e) {}
       }
+      if (!finalUrl) throw new Error('All image generation models are currently busy. Please try again.');
+
       card.innerHTML = `
         <img src="${finalUrl}" class="w-full cursor-pointer" onclick="document.getElementById('lightbox-img').src='${finalUrl}';document.getElementById('lightbox').classList.remove('hidden')"/>
         <div class="p-3">
@@ -1479,7 +1485,7 @@ document.getElementById('generate-img-btn').onclick = async () => {
           </div>
         </div>`;
     } catch(err) {
-      card.innerHTML = `<div class="p-6 text-center text-sm text-error">Image generation service temporarily unavailable. Please try again. <button class="ml-2 text-xs text-link underline" onclick="this.closest('.surface-card').remove()">Remove</button></div>`;
+      card.innerHTML = `<div class="p-6 text-center text-sm text-error">${esc(err.message)} <button class="ml-2 text-xs text-link underline" onclick="this.closest('.surface-card').remove()">Remove</button></div>`;
     }
   }
 
