@@ -1546,20 +1546,91 @@ MANDATORY DESIGN SYSTEM & TECHNICAL SPECIFICATIONS:
     lastGeneratedCode = code;
 
     let previewHTML = '';
-    if (lang === 'HTML/CSS/JS' || lang === 'React JSX' || code.includes('<!DOCTYPE html>') || code.includes('<html')) {
-      previewHTML = `<div class="border-t border-themed"><div class="px-3 py-1 text-[10px] font-mono text-themed-mute surface-card2 border-b border-themed flex items-center justify-between"><span>Live Preview</span><button class="open-preview-btn text-link hover:underline">Open fullscreen</button></div><iframe class="live-preview-frame" style="height:480px" srcdoc="${esc(code)}"></iframe></div>`;
+    const isWebCode = lang === 'HTML/CSS/JS' || lang === 'React JSX' || code.includes('<!DOCTYPE html>') || code.includes('<html') || code.includes('<div');
+
+    if (isWebCode) {
+      previewHTML = `
+        <div class="border-t border-themed">
+          <div class="px-3 py-1.5 surface-card2 border-b border-themed flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <button class="vibe-tab-btn px-2.5 py-1 rounded text-xs font-medium btn-ink transition" data-tab="preview">🌐 Live Preview</button>
+              <button class="vibe-tab-btn px-2.5 py-1 rounded text-xs font-medium text-themed-body hover:text-themed-ink transition" data-tab="code">💻 Source Code</button>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="auto-fix-btn text-[11px] font-mono text-cyan hover:underline flex items-center gap-1">✨ Auto-Fix UI</button>
+              <button class="open-preview-btn text-[11px] font-mono text-link hover:underline flex items-center gap-1">↗ Fullscreen</button>
+            </div>
+          </div>
+          <div class="vibe-panel-preview">
+            <iframe class="live-preview-frame w-full border-0 rounded-b-lg surface-card" style="height:540px"></iframe>
+          </div>
+          <div class="vibe-panel-code hidden" style="background:#171717;max-height:500px;overflow:auto">
+            <pre class="p-4 m-0"><code class="language-${lang.toLowerCase().replace(/[^a-z]/g,'')}" style="font-size:13px;color:#e5e5e5">${esc(code)}</code></pre>
+          </div>
+        </div>`;
+    } else {
+      previewHTML = `
+        <div style="background:#171717;max-height:500px;overflow:auto">
+          <pre class="p-4 m-0"><code class="language-${lang.toLowerCase().replace(/[^a-z]/g,'')}" style="font-size:13px;color:#e5e5e5">${esc(code)}</code></pre>
+        </div>`;
     }
 
     card.innerHTML = `
-      <div class="flex items-center justify-between px-4 py-2 surface-card2 border-b border-themed">
-        <span class="text-[11px] font-mono text-themed-mute uppercase">${esc(lang)} · ${esc(complexity)}</span>
+      <div class="flex items-center justify-between px-4 py-2.5 surface-card2 border-b border-themed">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-cyan pulse-dot"></span>
+          <span class="text-xs font-mono text-themed-ink font-semibold uppercase tracking-wider">${esc(lang)} · ${esc(complexity)}</span>
+        </div>
         <div class="flex gap-2">
-          <button class="copy-code text-[11px] font-mono text-themed-mute hover:text-themed-ink">copy</button>
-          <button class="download-code text-[11px] font-mono text-themed-mute hover:text-themed-ink">↓ download</button>
+          <button class="copy-code h-7 px-3 border border-themed rounded-pill text-[11px] font-mono text-themed-body hover-card2 transition">Copy</button>
+          <button class="download-code h-7 px-3 btn-ink rounded-pill text-[11px] font-mono font-medium transition">↓ Download</button>
         </div>
       </div>
-      <div style="background:#171717;max-height:400px;overflow:auto"><pre class="p-4 m-0"><code class="language-${lang.toLowerCase().replace(/[^a-z]/g,'')}" style="font-size:13px;color:#e5e5e5">${esc(code)}</code></pre></div>
       ${previewHTML}`;
+
+    // Safely write live preview code into iframe contentDocument
+    if (isWebCode) {
+      setTimeout(() => {
+        const iframe = card.querySelector('.live-preview-frame');
+        if (iframe) {
+          try {
+            const doc = iframe.contentWindow.document || iframe.contentDocument;
+            doc.open();
+            doc.write(code);
+            doc.close();
+          } catch(e) {
+            console.error('Frame write error:', e);
+          }
+        }
+      }, 50);
+
+      // Tab switching
+      const tabBtns = card.querySelectorAll('.vibe-tab-btn');
+      const panelPreview = card.querySelector('.vibe-panel-preview');
+      const panelCode = card.querySelector('.vibe-panel-code');
+
+      tabBtns.forEach(btn => {
+        btn.onclick = () => {
+          tabBtns.forEach(b => { b.classList.remove('btn-ink'); b.classList.add('text-themed-body'); });
+          btn.classList.add('btn-ink'); btn.classList.remove('text-themed-body');
+          if (btn.dataset.tab === 'preview') {
+            panelPreview?.classList.remove('hidden');
+            panelCode?.classList.add('hidden');
+          } else {
+            panelPreview?.classList.add('hidden');
+            panelCode?.classList.remove('hidden');
+          }
+        };
+      });
+
+      const autoFixBtn = card.querySelector('.auto-fix-btn');
+      if (autoFixBtn) {
+        autoFixBtn.onclick = () => {
+          document.getElementById('code-prompt').value = `Auto-fix and enhance this web app UI/UX to look like a polished $100k production app with clean spacing, modern fonts, glassmorphism, and responsive layout:\n\`\`\`html\n${code.substring(0, 3000)}\n\`\`\``;
+          document.getElementById('generate-code-btn').click();
+        };
+      }
+    }
 
     card.querySelector('.copy-code').onclick = () => { navigator.clipboard.writeText(code); toast('Code copied!','success'); };
     card.querySelector('.download-code').onclick = () => {
