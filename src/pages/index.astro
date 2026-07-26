@@ -615,6 +615,17 @@ const auth = firebase.auth();
 const db = firebase.database();
 const ADMIN_EMAIL = 'khanshahidkhanshahid96@gmail.com';
 
+// Check Firebase configuration on load
+setTimeout(() => {
+  try {
+    const app = firebase.app();
+    console.log('[Firebase] Initialized:', app.name);
+    console.log('[Firebase] Project:', app.options.projectId);
+  } catch (e) {
+    console.error('[Firebase] Initialization error:', e);
+  }
+}, 1000);
+
 /* ═══════════════════════════════════════════════════
    State
    ═══════════════════════════════════════════════════ */
@@ -855,6 +866,18 @@ function toggleSidebar() {
    ═══════════════════════════════════════════════════ */
 let isLoggingIn = false;
 
+function resetLoginButtons() {
+  isLoggingIn = false;
+  const googleBtn = document.getElementById('login-google');
+  const guestBtn = document.getElementById('login-guest');
+  if (googleBtn && guestBtn) {
+    googleBtn.disabled = false;
+    guestBtn.disabled = false;
+    googleBtn.style.opacity = '';
+    guestBtn.style.opacity = '';
+  }
+}
+
 document.getElementById('login-google').onclick = async () => {
   if (isLoggingIn) return;
   isLoggingIn = true;
@@ -876,24 +899,33 @@ document.getElementById('login-google').onclick = async () => {
     provider.addScope('email');
     const result = await auth.signInWithPopup(provider);
     status.textContent = 'Signed in! Loading...';
+    // onAuthStateChanged will call enterApp()
   } catch (e) {
-    isLoggingIn = false;
-    googleBtn.disabled = false;
-    guestBtn.disabled = false;
-    googleBtn.style.opacity = '';
-    guestBtn.style.opacity = '';
+    resetLoginButtons();
     
-    if (e.code === 'auth/cancelled-popup-request') {
+    const errorCode = e.code || 'unknown';
+    const errorMsg = e.message || 'Unknown error';
+    
+    if (errorCode === 'auth/cancelled-popup-request') {
       status.textContent = 'Sign-in window already open. Please look for the Google window.';
       toast('Login window is already open', 'warning');
-    } else if (e.code === 'auth/popup-closed-by-user') {
+    } else if (errorCode === 'auth/popup-closed-by-user') {
       status.textContent = 'Sign-in cancelled. Please try again.';
       toast('Sign-in closed by user', 'info');
+    } else if (errorCode === 'auth/popup-blocked') {
+      status.textContent = 'Popup blocked by browser. Please allow popups and try again.';
+      toast('Popup blocked - allow popups for this site', 'error');
+    } else if (errorCode === 'auth/unauthorized-domain') {
+      status.textContent = 'Domain not authorized. Please contact admin to add this domain to Firebase.';
+      toast('Domain not authorized in Firebase Console', 'error');
+    } else if (errorCode === 'auth/operation-not-allowed') {
+      status.textContent = 'Google sign-in is not enabled. Please enable it in Firebase Console.';
+      toast('Google sign-in not enabled in Firebase', 'error');
     } else {
-      status.textContent = 'Error: ' + e.message;
-      toast('Sign-in error: ' + e.message, 'error');
+      status.textContent = 'Error: ' + errorMsg;
+      toast('Sign-in error: ' + errorMsg, 'error');
     }
-    console.error('Auth error:', e);
+    console.error('Auth error:', errorCode, errorMsg, e);
   }
 };
 
@@ -903,19 +935,23 @@ document.getElementById('login-guest').onclick = () => {
   
   const googleBtn = document.getElementById('login-google');
   const guestBtn = document.getElementById('login-guest');
+  const status = document.getElementById('login-status');
   
   googleBtn.disabled = true;
   guestBtn.disabled = true;
+  status.classList.remove('hidden');
+  status.textContent = 'Signing in as guest...';
   
-  auth.signInAnonymously().then(() => {
-    isLoggingIn = false;
+  auth.signInAnonymously().then((result) => {
+    status.textContent = 'Signed in! Loading...';
+    // onAuthStateChanged will call enterApp()
   }).catch(e => {
-    isLoggingIn = false;
-    googleBtn.disabled = false;
-    guestBtn.disabled = false;
-    // Fallback if anonymous auth fails
+    console.warn('Anonymous auth failed:', e.code, e.message);
+    // Fallback: create local-only guest user
     currentUser = { uid: 'guest_' + Date.now(), displayName: 'Guest', email: null, photoURL: null, isGuest: true };
     isAdmin = false;
+    status.textContent = 'Offline mode - data will not sync.';
+    toast('Running in offline mode (Firebase not configured)', 'warning');
     enterApp();
   });
 };
