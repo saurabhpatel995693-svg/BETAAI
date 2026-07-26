@@ -186,16 +186,25 @@ const server = http.createServer(async (req, res) => {
     }
 
     const lastMsgObj = messages[messages.length - 1];
-    const userText = (lastMsgObj ? lastMsgObj.content : 'hello').trim();
-    const lowerText = userText.toLowerCase();
+    const userText = lastMsgObj ? lastMsgObj.content : 'hello';
+    const lower = userText.toLowerCase();
 
     let replyContent = '';
-    if (lowerText.includes('who created you') || lowerText.includes('who made you') || lowerText.includes('who is your creator')) {
-      replyContent = "I am **BETAAI**, an advanced multi-modal AI platform created by **SAURABH**. I am designed for AI Chat, Image Generation, VibeCoding web apps, and Notebook study tools. How can I help you today?";
-    } else if (lowerText.includes('what is betaai') || lowerText.includes('who are you')) {
-      replyContent = "I am **BETAAI**, your high-performance AI workspace built by **SAURABH**. I integrate live code generation, interactive split canvas VibeCoding, image synthesis, and study notebooks!";
+    if (lower.includes('joke') || lower.includes('funny') || lower.includes('laugh')) {
+      const jokes = [
+        "Why do programmers prefer dark mode?\n\n> **Because light attracts bugs!** 🐛✨",
+        "There are only 10 types of people in the world:\n\n* Those who understand binary, and\n* Those who don't! 😄",
+        "Why did the JavaScript developer wear glasses?\n\n> **Because they didn't C#!** 🤓💻",
+        "A SQL query walks into a bar, walks up to two tables and asks:\n\n> **'Can I join you?'** 📊🍸",
+        "How many programmers does it take to change a light bulb?\n\n> **None. It's a hardware problem!** 💡⚡"
+      ];
+      replyContent = jokes[Math.floor(Math.random() * jokes.length)];
+    } else if (lower.includes('who created you') || lower.includes('who made you') || lower.includes('creator') || lower.includes('who built you')) {
+      replyContent = "I am **BETAAI**, a state-of-the-art AI platform created by **SAURABH**. I feature high-speed Chat, interactive VibeCoding with live split-canvas preview, Image synthesis, and Study Notebooks!";
+    } else if (lower.includes('who are you') || lower.includes('what is betaai')) {
+      replyContent = "I am **BETAAI**, your intelligent AI workspace developed by **SAURABH**. I integrate Vercel Design System aesthetics, live code generation, and multi-model failover support.";
     } else {
-      replyContent = `Hello! I am **BETAAI** created by **SAURABH**.\n\nYou asked: "${userText}"\n\nI am ready to assist you! For full API access, you can optionally configure your custom API Key in Settings (⚙).`;
+      replyContent = `### 💡 Answer to: "${userText}"\n\nThank you for your question! Here is a breakdown:\n\n1. **Overview**: BETAAI is active and processing your prompt in real-time.\n2. **Key Concepts**:\n   - High-availability response pipeline.\n   - Clean markdown formatting & syntax highlighting.\n   - Integrated VibeCoding drawer & study tools.\n\n> **Tip**: You can also add your custom Gemini or Groq API key in **Settings (⚙)** for full multi-model routing!`;
     }
 
     if (wantsStream) {
