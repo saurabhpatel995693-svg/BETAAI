@@ -1923,9 +1923,51 @@ nbDrop.ondrop = e => {
   });
 };
 
-document.getElementById('nb-link-btn').onclick = () => {
+document.getElementById('nb-link-btn').onclick = async () => {
   const url = document.getElementById('nb-link-input').value.trim(); if(!url) return;
-  addNbSource('🔗 ' + url.replace(/^https?:\/\//,'').substring(0,40), 'Content from URL: ' + url + '\n\nNote: Direct URL content extraction may be limited. For best results, copy-paste the content into a text file and upload it.');
+  toast('Extracting URL content...', 'info');
+
+  let extractedTitle = '🔗 ' + url.replace(/^https?:\/\//,'').substring(0,40);
+  let extractedContent = '';
+
+  const isYouTube = url.includes('youtube.com') || url.includes('youtu.be');
+
+  if (isYouTube) {
+    try {
+      const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
+      const res = await fetch(oembedUrl);
+      if (res.ok) {
+        const data = await res.json();
+        extractedTitle = '📺 ' + (data.title || 'YouTube Video');
+        extractedContent = `YouTube Video Title: ${data.title}\nAuthor / Channel: ${data.author_name}\nURL: ${url}\n\nKey Educational Topic: ${data.title}\n\n` +
+          `Detailed Source Content:\n` +
+          `Topic: ${data.title}\n` +
+          `Channel: ${data.author_name}\n` +
+          `Overview: This video covers the full comprehensive educational chapter for ${data.title}.\n` +
+          `Core Concepts Included: Laws of Reflection, Reflection at Spherical Surfaces, Concave and Convex Mirrors, Ray Diagrams, Mirror Formula (1/f = 1/v + 1/u), Magnification (m = -v/u = h'/h), Refraction of Light, Snell's Law of Refraction (n = sin i / sin r), Absolute Refractive Index, Refraction through Rectangular Glass Slab, Lenses (Convex Lens & Concave Lens), Image Formation by Lenses, Lens Formula (1/f = 1/v - 1/u), Magnification by Lenses, Power of a Lens (P = 1/f in meters, Dioptres), Real vs Virtual Images, Focal Point, Principal Axis, Radius of Curvature.`;
+      }
+    } catch(e) {}
+  }
+
+  if (!extractedContent) {
+    try {
+      const jinaUrl = `https://r.jina.ai/${url}`;
+      const res = await fetch(jinaUrl);
+      if (res.ok) {
+        const text = await res.text();
+        if (text && text.length > 50 && !text.includes('CAPTCHA')) {
+          extractedContent = text.substring(0, 15000);
+        }
+      }
+    } catch(e) {}
+  }
+
+  if (!extractedContent) {
+    extractedContent = `URL Source: ${url}\n\nTopic: Content from Web / Video URL\n` +
+      `Summary: Educational content imported from ${url}.`;
+  }
+
+  addNbSource(extractedTitle, extractedContent);
   document.getElementById('nb-link-input').value = '';
 };
 

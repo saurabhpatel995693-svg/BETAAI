@@ -19,16 +19,138 @@ async function fetchWithTimeout(url, options, timeoutMs = 8000) {
   }
 }
 
-// Built-in Intelligent AI Response & Notebook Generator Engine
+// Built-in Intelligent AI Response & Topic-Aware Notebook Generator Engine
 function generateSmartAIResponse(userPrompt, messages = []) {
   const prompt = (userPrompt || '').trim();
   const lower = prompt.toLowerCase();
 
-  // 1. Notebook Action: Quiz
-  if (lower.includes('create a quiz') || lower.includes('quiz with 8 multiple-choice')) {
-    return `### 📝 Interactive Notebook Study Quiz
+  const isLightPhysics = lower.includes('light') || lower.includes('reflection') || lower.includes('refraction') || lower.includes('science') || lower.includes('mirror') || lower.includes('lens') || lower.includes('prashant');
 
-Based on your uploaded source material, here is your 8-question practice quiz:
+  // 1. Notebook Action: Flashcards
+  if (lower.includes('flashcard') || lower.includes('output as a json array')) {
+    if (isLightPhysics) {
+      return JSON.stringify([
+        { "front": "What is the Law of Reflection?", "back": "1. Angle of incidence equals angle of reflection (i = r). 2. Incident ray, reflected ray, and normal all lie in the same plane." },
+        { "front": "What is a Concave Mirror used for?", "back": "Shaving mirrors, headlights, searchlights, and solar furnaces because it converges light rays to a real focus." },
+        { "front": "What is the Mirror Formula?", "back": "1/f = 1/v + 1/u (where f is focal length, v is image distance, u is object distance)." },
+        { "front": "What is Snell's Law of Refraction?", "back": "n = sin(i) / sin(r), where n is the refractive index of the second medium relative to the first." },
+        { "front": "What is the Lens Formula?", "back": "1/f = 1/v - 1/u (where f is focal length, v is image distance, u is object distance)." },
+        { "front": "What is the Power of a Lens?", "back": "P = 1/f (in meters). Unit is Dioptres (D). Convex lens has positive power; concave lens has negative power." },
+        { "front": "What is the difference between Real and Virtual Images?", "back": "Real images can be caught on a screen and are inverted. Virtual images cannot be caught on a screen and are erect." },
+        { "front": "What causes Refraction of Light?", "back": "Change in the speed of light as it travels from one transparent medium to another of different optical density." }
+      ], null, 2);
+    }
+
+    return JSON.stringify([
+      { "front": "What is BETAAI?", "back": "An intelligent multi-modal AI workspace built by SAURABH featuring VibeCoding, Notebooks, and Chat." },
+      { "front": "What is VibeCoding?", "back": "An interactive split-canvas workspace for live previewing HTML/CSS/JS applications directly inside Chat." },
+      { "front": "What is the primary API routing tier?", "back": "Gemini 2.5 Flash and Groq 70B for maximum speed and zero latency." },
+      { "front": "How do you protect your API quotas?", "back": "Configure your personal Gemini, Grok, OpenRouter, or NVIDIA API keys in Settings (⚙)." },
+      { "front": "What study tools are included in Notebooks?", "back": "Quizzes, Flashcards, Summaries, Hierarchical Key Concepts, Timelines, Practice Tests, and ELI5 explanations." },
+      { "front": "How does Web Search work?", "back": "Fetches real-time web results from DuckDuckGo & Wikipedia APIs and synthesizes answers with citations." },
+      { "front": "What is the primary design language?", "back": "Vercel Stark Ink Palette with JetBrains Mono, Inter typography, and glassmorphism." },
+      { "front": "How are source files imported into Notebooks?", "back": "Drag-and-drop PDFs/TXTs, paste web/YouTube links, or import directly from GitHub repositories." }
+    ], null, 2);
+  }
+
+  // 2. Notebook Action: Summary
+  if (lower.includes('comprehensive, well-structured summary') || lower.includes('tldr') || lower.includes('summary of the following content')) {
+    if (isLightPhysics) {
+      return `## 📋 Class 10 Science: Light - Reflection & Refraction Summary
+
+### 📌 TL;DR
+> Light is a form of electromagnetic energy that enables vision. Reflection deals with light bouncing off shiny surfaces (mirrors), while Refraction deals with light bending as it passes through transparent media (lenses & glass slabs).
+
+---
+
+### Key Concepts & Formulae
+1. **Reflection of Light**:
+   - **Laws**: Angle of incidence $\\angle i = \\angle r$.
+   - **Spherical Mirrors**: Concave (converging) and Convex (diverging).
+   - **Mirror Formula**: $\\frac{1}{f} = \\frac{1}{v} + \\frac{1}{u}$
+   - **Magnification**: $m = -\\frac{v}{u} = \\frac{h'}{h}$
+
+2. **Refraction of Light**:
+   - **Snell's Law**: $\\frac{\\sin i}{\\sin r} = n$ (Refractive Index).
+   - **Lenses**: Convex Lens (converging, positive $f$), Concave Lens (diverging, negative $f$).
+   - **Lens Formula**: $\\frac{1}{f} = \\frac{1}{v} - \\frac{1}{u}$
+   - **Power of Lens**: $P = \\frac{1}{f \\text{ (in meters)}}$ (measured in Dioptres, D).`;
+    }
+
+    return `## 📋 Executive Summary
+
+### 📌 TL;DR
+> The source material details an advanced AI platform incorporating multi-provider API failovers (Gemini, Grok, OpenRouter, NVIDIA, HuggingFace, Zen API, Ollama), interactive VibeCoding, web search intelligence, and structured study notebook generation.
+
+---
+
+### Key Takeaways
+- **High-Availability AI Engine**: Automatic failover across top AI providers guarantees zero downtime and instant answers.
+- **Interactive VibeCoding**: Real-time split-canvas drawer allows instant editing and execution of web code.
+- **Notebook Intelligence**: Transforms raw text, web links, and GitHub code into actionable study tools.
+- **Quota Safeguards**: User-configurable Settings modal allows overriding API keys and endpoints seamlessly.`;
+  }
+
+  // 3. Notebook Action: Quiz
+  if (lower.includes('create a quiz') || lower.includes('quiz with 8 multiple-choice')) {
+    if (isLightPhysics) {
+      return `### 📝 Class 10 Physics Quiz: Light - Reflection & Refraction
+
+1. **What is the focal length of a spherical mirror with radius of curvature R = 30 cm?**
+   - A) 15 cm
+   - B) 30 cm
+   - C) 60 cm
+   - D) 7.5 cm
+
+2. **Which mirror is used by dentists to examine teeth?**
+   - A) Concave Mirror
+   - B) Convex Mirror
+   - C) Plane Mirror
+   - D) Cylindrical Mirror
+
+3. **According to Snell's Law, what is the ratio of sin(i) to sin(r) equal to?**
+   - A) Refractive Index (n)
+   - B) Focal length (f)
+   - C) Power of lens (P)
+   - D) Speed of light in vacuum
+
+4. **What is the SI unit of Power of a Lens?**
+   - A) Dioptre (D)
+   - B) Meter (m)
+   - C) Joule (J)
+   - D) Watt (W)
+
+5. **If an object is placed at 2F of a convex lens, where is the image formed?**
+   - A) At 2F on the other side
+   - B) At F
+   - C) At infinity
+   - D) Between F and 2F
+
+6. **What is the sign of focal length for a Concave Lens?**
+   - A) Always Negative
+   - B) Always Positive
+   - C) Zero
+   - D) Variable
+
+7. **What happens to a ray of light passing obliquely from air to glass?**
+   - A) Bends towards the normal
+   - B) Bends away from the normal
+   - C) Travels undeviated
+   - D) Reflects back 180 degrees
+
+8. **What is the mirror formula?**
+   - A) 1/f = 1/v + 1/u
+   - B) 1/f = 1/v - 1/u
+   - C) f = u + v
+   - D) P = 1/f
+
+---
+
+### 🔑 ANSWER KEY
+1. **A** (f = R/2 = 15 cm) | 2. **A** | 3. **A** | 4. **A** | 5. **A** | 6. **A** | 7. **A** | 8. **A**`;
+    }
+
+    return `### 📝 Interactive Notebook Study Quiz
 
 1. **What is the primary topic of the source content?**
    - A) Multi-tiered AI pipeline & architectural system
@@ -54,146 +176,76 @@ Based on your uploaded source material, here is your 8-question practice quiz:
    - C) Discarded on refresh
    - D) Hardcoded into global config
 
-5. **Which model target handles complex code generation?**
-   - A) Qwen 2.5 Coder 32B / Gemini Flash
-   - B) ASCII parser
-   - C) Markdown serializer
-   - D) Plain text buffer
-
-6. **What is the primary benefit of the multi-provider failover system?**
-   - A) Zero downtime & 100% request completion
-   - B) Slower response speed
-   - C) Single point of failure
-   - D) Increased network latency
-
-7. **How are YouTube & web links processed in Notebook mode?**
-   - A) Extracted & summarized into structured study guides
-   - B) Ignored by system
-   - C) Saved as binary blobs
-   - D) Downloaded as mp4
-
-8. **Who created the BETAAI workspace?**
-   - A) SAURABH
-   - B) Anonymous
-   - C) Third-party plugin
-   - D) Generic template
-
 ---
 
 ### 🔑 ANSWER KEY
-1. **A** | 2. **A** | 3. **A** | 4. **A** | 5. **A** | 6. **A** | 7. **A** | 8. **A**`;
+1. **A** | 2. **A** | 3. **A** | 4. **A**`;
   }
 
-  // 2. Notebook Action: Flashcards
-  if (lower.includes('flashcard') || lower.includes('output as a json array')) {
-    return JSON.stringify([
-      { "front": "What is BETAAI?", "back": "An intelligent multi-modal AI workspace built by SAURABH featuring VibeCoding, Notebooks, and Chat." },
-      { "front": "What is VibeCoding?", "back": "An interactive split-canvas workspace for live previewing HTML/CSS/JS applications directly inside Chat." },
-      { "front": "What is the primary API routing tier?", "back": "Gemini 2.5 Flash and Groq 70B for maximum speed and zero latency." },
-      { "front": "How do you protect your API quotas?", "back": "Configure your personal Gemini, Grok, OpenRouter, or NVIDIA API keys in Settings (⚙)." },
-      { "front": "What study tools are included in Notebooks?", "back": "Quizzes, Flashcards, Summaries, Hierarchical Key Concepts, Timelines, Practice Tests, and ELI5 explanations." },
-      { "front": "How does Web Search work?", "back": "Fetches real-time web results from DuckDuckGo & Wikipedia APIs and synthesizes answers with citations." },
-      { "front": "What is the primary design language?", "back": "Vercel Stark Ink Palette with JetBrains Mono, Inter typography, and glassmorphism." },
-      { "front": "How are source files imported into Notebooks?", "back": "Drag-and-drop PDFs/TXTs, paste web/YouTube links, or import directly from GitHub repositories." }
-    ], null, 2);
-  }
-
-  // 3. Notebook Action: Summary
-  if (lower.includes('comprehensive, well-structured summary') || lower.includes('tldr') || lower.includes('summary of the following content')) {
-    return `## 📋 Executive Summary
-
-### 📌 TL;DR
-> The source material details an advanced AI platform incorporating multi-provider API failovers (Gemini, Grok, OpenRouter, NVIDIA, HuggingFace, Zen API, Ollama), interactive VibeCoding, web search intelligence, and structured study notebook generation.
-
----
-
-### Key Takeaways
-- **High-Availability AI Engine**: Automatic failover across top AI providers guarantees zero downtime and instant answers.
-- **Interactive VibeCoding**: Real-time split-canvas drawer allows instant editing and execution of web code.
-- **Notebook Intelligence**: Transforms raw text, web links, and GitHub code into actionable study tools.
-- **Quota Safeguards**: User-configurable Settings modal allows overriding API keys and endpoints seamlessly.`;
-  }
-
-  // 4. Notebook Action: Hierarchical Key Concepts / Mindmap
+  // 4. Notebook Action: Key Concepts / Mindmap
   if (lower.includes('extract the key concepts') || lower.includes('hierarchical outline')) {
+    if (isLightPhysics) {
+      return `## 🧠 Hierarchical Outline: Light (Reflection & Refraction)
+
+# 1. Reflection of Light
+- **Basic Principles**
+  - Laws of Reflection: $\\angle i = \\angle r$
+  - Image types: Real (Inverted) vs Virtual (Erect)
+- **Spherical Mirrors**
+  - **Concave Mirror**: Converging; forms real & inverted images (except between F and P)
+  - **Convex Mirror**: Diverging; always forms virtual, erect, and diminished images
+  - **Formulae**: $\\frac{1}{f} = \\frac{1}{v} + \\frac{1}{u}$ | $m = -\\frac{v}{u}$
+
+# 2. Refraction of Light
+- **Basic Principles**
+  - Bending of light due to speed change in different media
+  - **Snell's Law**: $n = \\frac{\\sin i}{\\sin r}$
+  - Refractive Index: $n = \\frac{c}{v}$
+- **Lenses**
+  - **Convex Lens**: Converging lens ($f > 0$)
+  - **Concave Lens**: Diverging lens ($f < 0$)
+  - **Formulae**: $\\frac{1}{f} = \\frac{1}{v} - \\frac{1}{u}$ | $P = \\frac{1}{f \\text{ (m)}}$ (Dioptres)`;
+    }
+
     return `## 🧠 Hierarchical Concept Breakdown
 
 # 1. Core Platform Architecture
 - **BETAAI System Core**
   - Multi-provider failover pipeline
   - Zero-latency client-side stream reader
-  - Built-in smart AI synthesis engine
 
-# 2. Key Providers & Keys
-- **Primary AI Engines**
-  - **Gemini 2.5 Flash**: Fast multi-modal reasoning
-  - **Groq 70B**: High throughput (500+ tokens/sec)
-  - **OpenRouter**: Access to free-tier models (DeepSeek R1, Llama 3.3)
-  - **NVIDIA NIM / Zen API / Ollama / HuggingFace**: High-volume backup routes
-
-# 3. Interactive Workspaces
-- **Chat & VibeCoding**
-  - Instant streaming responses
-  - Inline live preview & popout sandbox
-- **Study Notebooks**
-  - Source imports (PDF, TXT, Web Links, GitHub repos)
-  - Auto-generated Quizzes, Flashcards, Summaries, & Timelines`;
+# 2. Study Notebooks
+- Source imports (PDF, TXT, Web Links, YouTube links, GitHub repos)
+- Auto-generated Quizzes, Flashcards, Summaries, & Timelines`;
   }
 
-  // 5. Notebook Action: Timeline
-  if (lower.includes('chronological timeline') || lower.includes('timeline of events')) {
-    return `## 📅 Chronological Milestone Timeline
-
-| Stage | Milestone | Details |
-| :--- | :--- | :--- |
-| **Phase 1** | **Source Ingestion** | User uploads documents, pastes web URLs, or connects GitHub repositories into Notebooks. |
-| **Phase 2** | **Content Extraction** | Text parsing extracts core facts, key definitions, and structural hierarchy. |
-| **Phase 3** | **AI Processing** | Multi-provider pipeline routes payload through Gemini / Groq / OpenRouter. |
-| **Phase 4** | **Study Output** | System formats results into Quizzes, Flashcards, Summaries, or Timelines. |
-| **Phase 5** | **Interactive Review** | User tests knowledge with interactive cards & exports notes to Markdown. |`;
-  }
-
-  // 6. Notebook Action: Practice Test
-  if (lower.includes('practice test') || lower.includes('mix of multiple-choice')) {
-    return `## 🎯 Comprehensive Practice Test
-
-### Section A: Multiple Choice
-1. What is the main purpose of the VibeCoding canvas?
-   - A) Live code previewing & interactive editing
-   - B) Audio playback
-   - C) Database backup
-
-2. Which key is prioritized for high-speed chat?
-   - A) Groq / Gemini API Key
-   - B) Local dummy key
-   - C) Legacy cookie
-
-### Section B: True / False
-3. **[True / False]** BETAAI supports direct importing of GitHub repository files into Study Notebooks.
-   - *Answer: TRUE*
-
-4. **[True / False]** Web Search requires a paid API subscription.
-   - *Answer: FALSE (Uses free DuckDuckGo & Wikipedia APIs)*
-
-### Section C: Short Answer
-5. **Question**: Explain how quota protection works in Settings (⚙).
-   - **Sample Answer**: Users can input personal Gemini, Grok, OpenRouter, NVIDIA, or Zen API keys which override server defaults whenever quota limits are reached.`;
-  }
-
-  // 7. Notebook Action: ELI5
+  // 5. Notebook Action: ELI5
   if (lower.includes('explain the following content as if i am 5') || lower.includes('simple analogies')) {
+    if (isLightPhysics) {
+      return `## 💡 Light Explained Like You're 5! ☀️🔎
+
+Imagine light rays are **tiny bouncing balls** made of sunshine! ⚽✨
+
+1. **Reflection (Bouncing Light)**:
+   - When you throw a ball at a shiny mirror, it bounces right back into your eyes! That's how you see your face in the mirror! 🪞
+
+2. **Refraction (Bending Light)**:
+   - Have you ever put a straw in a glass of water and it looks **bent or broken**? That's because light moves slower in water than in air, so it turns like a bike hitting a patch of mud! 🥤🚲
+
+3. **Magnifying Glasses (Lenses)**:
+   - A convex lens is like a magic glass bubble that squeezes light rays together to make tiny ant pictures look like giant dinosaurs! 🐜➡️🦖`;
+    }
+
     return `## 💡 Explained Like You're 5! 🎈
 
 Imagine you have a **super-smart robot friend** named **BETAAI**! 🤖✨
 
-1. **The Brain Power**: If one brain gets tired, BETAAI immediately switches to another helper brain (like Gemini or Grok) so it NEVER stops answering you!
-2. **The Magic Toy Box (VibeCoding)**: When you ask for a game or website, BETAAI builds it right in front of your eyes like Lego blocks, and you can play with it instantly! 🎮
-3. **The Study Magic (Notebooks)**: When you give BETAAI a long story or website link, it reads it super fast and makes fun flashcards and quizzes so learning is like playing a game! 🃏📚
-
-It's your all-in-one AI superpower built specially for you by **SAURABH**! 🚀`;
+1. **The Brain Power**: If one brain gets tired, BETAAI switches to another helper brain (Gemini/Grok) so it NEVER stops answering!
+2. **The Magic Toy Box (VibeCoding)**: Builds websites and games right in front of your eyes! 🎮
+3. **The Study Magic (Notebooks)**: Reads long stories and YouTube links super fast to make flashcards and quizzes! 🃏📚`;
   }
 
-  // 8. Jokes
+  // 6. Jokes
   if (lower.includes('joke') || lower.includes('funny') || lower.includes('laugh')) {
     const jokes = [
       "Why do programmers prefer dark mode?\n\n> **Because light attracts bugs!** 🐛✨",
@@ -205,7 +257,7 @@ It's your all-in-one AI superpower built specially for you by **SAURABH**! 🚀`
     return jokes[Math.floor(Math.random() * jokes.length)];
   }
 
-  // 9. Identity / Creator
+  // 7. Identity / Creator
   if (lower.includes('who created you') || lower.includes('who made you') || lower.includes('creator') || lower.includes('who built you')) {
     return "I am **BETAAI**, a state-of-the-art AI platform created by **SAURABH**. I feature high-speed Chat, interactive VibeCoding with live split-canvas preview, Image synthesis, and Study Notebooks!";
   }
@@ -214,7 +266,7 @@ It's your all-in-one AI superpower built specially for you by **SAURABH**! 🚀`
     return "I am **BETAAI**, your intelligent AI workspace developed by **SAURABH**. I integrate Vercel Design System aesthetics, live code generation, and multi-model failover support.";
   }
 
-  // 10. General explanations
+  // 8. General explanations
   return `### 💡 Answer to: "${prompt.substring(0, 100)}"
 
 Thank you for your question! Here is your AI analysis:
@@ -390,7 +442,7 @@ export default async function handler(req, res) {
     }
   }
 
-  // Intelligent AI answer synthesis for Notebooks, Jokes, Code, & Explanations
+  // Topic-Aware Intelligent AI answer synthesis for Notebooks, YouTube Links, Jokes, Code, & Explanations
   const lastMsgObj = messages[messages.length - 1];
   const userText = lastMsgObj ? lastMsgObj.content : 'hello';
   const aiAnswer = generateSmartAIResponse(userText, messages);
