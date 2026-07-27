@@ -236,9 +236,8 @@ How else can I assist you with coding, web design, or study tools today?`;
 
 // In-memory rate limiting store (per IP)
 const userRateLimits = new Map();
-const MAX_REQUESTS = 15; // Limit per 10-min burst window
-const BURST_WINDOW_MS = 10 * 60 * 1000;
-const COOLDOWN_MS = 4 * 60 * 60 * 1000; // 4 Hours
+const MAX_SESSION_DURATION_MS = 2 * 60 * 60 * 1000; // 2 Hours active usage session window
+const COOLDOWN_MS = 4 * 60 * 60 * 1000; // 4 Hours wait period
 
 // ─── Main Serverless Handler ───────────────────────────────────────
 export default async function handler(req, res) {
@@ -249,16 +248,16 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: { message: 'Method not allowed' } });
 
-  // Rate Limiting Check
+  // Rate Limiting Check: User gets 2 hours active chat window. After 2 hours of use, hit limit & block for 4 hours.
   const clientIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'global-user';
   const now = Date.now();
-  let userRecord = userRateLimits.get(clientIp) || { count: 0, windowStart: now, blockedUntil: 0 };
+  let userRecord = userRateLimits.get(clientIp) || { sessionStart: now, lastActive: now, blockedUntil: 0 };
 
   // Check if currently blocked in 4-hour cooldown
   if (userRecord.blockedUntil && now < userRecord.blockedUntil) {
     const remainingMs = userRecord.blockedUntil - now;
     const remainingHours = (remainingMs / (1000 * 60 * 60)).toFixed(1);
-    const limitMessage = `⏳ You have reached the continuous message limit for SHESHAAI. Please come back 4 hours later to continue chatting (${remainingHours} hrs remaining).`;
+    const limitMessage = `⏳ You have reached the usage limit after 2 hours of continuous activity on SHESHAAI. Please come back 4 hours later to continue chatting (${remainingHours} hrs remaining).`;
 
     if (req.body && (typeof req.body === 'string' ? req.body.includes('"stream":true') : req.body.stream === true)) {
       res.setHeader('Content-Type', 'text/event-stream');
@@ -270,17 +269,16 @@ export default async function handler(req, res) {
     return res.status(429).json({ error: { message: limitMessage } });
   }
 
-  // Reset window if 10 mins passed since start
-  if (now - userRecord.windowStart > BURST_WINDOW_MS) {
-    userRecord = { count: 0, windowStart: now, blockedUntil: 0 };
+  // If user was inactive for more than 4 hours, reset their session
+  if (now - userRecord.lastActive > COOLDOWN_MS) {
+    userRecord = { sessionStart: now, lastActive: now, blockedUntil: 0 };
   }
 
-  userRecord.count += 1;
-
-  if (userRecord.count > MAX_REQUESTS) {
+  // Check if current active session duration has crossed 2 hours
+  if (now - userRecord.sessionStart >= MAX_SESSION_DURATION_MS) {
     userRecord.blockedUntil = now + COOLDOWN_MS;
     userRateLimits.set(clientIp, userRecord);
-    const limitMessage = `⏳ You have reached the continuous message limit for SHESHAAI. Please come back 4 hours later to continue chatting (4.0 hrs remaining).`;
+    const limitMessage = `⏳ You have reached the usage limit after 2 hours of continuous activity on SHESHAAI. Please come back 4 hours later to continue chatting (4.0 hrs remaining).`;
 
     if (req.body && (typeof req.body === 'string' ? req.body.includes('"stream":true') : req.body.stream === true)) {
       res.setHeader('Content-Type', 'text/event-stream');
@@ -292,6 +290,7 @@ export default async function handler(req, res) {
     return res.status(429).json({ error: { message: limitMessage } });
   }
 
+  userRecord.lastActive = now;
   userRateLimits.set(clientIp, userRecord);
 
   let payload = {};
