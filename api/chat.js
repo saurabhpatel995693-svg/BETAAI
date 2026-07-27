@@ -140,10 +140,260 @@ ${topicLine ? `**${topicLine}**` : 'This topic'} is just like organizing your fa
 - **Study Status**: Verified and structured for quick revision.`;
   }
 
-  // Coding Fallback - Dynamic App/Game Generator
+  // Coding Fallback - Specialized Complete Interactive Application Generators
   if (isCoding) {
-    const appTitle = prompt.replace(/^(create|build|generate|make|write)\s*(a|an)?\s*/i, '').substring(0, 40).trim() || 'Web App';
+    const appTitle = prompt.replace(/^(create|build|generate|make|write)\s*(a|an)?\s*/i, '').substring(0, 50).trim() || 'Web App';
     const isLudo = lower.includes('ludo');
+    const isSpaceGame = lower.includes('space') || lower.includes('arcade') || lower.includes('cyberpunk') || lower.includes('shooter') || lower.includes('game');
+    const isDashboard = lower.includes('dashboard') || lower.includes('analytics');
+    const isSaas = lower.includes('saas') || lower.includes('landing');
+    const isChatUi = lower.includes('chat ui') || lower.includes('chat assistant');
+    const isKanban = lower.includes('kanban') || lower.includes('task');
+
+    if (isSpaceGame) {
+      return `### 🎯 Architecture & Approach (Thinking)
+1. **Canvas Space Shooter Architecture**: HTML5 \`<canvas>\` 2D render loop running at 60 FPS with player spaceship, enemy invaders array, laser bullets, score tracker, and health system.
+2. **Visual & Audio FX**: Cyberpunk neon glow rendering (\`shadowBlur\`), particle explosions, sound synth audio generator using Web Audio API (\`AudioContext\`), and game-over overlay.
+3. **Controls**: Keyboard arrow keys / A & D keys for movement, Spacebar to shoot lasers.
+
+\`\`\`html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cyberpunk Space Shooter 2026 - SHESHAAI</title>
+  <script src="https://cdn.tailwindcss.com"><\/script>
+  <style>
+    body { background: #05050a; overflow: hidden; font-family: monospace; }
+    canvas { background: radial-gradient(circle at center, #0f0c1b 0%, #05050a 100%); border: 1px solid rgba(0,240,255,0.2); box-shadow: 0 0 30px rgba(0,240,255,0.1); }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 text-cyan-400 select-none">
+  <div class="max-w-xl w-full flex items-center justify-between mb-3 px-2">
+    <div class="text-sm font-bold tracking-widest uppercase text-cyan-400">⚡ CYBERPUNK ARCADE</div>
+    <div class="flex items-center gap-4 text-xs">
+      <div>SCORE: <span id="scoreVal" class="text-emerald-400 text-sm font-bold">0</span></div>
+      <div>HP: <span id="hpVal" class="text-rose-400 text-sm font-bold">100</span></div>
+    </div>
+  </div>
+
+  <div class="relative">
+    <canvas id="gameCanvas" width="560" height="420" class="rounded-xl"></canvas>
+    <div id="startOverlay" class="absolute inset-0 bg-black/80 backdrop-blur-md rounded-xl flex flex-col items-center justify-center p-6 text-center">
+      <h1 class="text-2xl font-black tracking-widest text-cyan-400 mb-2">NEON SPACE SHOOTER</h1>
+      <p class="text-xs text-neutral-400 mb-6">Use [A / D / ← →] to Move & [Spacebar] to Fire Synth Lasers</p>
+      <button onclick="startGame()" class="px-6 py-3 bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs uppercase tracking-widest rounded-lg shadow-lg shadow-cyan-500/30 transition">
+        Launch Fighter
+      </button>
+    </div>
+  </div>
+
+  <div class="text-[11px] text-neutral-500 mt-4">Synthesized by SHESHAAI Engine for SAURABH</div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    let score = 0, hp = 100, gameRunning = false, player, bullets = [], enemies = [], particles = [], keys = {};
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playSynthSound(freq, duration) {
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + duration);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + duration);
+      } catch(e){}
+    }
+
+    class Player {
+      constructor() { this.x = canvas.width / 2 - 15; this.y = canvas.height - 40; this.w = 30; this.h = 20; this.speed = 6; }
+      draw() {
+        ctx.shadowBlur = 15; ctx.shadowColor = '#00f0ff'; ctx.fillStyle = '#00f0ff';
+        ctx.beginPath(); ctx.moveTo(this.x + this.w/2, this.y); ctx.lineTo(this.x, this.y + this.h); ctx.lineTo(this.x + this.w, this.y + this.h); ctx.closePath(); ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+      update() {
+        if ((keys['ArrowLeft'] || keys['KeyA']) && this.x > 0) this.x -= this.speed;
+        if ((keys['ArrowRight'] || keys['KeyD']) && this.x < canvas.width - this.w) this.x += this.speed;
+      }
+    }
+
+    function spawnEnemy() {
+      if (Math.random() < 0.04) {
+        enemies.push({ x: Math.random() * (canvas.width - 25), y: -20, w: 25, h: 20, speed: 2 + Math.random() * 2 });
+      }
+    }
+
+    function startGame() {
+      document.getElementById('startOverlay').classList.add('hidden');
+      score = 0; hp = 100; bullets = []; enemies = []; particles = [];
+      document.getElementById('scoreVal').innerText = score; document.getElementById('hpVal').innerText = hp;
+      player = new Player(); gameRunning = true; animate();
+    }
+
+    window.addEventListener('keydown', e => {
+      keys[e.code] = true;
+      if (e.code === 'Space' && gameRunning) {
+        bullets.push({ x: player.x + player.w/2 - 2, y: player.y, w: 4, h: 10, speed: 8 });
+        playSynthSound(440, 0.1);
+      }
+    });
+    window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+    function animate() {
+      if (!gameRunning) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      player.update(); player.draw(); spawnEnemy();
+
+      bullets.forEach((b, i) => {
+        b.y -= b.speed; ctx.fillStyle = '#ff0080'; ctx.shadowBlur = 10; ctx.shadowColor = '#ff0080'; ctx.fillRect(b.x, b.y, b.w, b.h); ctx.shadowBlur = 0;
+        if (b.y < 0) bullets.splice(i, 1);
+      });
+
+      enemies.forEach((e, i) => {
+        e.y += e.speed; ctx.fillStyle = '#ff4d4d'; ctx.shadowBlur = 10; ctx.shadowColor = '#ff4d4d'; ctx.fillRect(e.x, e.y, e.w, e.h); ctx.shadowBlur = 0;
+        bullets.forEach((b, bi) => {
+          if (b.x < e.x + e.w && b.x + b.w > e.x && b.y < e.y + e.h && b.y + b.h > e.y) {
+            score += 10; document.getElementById('scoreVal').innerText = score;
+            playSynthSound(800, 0.15);
+            enemies.splice(i, 1); bullets.splice(bi, 1);
+          }
+        });
+        if (e.y > canvas.height) { hp -= 10; document.getElementById('hpVal').innerText = hp; enemies.splice(i, 1); }
+      });
+
+      if (hp <= 0) {
+        gameRunning = false;
+        document.getElementById('startOverlay').classList.remove('hidden');
+        document.getElementById('startOverlay').querySelector('h1').innerText = 'GAME OVER';
+      } else { requestAnimationFrame(animate); }
+    }
+  <\/script>
+</body>
+</html>
+\`\`\``;
+    }
+
+    if (isDashboard) {
+      return `### 🎯 Architecture & Approach (Thinking)
+1. **Analytics Dashboard Architecture**: Fully responsive SaaS telemetry dashboard with fixed sidebar, live metric stat cards, conversion graph visualization, filterable table with search bar, and status badges.
+2. **Styling & Theme**: Modern Vercel dark mode palette (\`#09090b\`), glassmorphic backdrop filters, gradient metric counters, and clean typography.
+3. **Interactivity**: Dynamic search filtering on customer records, status toggle, and real-time live data increment simulation.
+
+\`\`\`html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Analytics Dashboard - SHESHAAI</title>
+  <script src="https://cdn.tailwindcss.com"><\/script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>body { font-family: 'Inter', sans-serif; background: #09090b; }</style>
+</head>
+<body class="text-neutral-200 min-h-screen flex">
+  <!-- Sidebar -->
+  <aside class="w-64 border-r border-white/10 bg-neutral-950 p-6 flex flex-col justify-between hidden md:flex">
+    <div class="space-y-6">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-purple-600 flex items-center justify-center font-bold text-white">Š</div>
+        <span class="font-bold text-white tracking-wide">SHESHAAI Analytics</span>
+      </div>
+      <nav class="space-y-1 text-sm font-medium">
+        <a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-white/10 text-white" href="#">📊 Overview</a>
+        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-neutral-400 hover:bg-white/5 transition" href="#">📈 Telemetry</a>
+        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-neutral-400 hover:bg-white/5 transition" href="#">👥 Customers</a>
+        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-neutral-400 hover:bg-white/5 transition" href="#">⚙ Settings</a>
+      </nav>
+    </div>
+    <div class="text-xs text-neutral-500 font-mono">v3.0 Production Engine</div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 p-6 space-y-6 overflow-y-auto">
+    <!-- Header -->
+    <header class="flex items-center justify-between pb-4 border-b border-white/10">
+      <div>
+        <h1 class="text-xl font-bold text-white tracking-tight">Executive Telemetry</h1>
+        <p class="text-xs text-neutral-400">Real-time performance metrics</p>
+      </div>
+      <button onclick="refreshData()" class="px-4 py-2 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-xs font-semibold hover:bg-cyan-500/20 transition">
+        ⚡ Refresh Metrics
+      </button>
+    </header>
+
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="p-5 rounded-xl bg-neutral-900 border border-white/10 space-y-1">
+        <div class="text-xs font-medium text-neutral-400">Monthly Recurring Revenue</div>
+        <div id="mrrVal" class="text-2xl font-bold text-white">$48,250</div>
+        <div class="text-[11px] text-emerald-400">↑ 12.4% from last month</div>
+      </div>
+      <div class="p-5 rounded-xl bg-neutral-900 border border-white/10 space-y-1">
+        <div class="text-xs font-medium text-neutral-400">Active Subscribers</div>
+        <div id="usersVal" class="text-2xl font-bold text-white">1,420</div>
+        <div class="text-[11px] text-emerald-400">↑ 8.1% active now</div>
+      </div>
+      <div class="p-5 rounded-xl bg-neutral-900 border border-white/10 space-y-1">
+        <div class="text-xs font-medium text-neutral-400">Conversion Rate</div>
+        <div class="text-2xl font-bold text-white">3.82%</div>
+        <div class="text-[11px] text-neutral-400">Optimal threshold</div>
+      </div>
+      <div class="p-5 rounded-xl bg-neutral-900 border border-white/10 space-y-1">
+        <div class="text-xs font-medium text-neutral-400">API Latency</div>
+        <div class="text-2xl font-bold text-cyan-400">18ms</div>
+        <div class="text-[11px] text-emerald-400">99.99% Uptime</div>
+      </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="rounded-xl bg-neutral-900 border border-white/10 p-5 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-white">Recent Transactions</h3>
+        <input id="searchInput" oninput="filterTable()" placeholder="Search customer..." class="px-3 py-1.5 rounded-lg bg-black/50 border border-white/10 text-xs text-white placeholder-neutral-500 focus:outline-none"/>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="text-neutral-400 border-b border-white/10">
+            <tr>
+              <th class="pb-3 font-medium">Customer</th>
+              <th class="pb-3 font-medium">Plan</th>
+              <th class="pb-3 font-medium">Amount</th>
+              <th class="pb-3 font-medium">Status</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody" class="divide-y divide-white/5">
+            <tr><td class="py-3 font-medium text-white">Acme Corp</td><td>Enterprise</td><td>$2,400</td><td><span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Active</span></td></tr>
+            <tr><td class="py-3 font-medium text-white">Vercel Inc</td><td>Pro Tier</td><td>$850</td><td><span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Active</span></td></tr>
+            <tr><td class="py-3 font-medium text-white">Linear Systems</td><td>Pro Tier</td><td>$620</td><td><span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Active</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function refreshData() {
+      const currentMRR = parseInt(document.getElementById('mrrVal').innerText.replace(/[^0-9]/g,''));
+      document.getElementById('mrrVal').innerText = '$' + (currentMRR + Math.floor(Math.random() * 500)).toLocaleString();
+    }
+    function filterTable() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      document.querySelectorAll('#tableBody tr').forEach(tr => {
+        tr.style.display = tr.innerText.toLowerCase().includes(q) ? '' : 'none';
+      });
+    }
+  <\/script>
+</body>
+</html>
+\`\`\``;
+    }
 
     if (isLudo) {
       return `### 🎯 Architecture & Approach (Thinking)
@@ -159,9 +409,6 @@ ${topicLine ? `**${topicLine}**` : 'This topic'} is just like organizing your fa
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Ludo Classic - SHESHAAI Game Engine</title>
   <script src="https://cdn.tailwindcss.com"><\/script>
-  <style>
-    .ludo-grid { display: grid; grid-template-columns: repeat(15, 1fr); grid-template-rows: repeat(15, 1fr); }
-  </style>
 </head>
 <body class="bg-neutral-950 text-white min-h-screen flex flex-col items-center justify-center p-4">
   <div class="max-w-md w-full bg-neutral-900 border border-white/10 rounded-2xl p-6 shadow-2xl space-y-4 text-center">
@@ -169,39 +416,9 @@ ${topicLine ? `**${topicLine}**` : 'This topic'} is just like organizing your fa
       <span class="text-xs font-mono text-cyan-400 bg-cyan-500/10 px-3 py-1 rounded-full border border-cyan-500/20">🎲 SHESHAAI Ludo v1.0</span>
       <span id="turnIndicator" class="text-xs font-semibold text-emerald-400">Turn: Red Player</span>
     </div>
-
-    <!-- Ludo Board Representation -->
-    <div class="aspect-square w-full bg-neutral-950 rounded-xl border border-white/10 p-2 relative flex flex-col justify-between">
-      <div class="flex justify-between h-2/5">
-        <div class="w-2/5 bg-red-600/30 border border-red-500 rounded-lg flex items-center justify-center">
-          <div class="w-10 h-10 rounded-full bg-red-500 shadow-lg shadow-red-500/50 flex items-center justify-center font-bold">🔴</div>
-        </div>
-        <div class="w-1/5 bg-yellow-500/20 border border-yellow-500/30 rounded flex items-center justify-center text-xs font-mono">Home</div>
-        <div class="w-2/5 bg-green-600/30 border border-green-500 rounded-lg flex items-center justify-center">
-          <div class="w-10 h-10 rounded-full bg-green-500 shadow-lg shadow-green-500/50 flex items-center justify-center font-bold">🟢</div>
-        </div>
-      </div>
-
-      <div id="diceDisplay" class="my-4 py-6 bg-black/60 rounded-xl border border-white/10 text-4xl font-mono text-cyan-400 animate-pulse">
-        🎲 6
-      </div>
-
-      <div class="flex justify-between h-2/5">
-        <div class="w-2/5 bg-blue-600/30 border border-blue-500 rounded-lg flex items-center justify-center">
-          <div class="w-10 h-10 rounded-full bg-blue-500 shadow-lg shadow-blue-500/50 flex items-center justify-center font-bold">🔵</div>
-        </div>
-        <div class="w-1/5 bg-cyan-500/20 border border-cyan-500/30 rounded flex items-center justify-center text-xs font-mono">Path</div>
-        <div class="w-2/5 bg-yellow-600/30 border border-yellow-500 rounded-lg flex items-center justify-center">
-          <div class="w-10 h-10 rounded-full bg-yellow-500 shadow-lg shadow-yellow-500/50 flex items-center justify-center font-bold">🟡</div>
-        </div>
-      </div>
-    </div>
-
-    <button onclick="rollDice()" class="w-full py-3 bg-cyan-500 hover:bg-cyan-400 text-black font-bold rounded-xl transition shadow-lg shadow-cyan-500/20">
-      Roll Dice
-    </button>
+    <div id="diceDisplay" class="my-4 py-6 bg-black/60 rounded-xl border border-white/10 text-4xl font-mono text-cyan-400 animate-pulse">🎲 6</div>
+    <button onclick="rollDice()" class="w-full py-3 bg-cyan-500 hover:bg-cyan-400 text-black font-bold rounded-xl transition shadow-lg shadow-cyan-500/20">Roll Dice</button>
   </div>
-
   <script>
     let turn = 'Red';
     function rollDice() {
