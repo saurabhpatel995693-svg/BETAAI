@@ -327,18 +327,19 @@ export default async function handler(req, res) {
     });
   }
 
-  // TIER 2: Coding Mode → Ultra-High Performance Coding Models (Qwen 2.5 Coder 32B, DeepSeek R1, Gemini 2.5 Flash)
+  // ── STRICT DIVISION OF WORK ──────────────────────────────────────
+  // 1. CODING MODE -> ONLY OPENROUTER CODING KEYS
+  // 2. CHAT / GENERAL MODE -> ONLY GEMINI 6-KEY API POOL
   if (isCodingMode) {
     const CODING_MODELS = [
-      'qwen/qwen-2.5-coder-32b-instruct:free',
-      'deepseek/deepseek-r1:free',
+      'openrouter/free',
       'google/gemini-2.5-flash:free',
-      'openrouter/free'
+      'meta-llama/llama-3.3-70b-instruct:free'
     ];
-    for (const modelName of CODING_MODELS) {
-      for (const key of OPENROUTER_KEYS) {
+    for (const key of OPENROUTER_KEYS) {
+      for (const modelName of CODING_MODELS) {
         targets.push({
-          name: `OpenRouter-Coding-${modelName.split('/')[1] || modelName}`,
+          name: `OpenRouter-Coding-${modelName}`,
           url: 'https://openrouter.ai/api/v1/chat/completions',
           key: key,
           model: modelName,
@@ -346,26 +347,15 @@ export default async function handler(req, res) {
         });
       }
     }
-  }
-
-  // TIER 3: Gemini API Pool (rotate through all 6 keys for maximum throughput)
-  GEMINI_KEYS.forEach((key, idx) => {
-    targets.push({
-      name: `Gemini-Key-${idx + 1}`,
-      url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
-      key: key,
-      model: 'gemini-2.5-flash'
-    });
-  });
-
-  // TIER 4: OpenRouter Free Fallback
-  for (const key of OPENROUTER_KEYS) {
-    targets.push({
-      name: 'OpenRouter-Fallback',
-      url: 'https://openrouter.ai/api/v1/chat/completions',
-      key: key,
-      model: 'openrouter/free',
-      headers: { 'X-Title': 'SHESHAAI', 'HTTP-Referer': 'https://betaai-seven.vercel.app' }
+  } else {
+    // General Chat / Notebooks / Search / ELI5 -> Use ONLY Gemini 6 Keys Pool
+    GEMINI_KEYS.forEach((key, idx) => {
+      targets.push({
+        name: `Gemini-Key-${idx + 1}`,
+        url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+        key: key,
+        model: 'gemini-2.5-flash'
+      });
     });
   }
 
