@@ -335,7 +335,7 @@ export default async function handler(req, res) {
         url: 'https://openrouter.ai/api/v1/chat/completions',
         key: key,
         model: 'openrouter/free',
-        headers: { 'X-Title': 'BETAAI VibeCoding', 'HTTP-Referer': 'https://betaai-seven.vercel.app' }
+        headers: { 'X-Title': 'SHESHAAI Coding', 'HTTP-Referer': 'https://betaai-seven.vercel.app' }
       });
     }
   }
@@ -357,7 +357,7 @@ export default async function handler(req, res) {
       url: 'https://openrouter.ai/api/v1/chat/completions',
       key: key,
       model: 'openrouter/free',
-      headers: { 'X-Title': 'BETAAI', 'HTTP-Referer': 'https://betaai-seven.vercel.app' }
+      headers: { 'X-Title': 'SHESHAAI', 'HTTP-Referer': 'https://betaai-seven.vercel.app' }
     });
   }
 
