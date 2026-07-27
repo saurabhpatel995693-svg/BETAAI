@@ -1747,24 +1747,16 @@ document.getElementById('generate-code-btn').onclick = async () => {
   box.prepend(card);
 
   try {
-    const systemPrompt = `You are VibeCoding AI — an elite Senior Principal Software Architect, Frontend Lead & UI/UX Designer by SAURABH.
-Generate production-ready, ultra-high-quality, fully responsive, and breathtaking web applications for: "${prompt}".
+    const systemPrompt = `You are VibeCoding AI — an elite Senior Principal Software Architect & UI/UX Designer by SAURABH.
+When the user asks to build or generate code for: "${prompt}", follow this structured approach:
 
-MANDATORY DESIGN SYSTEM & TECHNICAL SPECIFICATIONS:
-1. DESIGN & AESTHETICS:
-   - Output MUST look like a $100k Vercel / Apple product page — modern dark mode palette (#09090b / #121215), dynamic mesh gradient background, glassmorphic cards (backdrop-blur-md, border border-white/10), clean typography with negative tracking, subtle micro-animations (hover:scale-[1.02] transition-all duration-300).
-   - NEVER generate plain, unstyled, misaligned, or basic HTML layouts.
-2. TECHNICAL DEPENDENCIES INCLUDED IN HEAD:
-   - ALWAYS include Tailwind CSS CDN: <script src="https://cdn.tailwindcss.com"><\/script>
-   - ALWAYS include Google Fonts: <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-   - Set up Tailwind config script for custom colors, font families, and animations.
-3. LAYOUT & INTERACTION:
-   - Include a clean Navigation bar with logo badge + CTA, Hero Section with animated gradient headline span, Subtitle, CTA buttons, Feature grid with hover glow, Interactive elements (pricing monthly/yearly toggle, counter animations, working JS modals/tabs/games/forms).
-4. COMPLETENESS:
-   - Output 100% COMPLETE, self-contained single HTML file with embedded <style> and <script> tags.
-   - NO missing code, NO placeholders, NO truncated JS loops.
-5. FORMATTING:
-   - Output ONLY the single HTML file inside a single code block tagged with html (\`\`\`html). Output ZERO conversational text before or after the code block.`;
+### 🎯 Architecture & Approach (Thinking)
+Explain step-by-step how you design the component/app, UI layout, dependencies used, and key JavaScript interactivity.
+
+### ⚡ Complete Production Implementation
+Provide the FULL, working code in a single code block tagged with the appropriate language (e.g. \`\`\`html or \`\`\`python).
+- For HTML/JS/CSS: Include Tailwind CDN (<script src="https://cdn.tailwindcss.com"><\/script>), Google Fonts (Inter/JetBrains Mono), responsive Vercel-style aesthetics (#09090b / glassmorphic), working buttons, modals, sliders, and interactive event handlers.
+- Output MUST be 100% complete with NO missing lines, NO placeholders, and NO truncated loops.`;
 
     const res = await fetchWithFailover(async (config) => {
       return await fetchChatCompletion(config, {
@@ -1775,11 +1767,17 @@ MANDATORY DESIGN SYSTEM & TECHNICAL SPECIFICATIONS:
 
     if (!res) throw new Error('No response returned from AI provider.');
     const data = await res.json();
-    let code = data.choices?.[0]?.message?.content || '// No output';
+    let rawOutput = data.choices?.[0]?.message?.content || '// No output';
     
-    // Extract code from markdown blocks if present
-    const codeMatch = code.match(/```[\w]*\n([\s\S]*?)```/);
-    if (codeMatch) code = codeMatch[1];
+    // Separate thinking / explanation markdown from actual executable code block
+    let explanationText = '';
+    let code = rawOutput;
+    
+    const codeMatch = rawOutput.match(/```[\w]*\n([\s\S]*?)```/);
+    if (codeMatch) {
+      code = codeMatch[1];
+      explanationText = rawOutput.replace(/```[\w]*\n[\s\S]*?```/g, '').trim();
+    }
     lastGeneratedCode = code;
 
     let previewHTML = '';
@@ -1812,6 +1810,8 @@ MANDATORY DESIGN SYSTEM & TECHNICAL SPECIFICATIONS:
         </div>`;
     }
 
+    const explanationHTML = explanationText ? `<div class="p-4 border-b border-themed text-sm text-themed-body markdown-body surface-card2">${marked.parse(explanationText)}</div>` : '';
+
     card.innerHTML = `
       <div class="flex items-center justify-between px-4 py-2.5 surface-card2 border-b border-themed">
         <div class="flex items-center gap-2">
@@ -1823,6 +1823,7 @@ MANDATORY DESIGN SYSTEM & TECHNICAL SPECIFICATIONS:
           <button class="download-code h-7 px-3 btn-ink rounded-pill text-[11px] font-mono font-medium transition">↓ Download</button>
         </div>
       </div>
+      ${explanationHTML}
       ${previewHTML}`;
 
     // Safely write live preview code into iframe contentDocument
