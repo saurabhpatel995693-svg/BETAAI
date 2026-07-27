@@ -79,7 +79,7 @@ function generateSmartAIResponse(userPrompt, messages = []) {
 2. **Design System & Aesthetics**: Modern Vercel/Apple dark mode palette (\`#09090b\` / \`#121215\`), glassmorphic cards with subtle \`border-white/10\`, \`backdrop-blur-md\`, and custom HSL gradient accents (\`#007cf0\` to \`#7928ca\`).
 3. **Interactive Features**: Live counting KPI widgets (MRR, Active Users, Conversion Rate, API Calls), interactive filterable Data Table with search bar, pagination controls, status badges, and light/dark theme switcher using Tailwind CSS.
 
-```html
+\`\`\`html
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
@@ -284,7 +284,7 @@ function generateSmartAIResponse(userPrompt, messages = []) {
   <\/script>
 </body>
 </html>
-````;
+\`\`\``;
   }
 
   // Discover: Web Dev / Tailwind
