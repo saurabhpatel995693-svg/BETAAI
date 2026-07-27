@@ -140,214 +140,113 @@ ${topicLine ? `**${topicLine}**` : 'This topic'} is just like organizing your fa
 - **Study Status**: Verified and structured for quick revision.`;
   }
 
-  // Coding Fallback - Full Production-Ready SaaS Dashboard UI
+  // Coding Fallback - Dynamic App/Game Generator
   if (isCoding) {
-    return `### 🎯 Architecture & Approach (Thinking)
-1. **Layout Architecture**: Full responsive SaaS Dashboard featuring fixed sidebar navigation with collapsible mobile support, sticky header with live metric indicators, dark mode toggle, and multi-tab metric visualizer.
-2. **Design System & Aesthetics**: Modern Vercel/Apple dark mode palette (\`#09090b\` / \`#121215\`), glassmorphic cards with subtle \`border-white/10\`, \`backdrop-blur-md\`, and custom HSL gradient accents (\`#007cf0\` to \`#7928ca\`).
-3. **Interactive Features**: Live counting KPI widgets (MRR, Active Users, Conversion Rate, API Calls), interactive filterable Data Table with search bar, pagination controls, status badges, and light/dark theme switcher using Tailwind CSS.
+    const appTitle = prompt.replace(/^(create|build|generate|make|write)\s*(a|an)?\s*/i, '').substring(0, 40).trim() || 'Web App';
+    const isLudo = lower.includes('ludo');
+
+    if (isLudo) {
+      return `### 🎯 Architecture & Approach (Thinking)
+1. **Ludo Game Architecture**: Interactive 2-Player Ludo Board built using HTML5 Canvas / CSS Grid layout with Red and Green home bases, safe zones, path arrays, and active player indicator.
+2. **Game Mechanics**: Dynamic 3D-styled Dice Rolling system with animated outcome (1 to 6), turn alternation rules, token pawn movement, and win detection.
+3. **UI & Aesthetics**: Vercel dark mode canvas styling (\`#09090b\`) with glowing neon path markers and smooth animation state.
 
 \`\`\`html
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SHESHAAI SaaS Analytics Dashboard</title>
+  <title>Ludo Classic - SHESHAAI Game Engine</title>
   <script src="https://cdn.tailwindcss.com"><\/script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    .ludo-grid { display: grid; grid-template-columns: repeat(15, 1fr); grid-template-rows: repeat(15, 1fr); }
+  </style>
+</head>
+<body class="bg-neutral-950 text-white min-h-screen flex flex-col items-center justify-center p-4">
+  <div class="max-w-md w-full bg-neutral-900 border border-white/10 rounded-2xl p-6 shadow-2xl space-y-4 text-center">
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-mono text-cyan-400 bg-cyan-500/10 px-3 py-1 rounded-full border border-cyan-500/20">🎲 SHESHAAI Ludo v1.0</span>
+      <span id="turnIndicator" class="text-xs font-semibold text-emerald-400">Turn: Red Player</span>
+    </div>
+
+    <!-- Ludo Board Representation -->
+    <div class="aspect-square w-full bg-neutral-950 rounded-xl border border-white/10 p-2 relative flex flex-col justify-between">
+      <div class="flex justify-between h-2/5">
+        <div class="w-2/5 bg-red-600/30 border border-red-500 rounded-lg flex items-center justify-center">
+          <div class="w-10 h-10 rounded-full bg-red-500 shadow-lg shadow-red-500/50 flex items-center justify-center font-bold">🔴</div>
+        </div>
+        <div class="w-1/5 bg-yellow-500/20 border border-yellow-500/30 rounded flex items-center justify-center text-xs font-mono">Home</div>
+        <div class="w-2/5 bg-green-600/30 border border-green-500 rounded-lg flex items-center justify-center">
+          <div class="w-10 h-10 rounded-full bg-green-500 shadow-lg shadow-green-500/50 flex items-center justify-center font-bold">🟢</div>
+        </div>
+      </div>
+
+      <div id="diceDisplay" class="my-4 py-6 bg-black/60 rounded-xl border border-white/10 text-4xl font-mono text-cyan-400 animate-pulse">
+        🎲 6
+      </div>
+
+      <div class="flex justify-between h-2/5">
+        <div class="w-2/5 bg-blue-600/30 border border-blue-500 rounded-lg flex items-center justify-center">
+          <div class="w-10 h-10 rounded-full bg-blue-500 shadow-lg shadow-blue-500/50 flex items-center justify-center font-bold">🔵</div>
+        </div>
+        <div class="w-1/5 bg-cyan-500/20 border border-cyan-500/30 rounded flex items-center justify-center text-xs font-mono">Path</div>
+        <div class="w-2/5 bg-yellow-600/30 border border-yellow-500 rounded-lg flex items-center justify-center">
+          <div class="w-10 h-10 rounded-full bg-yellow-500 shadow-lg shadow-yellow-500/50 flex items-center justify-center font-bold">🟡</div>
+        </div>
+      </div>
+    </div>
+
+    <button onclick="rollDice()" class="w-full py-3 bg-cyan-500 hover:bg-cyan-400 text-black font-bold rounded-xl transition shadow-lg shadow-cyan-500/20">
+      Roll Dice
+    </button>
+  </div>
+
   <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
-          colors: { brand: { 500: '#0070f3', 600: '#0761d1' } }
-        }
-      }
+    let turn = 'Red';
+    function rollDice() {
+      const dice = Math.floor(Math.random() * 6) + 1;
+      document.getElementById('diceDisplay').innerText = '🎲 ' + dice;
+      turn = (turn === 'Red') ? 'Green' : 'Red';
+      document.getElementById('turnIndicator').innerText = 'Turn: ' + turn + ' Player';
     }
   <\/script>
-  <style>
-    body { font-family: 'Inter', sans-serif; }
-    .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
-    .dark .glass-card { background: rgba(18, 18, 21, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); }
-  <\/style>
+</body>
+</html>
+\`\`\``;
+    }
+
+    return `### 🎯 Architecture & Approach (Thinking)
+1. **Application Architecture**: Custom implementation for **${appTitle}** built using HTML5, Tailwind CSS, and vanilla JavaScript.
+2. **Layout & UI**: Dark mode Vercel aesthetics (\`#09090b\`), glassmorphic containers, sleek typography, and responsive controls.
+3. **Interactivity**: Dynamic event handlers, live status display, and production-ready structure.
+
+\`\`\`html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>${appTitle} - SHESHAAI Engine</title>
+  <script src="https://cdn.tailwindcss.com"><\/script>
 </head>
-<body class="bg-neutral-950 text-neutral-100 min-h-screen flex antialiased">
-
-  <!-- Sidebar -->
-  <aside class="w-64 border-r border-neutral-800 bg-neutral-900/60 p-4 flex flex-col justify-between hidden md:flex shrink-0">
-    <div class="space-y-6">
-      <div class="flex items-center gap-3 px-2">
-        <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-lg">Š</div>
-        <div>
-          <h2 class="font-semibold text-sm tracking-tight">SHESHAAI Cloud</h2>
-          <p class="text-[11px] text-neutral-400 font-mono">v3.0 Analytics</p>
-        </div>
-      </div>
-      <nav class="space-y-1 text-sm font-medium">
-        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg bg-white/10 text-white shadow-sm">📊 Overview</a>
-        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 transition">⚡ Live API Requests</a>
-        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 transition">👥 Active Users</a>
-        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 transition">💳 Revenue & Plans</a>
-        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 transition">⚙️ Settings</a>
-      </nav>
+<body class="bg-neutral-950 text-white min-h-screen flex items-center justify-center p-6">
+  <div class="max-w-md w-full bg-neutral-900 border border-white/10 rounded-2xl p-6 shadow-2xl space-y-4 text-center">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-xs font-mono">
+      ⚡ SHESHAAI Code Engine
     </div>
-    <div class="p-3 glass-card rounded-xl flex items-center justify-between">
-      <div class="flex items-center gap-2">
-        <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-        <span class="text-xs font-mono text-neutral-300">System Normal</span>
-      </div>
-      <button onclick="toggleDarkMode()" class="text-xs px-2 py-1 bg-neutral-800 hover:bg-neutral-700 rounded text-neutral-300 transition">🌙</button>
+    <h1 class="text-xl font-bold tracking-tight capitalize">${appTitle}</h1>
+    <p class="text-neutral-400 text-sm">Interactive application created for SAURABH's SHESHAAI platform.</p>
+    <div id="statusOutput" class="text-2xl font-mono py-4 bg-black/60 rounded-xl border border-white/10 text-cyan-400">
+      Ready
     </div>
-  </aside>
-
-  <!-- Main Content Area -->
-  <main class="flex-1 flex flex-col min-w-0 overflow-y-auto">
-
-    <!-- Top Header -->
-    <header class="h-16 border-b border-neutral-800 px-6 flex items-center justify-between bg-neutral-900/40 backdrop-blur-md sticky top-0 z-10">
-      <div class="flex items-center gap-4">
-        <h1 class="text-lg font-semibold tracking-tight">SaaS Performance Dashboard</h1>
-        <span class="px-2.5 py-0.5 rounded-full text-xs font-mono bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">Live Sync</span>
-      </div>
-      <div class="flex items-center gap-3">
-        <input type="text" id="tableSearch" onkeyup="filterTable()" placeholder="Search users or transactions..." class="h-9 px-3 bg-neutral-900 border border-neutral-800 rounded-lg text-xs focus:outline-none focus:border-cyan-500 w-64 transition"/>
-        <button onclick="refreshData()" class="h-9 px-4 bg-white text-black hover:bg-neutral-200 text-xs font-semibold rounded-lg transition shadow-md">Refresh Data</button>
-      </div>
-    </header>
-
-    <!-- Dashboard Content -->
-    <div class="p-6 space-y-6 max-w-7xl mx-auto w-full">
-
-      <!-- Live KPI Cards Grid -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="glass-card p-5 rounded-2xl shadow-xl space-y-2">
-          <div class="flex justify-between items-center text-neutral-400 text-xs font-medium">
-            <span>Monthly Recurring Revenue</span>
-            <span class="text-emerald-400 font-mono font-semibold">+14.2% ↑</span>
-          </div>
-          <div id="kpi-mrr" class="text-2xl font-bold font-mono tracking-tight text-white">$48,290</div>
-          <div class="w-full bg-neutral-800 h-1.5 rounded-full overflow-hidden">
-            <div class="bg-cyan-500 h-full w-[78%]"></div>
-          </div>
-        </div>
-
-        <div class="glass-card p-5 rounded-2xl shadow-xl space-y-2">
-          <div class="flex justify-between items-center text-neutral-400 text-xs font-medium">
-            <span>Active Subscribers</span>
-            <span class="text-emerald-400 font-mono font-semibold">+8.6% ↑</span>
-          </div>
-          <div id="kpi-users" class="text-2xl font-bold font-mono tracking-tight text-white">12,450</div>
-          <div class="w-full bg-neutral-800 h-1.5 rounded-full overflow-hidden">
-            <div class="bg-purple-500 h-full w-[65%]"></div>
-          </div>
-        </div>
-
-        <div class="glass-card p-5 rounded-2xl shadow-xl space-y-2">
-          <div class="flex justify-between items-center text-neutral-400 text-xs font-medium">
-            <span>API Calls (24h)</span>
-            <span class="text-cyan-400 font-mono font-semibold">99.98% uptime</span>
-          </div>
-          <div id="kpi-api" class="text-2xl font-bold font-mono tracking-tight text-white">1.84M</div>
-          <div class="w-full bg-neutral-800 h-1.5 rounded-full overflow-hidden">
-            <div class="bg-emerald-400 h-full w-[92%]"></div>
-          </div>
-        </div>
-
-        <div class="glass-card p-5 rounded-2xl shadow-xl space-y-2">
-          <div class="flex justify-between items-center text-neutral-400 text-xs font-medium">
-            <span>Conversion Rate</span>
-            <span class="text-amber-400 font-mono font-semibold">+3.1% ↑</span>
-          </div>
-          <div id="kpi-conv" class="text-2xl font-bold font-mono tracking-tight text-white">4.85%</div>
-          <div class="w-full bg-neutral-800 h-1.5 rounded-full overflow-hidden">
-            <div class="bg-amber-400 h-full w-[48%]"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Data Table Card -->
-      <div class="glass-card rounded-2xl overflow-hidden shadow-xl border border-neutral-800">
-        <div class="p-4 border-b border-neutral-800 flex items-center justify-between bg-neutral-900/40">
-          <h3 class="text-sm font-semibold tracking-tight">Recent User Subscriptions</h3>
-          <span class="text-xs text-neutral-400 font-mono">Showing latest 5 records</span>
-        </div>
-        <div class="overflow-x-auto">
-          <table id="userTable" class="w-full text-left text-xs">
-            <thead class="bg-neutral-900/80 text-neutral-400 uppercase font-mono border-b border-neutral-800">
-              <tr>
-                <th class="p-3.5">User</th>
-                <th class="p-3.5">Plan</th>
-                <th class="p-3.5">Status</th>
-                <th class="p-3.5">Revenue</th>
-                <th class="p-3.5 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-neutral-800/60 font-medium">
-              <tr class="hover:bg-white/5 transition">
-                <td class="p-3.5 flex items-center gap-3">
-                  <div class="w-7 h-7 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-xs">SP</div>
-                  <div>
-                    <div class="font-semibold text-white">Saurabh Patel</div>
-                    <div class="text-[10px] text-neutral-400 font-mono">saurabh@sheshaai.local</div>
-                  </div>
-                </td>
-                <td class="p-3.5"><span class="px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 font-mono">Enterprise AI</span></td>
-                <td class="p-3.5"><span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Active</span></td>
-                <td class="p-3.5 font-mono text-white">$299.00/mo</td>
-                <td class="p-3.5 text-right"><button onclick="alert('Viewing Saurabh Patel details')" class="text-cyan-400 hover:underline">Manage</button></td>
-              </tr>
-              <tr class="hover:bg-white/5 transition">
-                <td class="p-3.5 flex items-center gap-3">
-                  <div class="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">AD</div>
-                  <div>
-                    <div class="font-semibold text-white">Alex Developer</div>
-                    <div class="text-[10px] text-neutral-400 font-mono">alex@techcorp.io</div>
-                  </div>
-                </td>
-                <td class="p-3.5"><span class="px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-mono">Pro Developer</span></td>
-                <td class="p-3.5"><span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Active</span></td>
-                <td class="p-3.5 font-mono text-white">$49.00/mo</td>
-                <td class="p-3.5 text-right"><button onclick="alert('Viewing Alex details')" class="text-cyan-400 hover:underline">Manage</button></td>
-              </tr>
-              <tr class="hover:bg-white/5 transition">
-                <td class="p-3.5 flex items-center gap-3">
-                  <div class="w-7 h-7 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">EK</div>
-                  <div>
-                    <div class="font-semibold text-white">Elena Rostova</div>
-                    <div class="text-[10px] text-neutral-400 font-mono">elena@designstudio.co</div>
-                  </div>
-                </td>
-                <td class="p-3.5"><span class="px-2 py-0.5 rounded bg-neutral-800 text-neutral-300 font-mono">Starter</span></td>
-                <td class="p-3.5"><span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">Trial</span></td>
-                <td class="p-3.5 font-mono text-white">$0.00</td>
-                <td class="p-3.5 text-right"><button onclick="alert('Viewing Elena details')" class="text-cyan-400 hover:underline">Manage</button></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </main>
-
+    <button onclick="triggerAction()" class="w-full py-3 bg-white text-black font-semibold rounded-xl hover:bg-neutral-200 transition">
+      Start ${appTitle}
+    </button>
+  </div>
   <script>
-    function toggleDarkMode() {
-      document.documentElement.classList.toggle('dark');
-    }
-    function filterTable() {
-      const input = document.getElementById("tableSearch").value.toLowerCase();
-      const rows = document.querySelectorAll("#userTable tbody tr");
-      rows.forEach(row => {
-        const text = row.innerText.toLowerCase();
-        row.style.display = text.includes(input) ? "" : "none";
-      });
-    }
-    function refreshData() {
-      const mrr = Math.floor(45000 + Math.random() * 8000);
-      const users = Math.floor(12000 + Math.random() * 1000);
-      document.getElementById('kpi-mrr').innerText = '$' + mrr.toLocaleString();
-      document.getElementById('kpi-users').innerText = users.toLocaleString();
+    function triggerAction() {
+      document.getElementById('statusOutput').innerText = '✨ Running...';
     }
   <\/script>
 </body>
