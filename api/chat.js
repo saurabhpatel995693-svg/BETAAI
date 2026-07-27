@@ -441,20 +441,11 @@ export default async function handler(req, res) {
   // ── Server-side environment variables ─────────────────────────────────
   const ENV_GEMINI_KEY      = process.env.GEMINI_KEY || process.env.GEMINI_API_KEY || '';
 
-  // ── 6 GEMINI KEYS POOL (Primary Engine with Least-Recently-Used Rotation) ─
-  const RAW_GEMINI_KEYS = [
-    'QVEuQWI4Uk42THFW' + 'UXg5NG5mblp3S3A1RHVMZjhHX0F4MEpUVHRya1RILXFFSThfUzJSNEE=',
-    'QVEuQWI4Uk42STht' + 'eGNBNERJbVlXNWY2R2dkQk44aGZjWHhRZzh1bG5kb1JoY3QzbTR3U0E=',
-    'QVEuQWI4Uk42SmtJ' + 'dFRuMGZ3eDhBX0VvOV83M0dTZXlPQWJnaGdLU1ppUkFveFlCYkFtYVE=',
-    'QVEuQWI4Uk42SU5M' + 'c3M3WnBXekc2dk00Q0REZjlUM0dvR3I5MGlKc2ZDWjNnR2JXWkc5VGc=',
-    'QVEuQWI4Uk42S05p' + 'VU9relRRREQxVEdMbVJrbi1Nd1RMYXBtYkRpcmY1UjB4SzVManozQQ==',
-    'QVEuQWI4Uk42S1N5' + 'V2FJZHZfMWM0dmV1ZGlEYmdMenBBbXY3YnhpdmJSckhyTGtsZWIzcVE='
-  ].map(k => Buffer.from(k, 'base64').toString('utf-8'));
-
+  // ── 6 GEMINI KEYS POOL (Primary Engine from Environment Variables) ─
   const GEMINI_KEYS = [
     process.env.GEMINI_KEY_1, process.env.GEMINI_KEY_2, process.env.GEMINI_KEY_3,
     process.env.GEMINI_KEY_4, process.env.GEMINI_KEY_5, process.env.GEMINI_KEY_6,
-    ENV_GEMINI_KEY, ...RAW_GEMINI_KEYS
+    ENV_GEMINI_KEY
   ].filter(Boolean);
 
   // ── 1. Unified System Prompt Enforcer ─────────────────────────────────
@@ -522,7 +513,12 @@ Rules & Behavior:
     targets.push(...geminiTargets, ...groqTargets, ...openRouterTargets);
   }
 
-  // ── 4. Attempt each keyed target in order (Silent Failover) ──────────
+  // Fast failover: if no valid targets configured, use Pollinations AI directly
+  if (targets.length === 0) {
+    targets.push({ name: 'Pollinations-Default', url: 'https://text.pollinations.ai/openai', key: '', model: 'openai' });
+  }
+
+  // ── 4. Attempt each keyed target in order (Fast Failover: 6s timeout per target) ──
   for (const target of targets) {
     try {
       const headers = {
@@ -539,7 +535,7 @@ Rules & Behavior:
         stream: wantsStream
       });
 
-      const apiRes = await fetchWithTimeout(target.url, { method: 'POST', headers, body }, 10000);
+      const apiRes = await fetchWithTimeout(target.url, { method: 'POST', headers, body }, 6000);
 
       if (!apiRes.ok) {
         const txt = await apiRes.text().catch(() => '');
@@ -591,9 +587,9 @@ Rules & Behavior:
     }
   }
 
-  // TIER 7: Pollinations AI — retry as final keyed fallback
+  // TIER 7: Pollinations AI — retry as final fallback
   try {
-    const pollRes2 = await tryPollinationsAI(messages, isCodingMode, false);
+    const pollRes2 = await tryPollinationsAI(messages, isCodingTask, false);
     const pollData2 = await pollRes2.json();
     if (pollData2?.choices?.[0]?.message?.content) {
       return res.status(200).json(pollData2);
