@@ -60,21 +60,21 @@ function generateSmartAIResponse(userPrompt, messages = []) {
   const isCoding = lower.includes('code') || lower.includes('function') || lower.includes('javascript') || lower.includes('python') || lower.includes('html') || lower.includes('css') || lower.includes('script') || lower.includes('build') || lower.includes('create') || lower.includes('app');
 
   // Greetings
-  if (lower === 'hi' || lower === 'hello' || lower === 'hey' || lower.match(/^(hello|hi|hey)\s*(betaai)?$/)) {
-    return "Hello! I am **BETAAI**, created by **SAURABH**. How can I help you with coding, web design, study tools, or AI research today?";
+  if (lower === 'hi' || lower === 'hello' || lower === 'hey' || lower.match(/^(hello|hi|hey)\s*(sheshaai|betaai)?$/)) {
+    return "Hello! I am **SHESHAAI**, created by **SAURABH**. How can I help you with coding, web design, study tools, or AI research today?";
   }
 
   // Identity / Creator
   if (lower.includes('who created you') || lower.includes('who made you') || lower.includes('creator') || lower.includes('who built you')) {
-    return "I am **BETAAI**, a state-of-the-art AI platform created by **SAURABH**. I feature high-speed Chat, interactive VibeCoding, Image synthesis, and Study Notebooks!";
+    return "I am **SHESHAAI**, a state-of-the-art AI platform created by **SAURABH**. I feature high-speed Chat, dedicated Coding engine, Image synthesis, and Study Notebooks!";
   }
-  if (lower.includes('who are you') || lower.includes('what is betaai')) {
-    return "I am **BETAAI**, your intelligent AI workspace developed by **SAURABH**. I integrate Vercel Design System aesthetics, live code generation, and multi-model failover support.";
+  if (lower.includes('who are you') || lower.includes('what is sheshaai') || lower.includes('what is betaai')) {
+    return "I am **SHESHAAI**, your intelligent AI workspace developed by **SAURABH**. I integrate Vercel Design System aesthetics, live code generation, and multi-model failover support.";
   }
 
   // Coding
   if (isCoding) {
-    return `### ⚡ BETAAI Code Solution
+    return `### ⚡ SHESHAAI Code Solution
 
 Here is a clean, production-ready implementation:
 
@@ -84,16 +84,16 @@ Here is a clean, production-ready implementation:
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BETAAI App</title>
+  <title>SHESHAAI App</title>
   <script src="https://cdn.tailwindcss.com"><\/script>
 </head>
 <body class="bg-neutral-950 text-white min-h-screen flex items-center justify-center p-6">
   <div class="max-w-md w-full bg-neutral-900 border border-white/10 rounded-2xl p-6 shadow-2xl space-y-4 text-center">
     <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-xs font-mono">
-      ⚡ BETAAI VibeCoding
+      ⚡ SHESHAAI Code Engine
     </div>
     <h1 class="text-xl font-bold tracking-tight">${prompt.substring(0, 50)}</h1>
-    <p class="text-neutral-400 text-sm">Interactive solution by SAURABH's BETAAI engine.</p>
+    <p class="text-neutral-400 text-sm">Interactive solution by SAURABH's SHESHAAI engine.</p>
     <div id="output" class="text-2xl font-mono py-3 bg-black/60 rounded-xl border border-white/10 text-cyan-400">
       Ready
     </div>
@@ -110,7 +110,7 @@ Here is a clean, production-ready implementation:
 </html>
 \`\`\`
 
-> Switch to **VibeCoding** mode and click **▶ Run** to preview live!`;
+> Open **Coding** mode for dedicated full-scale software architecture!`;
   }
 
   // Discover: Web Dev / Tailwind
@@ -127,7 +127,7 @@ Here is a clean, production-ready implementation:
 2. **Next.js 15 Server Actions**: End-to-end type-safe data fetching  
 3. **Stark Ink + Glassmorphism**: \`#171717\` dark mode + \`backdrop-blur-md\`
 
-> *BETAAI Real-Time Intelligence by SAURABH*`;
+> *SHESHAAI Real-Time Intelligence by SAURABH*`;
   }
 
   // Discover: AI Breakthroughs
@@ -161,7 +161,7 @@ Here is a clean, production-ready implementation:
 2. High relevance across technical docs and community benchmarks
 3. Verified data compiled from DuckDuckGo & Wikipedia
 
-> *BETAAI Real-Time Search by SAURABH*`;
+> *SHESHAAI Real-Time Search by SAURABH*`;
   }
 
   // Flashcards
@@ -179,9 +179,9 @@ Here is a clean, production-ready implementation:
       ], null, 2);
     }
     return JSON.stringify([
-      { front: "What is BETAAI?", back: "An intelligent multi-modal AI workspace built by SAURABH" },
-      { front: "What is VibeCoding?", back: "Split-canvas workspace for live HTML/CSS/JS preview" },
-      { front: "Primary API tier", back: "Gemini 2.5 Flash + Groq 70B + OpenRouter failover" },
+      { front: "What is SHESHAAI?", back: "An intelligent multi-modal AI workspace built by SAURABH" },
+      { front: "What is Coding Mode?", back: "Dedicated code generation workspace powered by OpenRouter" },
+      { front: "Primary API tier", back: "Gemini API Pool + OpenRouter Coding Engine + Pollinations AI" },
       { front: "Notebook tools", back: "Quiz, Flashcards, Summary, Key Concepts, Timeline, ELI5" },
       { front: "Design language", back: "Vercel Stark Ink, Inter/JetBrains Mono, glassmorphism" }
     ], null, 2);
@@ -206,9 +206,10 @@ Here is a clean, production-ready implementation:
     }
     return `## 📋 Executive Summary
 
-**BETAAI** by SAURABH is an advanced AI workspace with:
-- 💬 Multi-turn streaming Chat with multi-provider failover
-- ⚡ VibeCoding with live split-canvas HTML preview
+**SHESHAAI** by SAURABH is an advanced AI workspace with:
+- 💬 Multi-turn streaming Chat powered by Gemini Key Pool
+- 💻 Dedicated Coding mode powered by OpenRouter
+- 🎨 High-resolution image generation via Pollinations AI
 - 📚 Study Notebooks: Quizzes, Flashcards, Summaries, ELI5
 - 🔎 Real-time Discover & Web Search intelligence`;
   }
@@ -228,15 +229,12 @@ Here is a clean, production-ready implementation:
   // General fallback
   return `### 💡 Answer: "${prompt.substring(0, 100)}"
 
-**BETAAI** is analyzing your request:
+**SHESHAAI** is analyzing your request:
 
-1. **Multi-Provider AI**: Gemini 2.5 Flash → Groq 70B → OpenRouter → NVIDIA NIM → Pollinations (always-free fallback)
-2. **Your request has been processed** through the BETAAI intelligence engine.
-3. **For richer answers**: Add your personal API key in **Settings ⚙** (Gemini, Groq, OpenRouter, NVIDIA, Zen API).
+1. **Multi-Engine AI Architecture**: Gemini Key Pool → OpenRouter Coding → Pollinations AI
+2. **Your request has been processed** through the SHESHAAI intelligence engine.
 
-> *For best results, set a free [Groq API key](https://console.groq.com) or [Gemini API key](https://aistudio.google.com) in Settings.*
-
-*Created by SAURABH | BETAAI*`;
+*Created by SAURABH | SHESHAAI*`;
 }
 
 // ─── Main Serverless Handler ───────────────────────────────────────

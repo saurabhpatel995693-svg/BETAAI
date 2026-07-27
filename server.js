@@ -239,11 +239,11 @@ const server = http.createServer(async (req, res) => {
       ];
       replyContent = jokes[Math.floor(Math.random() * jokes.length)];
     } else if (lower.includes('who created you') || lower.includes('who made you') || lower.includes('creator') || lower.includes('who built you')) {
-      replyContent = "I am **BETAAI**, a state-of-the-art AI platform created by **SAURABH**. I feature high-speed Chat, interactive VibeCoding with live split-canvas preview, Image synthesis, and Study Notebooks!";
-    } else if (lower.includes('who are you') || lower.includes('what is betaai')) {
-      replyContent = "I am **BETAAI**, your intelligent AI workspace developed by **SAURABH**. I integrate Vercel Design System aesthetics, live code generation, and multi-model failover support.";
+      replyContent = "I am **SHESHAAI**, a state-of-the-art AI platform created by **SAURABH**. I feature high-speed Chat, dedicated Coding engine, Image synthesis, and Study Notebooks!";
+    } else if (lower.includes('who are you') || lower.includes('what is sheshaai') || lower.includes('what is betaai')) {
+      replyContent = "I am **SHESHAAI**, your intelligent AI workspace developed by **SAURABH**. I integrate Vercel Design System aesthetics, live code generation, and multi-model failover support.";
     } else {
-      replyContent = `### 💡 Answer to: "${userText}"\n\nThank you for your question! Here is a breakdown:\n\n1. **Overview**: BETAAI is active and processing your prompt in real-time.\n2. **Key Concepts**:\n   - High-availability response pipeline.\n   - Clean markdown formatting & syntax highlighting.\n   - Integrated VibeCoding drawer & study tools.\n\n> **Tip**: You can also add your custom Gemini or Groq API key in **Settings (⚙)** for full multi-model routing!`;
+      replyContent = `### 💡 Answer to: "${userText}"\n\nThank you for your question! Here is a breakdown:\n\n1. **Overview**: SHESHAAI is active and processing your prompt in real-time.\n2. **Key Concepts**:\n   - High-availability response pipeline.\n   - Clean markdown formatting & syntax highlighting.\n   - Dedicated OpenRouter coding engine & study tools.\n\n> **Powered by SAURABH | SHESHAAI**`;
     }
 
     if (wantsStream) {

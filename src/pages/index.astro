@@ -314,7 +314,7 @@ import '../styles/global.css';
                 <span class="text-[11px] font-mono text-themed-mute" id="attach-name"></span>
                 <button id="remove-attach" class="text-themed-mute hover:text-error text-xs">✕</button>
               </div>
-              <textarea id="chat-input" rows="1" placeholder="Message BETAAI or ask to code..." class="w-full bg-transparent text-sm text-themed-ink placeholder:text-themed-mute focus:outline-none resize-none max-h-[160px]"></textarea>
+              <textarea id="chat-input" rows="1" placeholder="Message SHESHAAI or ask to code..." class="w-full bg-transparent text-sm text-themed-ink placeholder:text-themed-mute focus:outline-none resize-none max-h-[160px]"></textarea>
               <div class="flex items-center justify-between pt-2">
                 <div class="flex items-center gap-1">
                   <label class="h-7 px-2 rounded-sm text-[11px] font-mono text-themed-mute border border-themed hover-card2 transition flex items-center gap-1 cursor-pointer" title="Attach file">
@@ -322,7 +322,7 @@ import '../styles/global.css';
                   </label>
                   <button id="voice-btn" class="h-7 px-2 rounded-sm text-[11px] font-mono text-themed-mute border border-themed hover-card2 transition" title="Voice input (V)">🎤</button>
                   <button id="img-mode-toggle" class="h-7 px-2 rounded-sm text-[11px] font-mono text-themed-mute border border-themed hover-card2 transition">🎨 Image</button>
-                  <button id="vibe-chat-toggle" class="h-7 px-2 rounded-sm text-[11px] font-mono text-themed-mute border border-themed hover-card2 transition" title="VibeCoding in Chat">⚡ VibeCoding</button>
+                  <button id="coding-chat-toggle" class="h-7 px-2 rounded-sm text-[11px] font-mono text-themed-mute border border-themed hover-card2 transition" title="Coding Mode">💻 Coding</button>
                 </div>
                 <div class="flex items-center gap-2">
                   <span id="char-count" class="text-[10px] font-mono text-themed-mute">0</span>
@@ -341,7 +341,7 @@ import '../styles/global.css';
             </div>
             <div class="flex items-center justify-between mt-1">
               <div class="text-[10px] font-mono text-themed-mute">Enter = send · Shift+Enter = line · V = voice · Ctrl+K = new chat</div>
-              <div class="text-[10px] font-mono text-themed-mute">BETAAI by SAURABH</div>
+              <div class="text-[10px] font-mono text-themed-mute">SHESHAAI by SAURABH</div>
             </div>
           </div>
         </div>
@@ -2144,13 +2144,13 @@ async function webSearch() {
   const query = document.getElementById('search-query').value.trim(); if(!query) return;
   const box = document.getElementById('search-results');
   const card = document.createElement('div');
-  card.className = 'surface-card rounded-lg border border-themed shadow-level-3 p-6 animate-fade-up';
-  card.innerHTML = '<span class="text-sm text-themed-mute animate-pulse">Searching real-time web...</span>';
+  card.className = 'surface-card rounded-lg border border-themed shadow-level-3 p-6 animate-fade-up space-y-4';
+  card.innerHTML = '<span class="text-sm text-themed-mute animate-pulse">🔎 Searching live web, news feeds, and videos...</span>';
   box.prepend(card);
 
   try {
     const liveSearchData = await performLiveWebSearch(query);
-    const systemPrompt = `You are a real-time web search assistant by SAURABH. Use the following real-time web search results to answer the query accurately. Include citations and markdown links where applicable.\n\n${liveSearchData}`;
+    const systemPrompt = `You are a real-time web & news search assistant by SAURABH. Format your response with clear Markdown headers, bullet points, source citations, and direct video links. Be comprehensive and up-to-the-minute.\n\n${liveSearchData}`;
 
     const res = await fetchWithFailover(async (config) => {
       return await fetchChatCompletion(config, {
@@ -2162,7 +2162,32 @@ async function webSearch() {
     });
     const data = await res.json();
     const reply = data.choices?.[0]?.message?.content || 'No search results found.';
-    card.innerHTML = `<div class="flex items-center gap-2 mb-3 pb-3 border-b border-themed"><svg class="w-4 h-4 text-link" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg><span class="text-xs font-mono text-themed-ink font-semibold">${esc(query)}</span><span class="ml-auto text-[10px] font-mono text-cyan">Live Results</span></div><div class="markdown-body text-sm text-themed-ink">${marked.parse(reply)}</div>`;
+    const cleanQ = encodeURIComponent(query);
+    
+    card.innerHTML = `
+      <div class="flex items-center justify-between pb-3 border-b border-themed">
+        <div class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-link" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <span class="text-sm font-semibold text-themed-ink">${esc(query)}</span>
+        </div>
+        <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan/10 text-cyan border border-cyan/20">⚡ Live Stream</span>
+      </div>
+      
+      <!-- Video & Live News Quick Access Toolbar -->
+      <div class="flex flex-wrap gap-2 p-3 surface-card2 rounded-md border border-themed text-xs">
+        <span class="text-themed-mute font-mono text-[11px] flex items-center gap-1">🎥 Live Media:</span>
+        <a href="https://www.youtube.com/results?search_query=${cleanQ}" target="_blank" rel="noopener" class="px-2.5 py-1 rounded bg-red-500/10 text-red-500 hover:bg-red-500/20 font-medium transition flex items-center gap-1">
+          ▶ Watch YouTube Videos
+        </a>
+        <a href="https://news.google.com/search?q=${cleanQ}" target="_blank" rel="noopener" class="px-2.5 py-1 rounded bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 font-medium transition flex items-center gap-1">
+          📰 Google News Feed
+        </a>
+        <a href="https://duckduckgo.com/?q=${cleanQ}&iax=videos&ia=videos" target="_blank" rel="noopener" class="px-2.5 py-1 rounded bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 font-medium transition flex items-center gap-1">
+          🎬 Video Stream
+        </a>
+      </div>
+
+      <div class="markdown-body text-sm text-themed-ink">${marked.parse(reply)}</div>`;
     card.querySelectorAll('pre code').forEach(block => hljs.highlightElement(block));
   } catch(e) { card.innerHTML = `<span class="text-error text-sm">Search Error: ${esc(e.message)}</span>`; }
 }
@@ -2233,20 +2258,14 @@ document.getElementById('byok-btn')?.addEventListener('click', () => {
   document.getElementById('settings-modal').classList.remove('hidden');
 });
 
-const vibeChatBtn = document.getElementById('vibe-chat-toggle');
-if (vibeChatBtn) {
-  vibeChatBtn.onclick = () => {
-    isVibeChat = !isVibeChat;
-    if (isVibeChat) {
-      vibeChatBtn.classList.add('bg-cyan/20', 'text-cyan', 'border-cyan');
-      toast('⚡ VibeCoding mode active in Chat!', 'success');
-      const sampleCode = `<!DOCTYPE html>\n<html>\n<head>\n<script src="https://cdn.tailwindcss.com"><\/script>\n</head>\n<body class="bg-slate-900 text-white min-h-screen flex items-center justify-center p-6">\n<div class="max-w-md w-full bg-slate-800/80 backdrop-blur border border-slate-700 p-8 rounded-2xl shadow-2xl text-center">\n<h1 class="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2">BETAAI VibeCoding Canvas</h1>\n<p class="text-slate-400 text-sm mb-6">Ask anything in chat to render full responsive web apps live on this split canvas.</p>\n<button onclick="alert('⚡ VibeCoding Canvas Ready!')" class="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full text-sm font-medium hover:opacity-90 transition">Test Interactive App</button>\n</div>\n</body>\n</html>`;
-      openVibeDrawer(sampleCode);
-    } else {
-      vibeChatBtn.classList.remove('bg-cyan/20', 'text-cyan', 'border-cyan');
-      document.getElementById('chat-vibe-drawer')?.classList.add('hidden');
-      toast('Chat mode reset to standard assistant', 'info');
-    }
+const codingChatBtn = document.getElementById('coding-chat-toggle');
+if (codingChatBtn) {
+  codingChatBtn.onclick = () => {
+    newChat();
+    currentPersona = 'coder';
+    document.getElementById('topbar-title').textContent = '💻 Coding Session';
+    document.getElementById('chat-input').placeholder = 'Describe what you want to code... (OpenRouter free model active)';
+    toast('💻 Coding Mode Activated! Powerful OpenRouter code engine active.', 'success');
   };
 }
 
