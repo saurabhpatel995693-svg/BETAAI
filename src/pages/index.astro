@@ -1933,12 +1933,7 @@ document.getElementById('nb-link-btn').onclick = async () => {
       if (res.ok) {
         const data = await res.json();
         extractedTitle = '📺 ' + (data.title || 'YouTube Video');
-        extractedContent = `YouTube Video Title: ${data.title}\nAuthor / Channel: ${data.author_name}\nURL: ${url}\n\nKey Educational Topic: ${data.title}\n\n` +
-          `Detailed Source Content:\n` +
-          `Topic: ${data.title}\n` +
-          `Channel: ${data.author_name}\n` +
-          `Overview: This video covers the full comprehensive educational chapter for ${data.title}.\n` +
-          `Core Concepts Included: Laws of Reflection, Reflection at Spherical Surfaces, Concave and Convex Mirrors, Ray Diagrams, Mirror Formula (1/f = 1/v + 1/u), Magnification (m = -v/u = h'/h), Refraction of Light, Snell's Law of Refraction (n = sin i / sin r), Absolute Refractive Index, Refraction through Rectangular Glass Slab, Lenses (Convex Lens & Concave Lens), Image Formation by Lenses, Lens Formula (1/f = 1/v - 1/u), Magnification by Lenses, Power of a Lens (P = 1/f in meters, Dioptres), Real vs Virtual Images, Focal Point, Principal Axis, Radius of Curvature.`;
+        extractedContent = `YouTube Video Title: ${data.title}\nAuthor / Channel: ${data.author_name}\nURL: ${url}\n\nKey Topic / Overview: ${data.title}\n\nThis imported media content covers ${data.title} by ${data.author_name}. Analyze this topic in detail according to user requests.`;
       }
     } catch(e) {}
   }

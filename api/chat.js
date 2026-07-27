@@ -340,52 +340,24 @@ function generateSmartAIResponse(userPrompt, messages = []) {
 
   // Flashcards
   if (lower.includes('flashcard') || lower.includes('output as a json array')) {
-    if (isLightPhysics) {
-      return JSON.stringify([
-        { front: "Law of Reflection", back: "Angle of incidence = angle of reflection (∠i = ∠r)" },
-        { front: "Mirror Formula", back: "1/f = 1/v + 1/u" },
-        { front: "Snell's Law", back: "n = sin(i) / sin(r)" },
-        { front: "Lens Formula", back: "1/f = 1/v − 1/u" },
-        { front: "Power of Lens", back: "P = 1/f (meters). Unit: Dioptres (D)" },
-        { front: "Concave Mirror uses", back: "Shaving mirrors, headlights, solar furnaces" },
-        { front: "Refractive Index", back: "n = c/v (speed of light in vacuum / speed in medium)" },
-        { front: "Total Internal Reflection", back: "Occurs when angle > critical angle, light ray stays inside denser medium" }
-      ], null, 2);
-    }
     return JSON.stringify([
-      { front: "What is SHESHAAI?", back: "An intelligent multi-modal AI workspace built by SAURABH" },
-      { front: "What is Coding Mode?", back: "Dedicated code generation workspace powered by OpenRouter" },
-      { front: "Primary API tier", back: "Gemini API Pool + OpenRouter Coding Engine + Pollinations AI" },
-      { front: "Notebook tools", back: "Quiz, Flashcards, Summary, Key Concepts, Timeline, ELI5" },
-      { front: "Design language", back: "Vercel Stark Ink, Inter/JetBrains Mono, glassmorphism" }
+      { front: "Imported Source Analysis", back: "Key concepts extracted from the imported link/document." },
+      { front: "Main Topic", back: prompt.substring(0, 80) },
+      { front: "Notebook Tools", back: "Quizzes, Flashcards, Summaries, Key Concepts, Timeline, ELI5" },
+      { front: "AI Platform Engine", back: "SHESHAAI by SAURABH" }
     ], null, 2);
   }
 
   // Summary
   if (lower.includes('comprehensive, well-structured summary') || lower.includes('tldr') || lower.includes('summary')) {
-    if (isLightPhysics) {
-      return `## 📋 Light: Reflection & Refraction — Class 10 Summary
+    return `## 📋 Summary of Imported Source Content
 
 ### TL;DR
-> Light bounces off mirrors (Reflection) and bends when passing between media (Refraction).
+> Key findings synthesized for: "${prompt.substring(0, 100)}".
 
-### Key Formulae
-| Concept | Formula |
-|---|---|
-| Mirror Formula | 1/f = 1/v + 1/u |
-| Magnification | m = −v/u |
-| Snell's Law | n = sin i / sin r |
-| Lens Formula | 1/f = 1/v − 1/u |
-| Lens Power | P = 1/f (Dioptres) |`;
-    }
-    return `## 📋 Executive Summary
-
-**SHESHAAI** by SAURABH is an advanced AI workspace with:
-- 💬 Multi-turn streaming Chat powered by Gemini Key Pool
-- 💻 Dedicated Coding mode powered by OpenRouter
-- 🎨 High-resolution image generation via Pollinations AI
-- 📚 Study Notebooks: Quizzes, Flashcards, Summaries, ELI5
-- 🔎 Real-time Discover & Web Search intelligence`;
+### Key Takeaways
+- **Topic**: ${prompt.substring(0, 80)}
+- **Analysis**: Full educational content processed through SHESHAAI.`;
   }
 
   // Jokes
