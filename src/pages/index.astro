@@ -700,7 +700,6 @@ setTimeout(() => {
 const DEFAULT_ZEN_KEY          = '';
 const DEFAULT_OPENROUTER_ALT  = '';
 const DEFAULT_OLLAMA_KEY      = '';
-const DEFAULT_NVIDIA_KEY      = '';
 const DEFAULT_API_KEY         = '';
 const DEFAULT_HF_TOKEN        = '';
 const DEFAULT_HF_MODEL        = 'FreedomAISVR/Qwen3.6-35B-A3B-MXFP4-MOE-Fast-GGUF';
@@ -799,16 +798,12 @@ async function fetchChatCompletion(config, bodyParams, signal = null) {
 
   const headers = {
     'Content-Type': 'application/json',
-    'X-Title': 'BETAAI',
+    'X-Title': 'SHESHAAI',
     'x-custom-key':   customKey,
     'x-custom-base':  customBase,
     'x-custom-model': customModel,
-    'x-gemini-key':   localStorage.getItem('betaai_gemini_key') || '',
-    'x-grok-key':     localStorage.getItem('betaai_grok_key') || '',
-    'x-openrouter-key': localStorage.getItem('betaai_openrouter_key') || '',
-    'x-nvidia-key':   localStorage.getItem('betaai_nvidia_key') || '',
-    'x-hf-token':     localStorage.getItem('betaai_hf_token') || '',
-    'x-zen-key':      localStorage.getItem('betaai_zen_key') || ''
+    'x-gemini-key':   localStorage.getItem('sheshaai_gemini_key') || '',
+    'x-openrouter-key': localStorage.getItem('sheshaai_openrouter_key') || ''
   };
 
   const payload = {
@@ -816,13 +811,9 @@ async function fetchChatCompletion(config, bodyParams, signal = null) {
     customBase,
     customModel,
     model: customModel || config.model || '',
-    geminiKey:     localStorage.getItem('betaai_gemini_key') || '',
-    grokKey:       localStorage.getItem('betaai_grok_key') || '',
-    openrouterKey: localStorage.getItem('betaai_openrouter_key') || '',
-    nvidiaKey:     localStorage.getItem('betaai_nvidia_key') || '',
-    hfToken:       localStorage.getItem('betaai_hf_token') || '',
-    zenKey:        localStorage.getItem('betaai_zen_key') || '',
-    mode: (isVibeChat || config.mode === 'code') ? 'code' : 'general',
+    geminiKey:     localStorage.getItem('sheshaai_gemini_key') || '',
+    openrouterKey: localStorage.getItem('sheshaai_openrouter_key') || '',
+    mode: config.mode === 'code' ? 'code' : 'general',
     ...bodyParams
   };
 

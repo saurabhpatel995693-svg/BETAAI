@@ -1,18 +1,17 @@
 /**
- * BETAAI / JavaGoat AI Integration & Image Generation Module
+ * SHESHAAI AI Integration & Image Generation Module
  * Integrates OpenRouter API for streaming chat completions, system prompt configuration,
- * and Pollinations.ai / OpenRouter image generation.
+ * and Pollinations.ai image generation.
  * Created for SAURABH
  */
 
 export const PRECONFIGURED_KEYS = {
-  openRouter: process.env.OPENROUTER_KEY || '',
-  nvidia: process.env.NVIDIA_KEY || ''
+  openRouter: process.env.OPENROUTER_KEY || ''
 };
 
 export const DEFAULT_MODEL = "poolside/laguna-xs-2.1:free";
 export const FALLBACK_MODEL = "openai/gpt-4o-mini";
-export const DEFAULT_SYSTEM_PROMPT = "You are BETAAI (JavaGoat 🐐), an intelligent, helpful, and creative AI assistant built by SAURABH. You deliver clear, precise, and well-formatted responses with Markdown styling, code highlights, and friendly helpful tone.";
+export const DEFAULT_SYSTEM_PROMPT = "You are SHESHAAI, an intelligent, helpful, and creative AI assistant built by SAURABH. You deliver clear, precise, and well-formatted responses with Markdown styling, code highlights, and friendly helpful tone.";
 
 /**
  * OpenRouter Streaming Chat Completion
@@ -45,8 +44,8 @@ export async function streamChatCompletion({
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${effectiveKey}`,
-        'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : 'https://betaai.local',
-        'X-Title': 'BETAAI JavaGoat by SAURABH',
+        'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : 'https://sheshaai.local',
+        'X-Title': 'SHESHAAI by SAURABH',
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({

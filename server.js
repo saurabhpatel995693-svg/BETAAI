@@ -32,14 +32,7 @@ const PROVIDERS = [
     key: process.env.OPENROUTER_KEY || process.env.GEMINI_KEY || '',
     models: ['google/gemini-2.5-flash:free', 'meta-llama/llama-3.3-70b-instruct:free', 'qwen/qwen-2.5-coder-32b-instruct:free', 'deepseek/deepseek-r1:free'],
     timeout: 4000,
-    extraHeaders: { 'X-Title': 'BETAAI' }
-  },
-  {
-    name: 'nvidia',
-    url: 'https://integrate.api.nvidia.com/v1/chat/completions',
-    key: process.env.NVIDIA_KEY || '',
-    models: ['meta/llama-3.1-70b-instruct', 'meta/llama-3.1-8b-instruct'],
-    timeout: 4000
+    extraHeaders: { 'X-Title': 'SHESHAAI' }
   }
 ];
 
@@ -72,7 +65,7 @@ async function tryProvider(provider, model, body, wantsStream) {
 const server = http.createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-custom-key, x-custom-base, x-custom-model, x-gemini-key, x-grok-key, x-openrouter-key, x-nvidia-key, x-ollama-host');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-custom-key, x-custom-base, x-custom-model, x-gemini-key, x-openrouter-key, x-ollama-host');
 
   if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
 
@@ -115,9 +108,6 @@ const server = http.createServer(async (req, res) => {
       } else if (customKey.startsWith('xai-')) {
         if (!baseUrl) baseUrl = 'https://api.x.ai/v1/chat/completions';
         if (!targetModel) targetModel = 'grok-3-mini';
-      } else if (customKey.startsWith('nvapi-')) {
-        if (!baseUrl) baseUrl = 'https://integrate.api.nvidia.com/v1/chat/completions';
-        if (!targetModel) targetModel = 'meta/llama-3.1-70b-instruct';
       } else if (customKey.startsWith('sk-proj-') || (baseUrl && baseUrl.includes('openai.com'))) {
         if (!baseUrl) baseUrl = 'https://api.openai.com/v1/chat/completions';
         if (!targetModel) {
