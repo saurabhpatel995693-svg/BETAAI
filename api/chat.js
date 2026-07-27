@@ -64,9 +64,9 @@ function generateSmartAIResponse(userPrompt, messages = []) {
     return "Hello! I am **SHESHAAI**, created by **SAURABH**. How can I help you with coding, web design, study tools, or AI research today?";
   }
 
-  // Identity / Creator
-  if (lower.includes('who created you') || lower.includes('who made you') || lower.includes('creator') || lower.includes('who built you')) {
-    return "I am **SHESHAAI**, a state-of-the-art AI platform created by **SAURABH**. I feature high-speed Chat, dedicated Coding engine, Image synthesis, and Study Notebooks!";
+  // Identity / Creator / Boss
+  if (lower.includes('who created you') || lower.includes('who made you') || lower.includes('creator') || lower.includes('who built you') || lower.includes('boss') || lower.includes('owner') || lower.includes('master')) {
+    return "My creator and boss is **SAURABH**. I am **SHESHAAI**, an intelligent multi-modal AI platform powered by Gemini & Pollinations AI!";
   }
   if (lower.includes('who are you') || lower.includes('what is sheshaai') || lower.includes('what is betaai')) {
     return "I am **SHESHAAI**, your intelligent AI workspace developed by **SAURABH**. I integrate Vercel Design System aesthetics, live code generation, and multi-model failover support.";
@@ -227,14 +227,11 @@ Here is a clean, production-ready implementation:
   }
 
   // General fallback
-  return `### 💡 Answer: "${prompt.substring(0, 100)}"
+  return `I am **SHESHAAI**, developed by **SAURABH**.
 
-**SHESHAAI** is analyzing your request:
+I have processed your query: "${prompt}".
 
-  // 1. Multi-Engine AI Architecture: Gemini Key Pool + Pollinations AI
-  // 2. Your request has been processed through the SHESHAAI intelligence engine.
-
-*Created by SAURABH | SHESHAAI*`;
+How else can I assist you with coding, web design, or study tools today?`;
 }
 
 // ─── Main Serverless Handler ───────────────────────────────────────
