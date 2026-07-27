@@ -1,0 +1,42 @@
+---
+import '../styles/global.css';
+---
+
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>404 — Page Not Found | SHESHAAI</title>
+  <meta name="description" content="404 Page Not Found - SHESHAAI by SAURABH."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet"/>
+  <script is:inline src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes gradient-shift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+    .mesh-gradient{background:linear-gradient(135deg,#007cf0,#00dfd8,#7928ca,#ff0080,#ff4d4d,#f9cb28);background-size:300% 300%;animation:gradient-shift 8s ease infinite}
+  </style>
+</head>
+<body class="bg-[#0a0a0a] text-[#ededed] font-sans min-h-screen flex items-center justify-center p-4 antialiased">
+  <div class="max-w-md w-full text-center space-y-6">
+    <div class="w-20 h-20 rounded-2xl mesh-gradient mx-auto flex items-center justify-center text-white text-3xl font-bold shadow-2xl">Š</div>
+    
+    <div class="space-y-2">
+      <span class="px-3 py-1 rounded-full text-xs font-mono bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">404 Error</span>
+      <h1 class="text-4xl font-bold tracking-tight text-white">Page Not Found</h1>
+      <p class="text-neutral-400 text-sm">The route you are trying to access does not exist or has been moved.</p>
+    </div>
+
+    <div class="pt-2">
+      <a href="/" class="inline-flex items-center justify-center px-6 h-11 bg-white text-black font-medium text-sm rounded-full hover:bg-neutral-200 transition shadow-lg gap-2">
+        ← Return to SHESHAAI Home
+      </a>
+    </div>
+
+    <div class="text-xs font-mono text-neutral-500 pt-4">
+      SHESHAAI Platform by SAURABH
+    </div>
+  </div>
+</body>
+</html>
