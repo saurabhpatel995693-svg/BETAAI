@@ -233,7 +233,6 @@ import '../styles/global.css';
         <button id="sync-btn" class="w-7 h-7 rounded-sm border border-themed flex items-center justify-center text-themed-mute hover:text-link text-xs transition" title="Cloud sync">☁</button>
         <button id="logout-btn" class="w-7 h-7 rounded-sm border border-themed flex items-center justify-center text-themed-mute hover:text-error text-xs transition" title="Logout">↗</button>
       </div>
-      <div class="text-[10px] font-mono text-themed-mute mt-1.5 text-center">CREATED BY SAURABH</div>
     </div>
   </aside>
 
@@ -245,15 +244,15 @@ import '../styles/global.css';
       <div class="flex items-center gap-2">
         <button id="mobile-menu-btn" class="lg:hidden w-8 h-8 rounded-sm border border-themed flex items-center justify-center text-themed-body" onclick="toggleSidebar()">☰</button>
         <h2 id="topbar-title" class="text-sm font-semibold tracking-tight truncate max-w-[180px] text-themed-ink">New chat</h2>
-        <div id="model-pill" class="hidden items-center gap-1.5 px-2 h-6 rounded-full surface-card2 border border-themed text-[10px] font-mono text-themed-mute">
+        <div id="model-pill" class="flex items-center gap-1.5 px-2.5 h-6 rounded-full surface-card2 border border-themed text-[10px] font-mono text-themed-mute">
           <span class="w-1.5 h-1.5 rounded-full bg-cyan pulse-dot"></span>
-          <span id="model-pill-text">gpt-4o-mini</span>
+          <span id="model-pill-text">Gemini 2.5 Flash</span>
         </div>
       </div>
       <div class="flex items-center gap-1.5">
-        <div id="active-status-pill" class="flex items-center gap-1.5 px-2.5 h-7 rounded-full surface-card2 border border-themed text-[11px] font-mono text-themed-ink" title="Backend automatically checks & uses active API keys">
+        <div id="active-status-pill" class="flex items-center gap-1.5 px-2.5 h-7 rounded-full surface-card2 border border-themed text-[11px] font-mono text-themed-ink" title="Multi-Tier Failover Engine (Gemini Pool -> Groq -> OpenRouter -> Pollinations)">
           <span class="w-2 h-2 rounded-full bg-cyan pulse-dot"></span>
-          <span>⚡ Auto AI Engine</span>
+          <span>⚡ Multi-Provider Engine</span>
         </div>
         <button id="settings-btn" class="w-8 h-8 rounded-sm border border-themed flex items-center justify-center text-themed-body hover:text-themed-ink transition">⚙</button>
         <button id="export-btn" class="w-8 h-8 rounded-sm border border-themed flex items-center justify-center text-themed-body hover:text-themed-ink transition" title="Export chat">↓</button>
@@ -269,35 +268,35 @@ import '../styles/global.css';
           <div class="max-w-lg text-center animate-fade-up">
             <div class="w-20 h-20 rounded-xl mesh-gradient mx-auto mb-6 flex items-center justify-center text-white text-3xl font-semibold shadow-level-4">Š</div>
             <h2 class="text-display-lg text-themed-ink mb-2">What can I help with?</h2>
-            <p class="text-themed-body text-sm mb-8">AI assistant by <strong class="text-themed-ink">SAURABH</strong> — chat, generate images, code, and study.</p>
+            <p class="text-themed-body text-sm mb-8">Intelligent AI workspace — chat, generate images, code, and analyze documents.</p>
             <!-- Suggestion Grid -->
             <div class="grid grid-cols-2 gap-3 text-left">
               <button class="suggest-btn p-4 rounded-md surface-card border border-themed shadow-level-2 hover:shadow-level-3 transition text-left animate-fade-up" style="animation-delay:0s">
-                <div class="text-xs font-medium mb-1 text-themed-ink">💬 Explain quantum computing</div>
-                <div class="text-[11px] text-themed-mute">In simple terms</div>
+                <div class="text-xs font-medium mb-1 text-themed-ink">💻 Build a SaaS App</div>
+                <div class="text-[11px] text-themed-mute">Live VibeCoding canvas preview</div>
               </button>
               <button class="suggest-btn p-4 rounded-md surface-card border border-themed shadow-level-2 hover:shadow-level-3 transition text-left animate-fade-up" style="animation-delay:.05s">
-                <div class="text-xs font-medium mb-1 text-themed-ink">💻 Build a Web App</div>
-                <div class="text-[11px] text-themed-mute">Directly code in Chat</div>
+                <div class="text-xs font-medium mb-1 text-themed-ink">📚 Notebook Quiz & Flashcards</div>
+                <div class="text-[11px] text-themed-mute">Import URL or study documents</div>
               </button>
               <button class="suggest-btn p-4 rounded-md surface-card border border-themed shadow-level-2 hover:shadow-level-3 transition text-left animate-fade-up" style="animation-delay:.1s">
-                <div class="text-xs font-medium mb-1 text-themed-ink">🎨 Generate an image</div>
-                <div class="text-[11px] text-themed-mute">Futuristic city at sunset</div>
+                <div class="text-xs font-medium mb-1 text-themed-ink">🎨 Generate 8K AI Art</div>
+                <div class="text-[11px] text-themed-mute">Futuristic glassmorphic world</div>
               </button>
               <button class="suggest-btn p-4 rounded-md surface-card border border-themed shadow-level-2 hover:shadow-level-3 transition text-left animate-fade-up" style="animation-delay:.15s">
-                <div class="text-xs font-medium mb-1 text-themed-ink">📝 Write a blog post</div>
-                <div class="text-[11px] text-themed-mute">About AI in education</div>
+                <div class="text-xs font-medium mb-1 text-themed-ink">⚡ DeepSeek & Quantum AI</div>
+                <div class="text-[11px] text-themed-mute">Explore 2026 AI developments</div>
               </button>
             </div>
             <!-- Persona selector -->
             <div class="mt-6">
-              <div class="text-[11px] font-mono text-themed-mute uppercase mb-2 tracking-wide">Select persona</div>
+              <div class="text-[11px] font-mono text-themed-mute uppercase mb-2 tracking-wide">Select persona mode</div>
               <div class="flex flex-wrap justify-center gap-2">
-                <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="default">🤖 Default</button>
-                <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="coder">💻 Coder</button>
-                <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="teacher">📚 Teacher</button>
-                <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="creative">🎭 Creative</button>
-                <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="analyst">📊 Analyst</button>
+                <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="default">🤖 Default Assistant</button>
+                <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="coder">💻 Principal Coder</button>
+                <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="teacher">📚 Master Educator</button>
+                <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="creative">🎭 Creative Director</button>
+                <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="analyst">📊 Data Analyst</button>
               </div>
             </div>
           </div>
@@ -341,7 +340,6 @@ import '../styles/global.css';
             </div>
             <div class="flex items-center justify-between mt-1">
               <div class="text-[10px] font-mono text-themed-mute">Enter = send · Shift+Enter = line · V = voice · Ctrl+K = new chat</div>
-              <div class="text-[10px] font-mono text-themed-mute">SHESHAAI by SAURABH</div>
             </div>
           </div>
         </div>
@@ -1177,13 +1175,7 @@ document.querySelectorAll('.mode-btn').forEach(btn => {
     btn.classList.add('mode-active','text-themed-ink'); btn.classList.remove('text-themed-body');
     
     if (currentMode === 'code') {
-      // Selecting Coding mode opens a NEW dedicated coding chat
-      newChat();
       currentPersona = 'coder';
-      document.getElementById('topbar-title').textContent = '💻 Coding Session';
-      document.getElementById('chat-input').placeholder = 'Describe what you want to code... (Gemini AI active)';
-      toast('💻 New Coding Chat opened! Gemini Code engine active.', 'success');
-      return;
     }
 
     ['chat','image','code','notebook','search'].forEach(v => document.getElementById('view-'+v)?.classList.add('hidden'));
