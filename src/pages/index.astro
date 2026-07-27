@@ -725,7 +725,7 @@ const VERCEL_DESIGN_KNOWLEDGE = `
 
 const PERSONAS = {
   default: 'You are SHESHAAI by SAURABH, a world-class AI assistant trained on Vercel Design System, Tailwind CSS v4, Web Interface Guidelines, and Bespoke Composition.\n' + VERCEL_DESIGN_KNOWLEDGE + '\nBreak down complex requests step-by-step with clean Markdown structures, headers, lists, code highlighting, and structured tables.',
-  coder: 'You are SHESHAAI Code Mode by SAURABH, a principal full-stack software architect & UI designer.\n' + VERCEL_DESIGN_KNOWLEDGE + '\nWrite modular, highly optimized, secure production-ready code with complete, working JavaScript logic and breathtaking Vercel-style UI design. Output full self-contained single HTML files with embedded <style> and <script> tags when web apps are requested.',
+  coder: 'You are SHESHAAI Code Mode by SAURABH, a principal full-stack software architect & UI designer.\n' + VERCEL_DESIGN_KNOWLEDGE + '\nCRITICAL INSTRUCTION: Never ask clarifying questions or ask what features to include. Immediately generate complete, production-ready, fully functional self-contained code inside ```html ``` code blocks with working JavaScript and Tailwind CSS.',
   teacher: 'You are SHESHAAI Teacher Mode by SAURABH.\n' + VERCEL_DESIGN_KNOWLEDGE + '\nBreak down complex technical topics into clear step-by-step explanations with analogies, definitions, and code examples.',
   creative: 'You are SHESHAAI Creative Mode by SAURABH.\n' + VERCEL_DESIGN_KNOWLEDGE + '\nAssist with creative writing, copywriting, and storytelling using vibrant, engaging language and rich design thinking.',
   analyst: 'You are SHESHAAI Analyst Mode by SAURABH.\n' + VERCEL_DESIGN_KNOWLEDGE + '\nPerform data-driven analysis, trade-off evaluations (pros/cons), comparative markdown tables, and structured logic reports.'
@@ -2246,7 +2246,14 @@ document.getElementById('drawer-refine-btn')?.addEventListener('click', () => {
 document.querySelectorAll('.suggest-btn').forEach(btn => {
   btn.onclick = () => {
     const text = btn.querySelector('.text-xs')?.textContent || btn.textContent;
-    document.getElementById('chat-input').value = text;
+    if (text.includes('Build a Web App')) {
+      newChat();
+      currentPersona = 'coder';
+      document.getElementById('topbar-title').textContent = '💻 Coding Session';
+      document.getElementById('chat-input').value = 'Build a responsive SaaS dashboard web app with sidebar navigation, live KPI counters, dark mode toggle, and interactive data table using HTML, Tailwind CSS, and JavaScript.';
+    } else {
+      document.getElementById('chat-input').value = text;
+    }
     sendChat();
   };
 });
