@@ -768,12 +768,10 @@ function getValidKey(userKey, defaultKey) {
 let isVibeChat = false;
 
 function getCustomKey() {
-  const elVal = document.getElementById('custom-api-key')?.value?.trim();
-  if (elVal) return elVal;
-  return localStorage.getItem('betaai_custom_key') || localStorage.getItem('GEMINI_API_KEY') || '';
+  return document.getElementById('custom-api-key')?.value?.trim() || '';
 }
-function getCustomBase() { return document.getElementById('custom-api-base')?.value?.trim() || localStorage.getItem('betaai_custom_base') || ''; }
-function getCustomModel() { return document.getElementById('custom-api-model')?.value?.trim() || localStorage.getItem('betaai_custom_model') || ''; }
+function getCustomBase() { return document.getElementById('custom-api-base')?.value?.trim() || ''; }
+function getCustomModel() { return document.getElementById('custom-api-model')?.value?.trim() || ''; }
 
 function getAPIKey() {
   const userEnteredKey = getCustomKey() || document.getElementById('s-api-key')?.value;
@@ -1700,7 +1698,7 @@ document.getElementById('generate-img-btn').onclick = async () => {
       <div class="p-3 surface-card border-t border-themed">
         <p class="text-[11px] text-themed-mute font-mono mb-2 truncate">${esc(prompt)}</p>
         <div class="flex gap-2">
-          <a href="${initialAiUrl}" target="_blank" download="betaai_image_${seed}.jpg" class="dl-btn h-7 px-3 btn-ink rounded-pill text-[11px] font-medium flex items-center gap-1">↓ Download</a>
+          <a href="${initialAiUrl}" target="_blank" download="sheshaai_image_${seed}.jpg" class="dl-btn h-7 px-3 btn-ink rounded-pill text-[11px] font-medium flex items-center gap-1">↓ Download</a>
           <button class="copy-url-btn h-7 px-3 border border-themed rounded-pill text-[11px] font-medium text-themed-body hover-card2">Copy URL</button>
         </div>
       </div>`;
