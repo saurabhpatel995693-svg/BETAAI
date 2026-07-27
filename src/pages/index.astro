@@ -1887,27 +1887,35 @@ document.getElementById('refine-code-btn').onclick = () => {
 /* ═══════════════════════════════════════════════════
    Notebooks
    ═══════════════════════════════════════════════════ */
-document.getElementById('nb-upload-btn').onclick = () => document.getElementById('nb-file-input').click();
-document.getElementById('nb-file-input').onchange = e => {
-  Array.from(e.target.files).forEach(file => {
-    const reader = new FileReader();
-    reader.onload = ev => addNbSource(file.name, ev.target.result);
-    reader.readAsText(file);
-  });
-};
+const nbUploadBtn = document.getElementById('nb-upload-btn');
+const nbFileInput = document.getElementById('nb-file-input');
+if (nbUploadBtn && nbFileInput) {
+  nbUploadBtn.onclick = () => nbFileInput.click();
+}
+if (nbFileInput) {
+  nbFileInput.onchange = e => {
+    Array.from(e.target.files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = ev => addNbSource(file.name, ev.target.result);
+      reader.readAsText(file);
+    });
+  };
+}
 
 // Drag & drop for notebooks
 const nbDrop = document.getElementById('nb-drop-zone');
-nbDrop.ondragover = e => { e.preventDefault(); nbDrop.style.borderColor='#0070f3'; };
-nbDrop.ondragleave = () => { nbDrop.style.borderColor=''; };
-nbDrop.ondrop = e => {
-  e.preventDefault(); nbDrop.style.borderColor='';
-  Array.from(e.dataTransfer.files).forEach(file => {
-    const reader = new FileReader();
-    reader.onload = ev => addNbSource(file.name, ev.target.result);
-    reader.readAsText(file);
-  });
-};
+if (nbDrop) {
+  nbDrop.ondragover = e => { e.preventDefault(); nbDrop.style.borderColor='#0070f3'; };
+  nbDrop.ondragleave = () => { nbDrop.style.borderColor=''; };
+  nbDrop.ondrop = e => {
+    e.preventDefault(); nbDrop.style.borderColor='';
+    Array.from(e.dataTransfer.files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = ev => addNbSource(file.name, ev.target.result);
+      reader.readAsText(file);
+    });
+  };
+}
 
 document.getElementById('nb-link-btn').onclick = async () => {
   const url = document.getElementById('nb-link-input').value.trim(); if(!url) return;
