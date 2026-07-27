@@ -627,11 +627,7 @@ import '../styles/global.css';
       <div class="grid gap-1.5">
         <div class="flex items-center justify-between">
           <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan pulse-dot"></span> ♊ Gemini API Pool (6 Keys Active)</span>
-          <span class="text-cyan text-[10px]">Primary Chat & Notebooks</span>
-        </div>
-        <div class="flex items-center justify-between">
-          <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan pulse-dot"></span> 🌐 OpenRouter Coding API (2 Keys Active)</span>
-          <span class="text-cyan text-[10px]">VibeCoding Engine</span>
+          <span class="text-cyan text-[10px]">Chat, Coding & Notebook Engine</span>
         </div>
         <div class="flex items-center justify-between">
           <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan pulse-dot"></span> 🎨 Pollinations AI</span>
@@ -1185,8 +1181,8 @@ document.querySelectorAll('.mode-btn').forEach(btn => {
       newChat();
       currentPersona = 'coder';
       document.getElementById('topbar-title').textContent = '💻 Coding Session';
-      document.getElementById('chat-input').placeholder = 'Describe what you want to code... (OpenRouter free model active)';
-      toast('💻 New Coding Chat opened! Powerful OpenRouter code engine active.', 'success');
+      document.getElementById('chat-input').placeholder = 'Describe what you want to code... (Gemini AI active)';
+      toast('💻 New Coding Chat opened! Gemini Code engine active.', 'success');
       return;
     }
 
@@ -2273,9 +2269,8 @@ if (codingChatBtn) {
   codingChatBtn.onclick = () => {
     newChat();
     currentPersona = 'coder';
-    document.getElementById('topbar-title').textContent = '💻 Coding Session';
-    document.getElementById('chat-input').placeholder = 'Describe what you want to code... (OpenRouter free model active)';
-    toast('💻 Coding Mode Activated! Powerful OpenRouter code engine active.', 'success');
+    document.getElementById('chat-input').placeholder = 'Describe what you want to code... (Gemini AI active)';
+    toast('💻 Coding Mode Activated! Gemini Code engine active.', 'success');
   };
 }
 

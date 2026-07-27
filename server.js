@@ -132,16 +132,6 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    const grokKey = clientGrokKey || process.env.GROQ_KEY || process.env.GROK_KEY || '';
-    if (grokKey) {
-      targets.push({
-        name: 'Grok-Groq-Primary',
-        url: grokKey.startsWith('xai-') ? 'https://api.x.ai/v1/chat/completions' : 'https://api.groq.com/openai/v1/chat/completions',
-        key: grokKey,
-        model: 'llama-3.3-70b-versatile'
-      });
-    }
-
     const geminiKey = clientGeminiKey || process.env.GEMINI_KEY || '';
     if (geminiKey) {
       targets.push({
@@ -149,17 +139,6 @@ const server = http.createServer(async (req, res) => {
         url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
         key: geminiKey,
         model: 'gemini-2.5-flash'
-      });
-    }
-
-    const openRouterKey = clientOpenRouterKey || process.env.OPENROUTER_KEY || '';
-    if (openRouterKey) {
-      targets.push({
-        name: 'OpenRouter-Primary',
-        url: 'https://openrouter.ai/api/v1/chat/completions',
-        key: openRouterKey,
-        model: isCodingMode ? 'qwen/qwen-2.5-coder-32b-instruct:free' : 'google/gemini-2.5-flash:free',
-        headers: { 'X-Title': 'BETAAI' }
       });
     }
 

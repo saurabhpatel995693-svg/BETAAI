@@ -231,8 +231,8 @@ Here is a clean, production-ready implementation:
 
 **SHESHAAI** is analyzing your request:
 
-1. **Multi-Engine AI Architecture**: Gemini Key Pool → OpenRouter Coding → Pollinations AI
-2. **Your request has been processed** through the SHESHAAI intelligence engine.
+  // 1. Multi-Engine AI Architecture: Gemini Key Pool + Pollinations AI
+  // 2. Your request has been processed through the SHESHAAI intelligence engine.
 
 *Created by SAURABH | SHESHAAI*`;
 }
@@ -263,11 +263,10 @@ export default async function handler(req, res) {
   const clientCustomBase    = req.headers['x-custom-base'] || payload.customBase || '';
   const clientCustomModel   = req.headers['x-custom-model'] || payload.customModel || '';
 
-  // ── Server-side environment variables (NEVER exposed to browser) ─
+  // ── Server-side environment variables ─
   const ENV_GEMINI_KEY      = process.env.GEMINI_KEY || process.env.GEMINI_API_KEY || '';
-  const ENV_OPENROUTER_KEY  = process.env.OPENROUTER_KEY || process.env.OPENROUTER_ALT || '';
 
-  // ── 6 GEMINI KEYS POOL (Primary Engine for general chat, summaries, notebook, discover) ─
+  // ── 6 GEMINI KEYS POOL (Primary Engine for Chat, Coding, Summaries, Notebooks, Discover) ─
   // Split strings assembled at runtime to bypass GitHub Push Protection secret regex scanner
   const RAW_GEMINI_KEYS = [
     'QVEuQWI4Uk42THFW' + 'UXg5NG5mblp3S3A1RHVMZjhHX0F4MEpUVHRya1RILXFFSThfUzJSNEE=',
@@ -278,42 +277,21 @@ export default async function handler(req, res) {
     'QVEuQWI4Uk42S1N5' + 'V2FJZHZfMWM0dmV1ZGlEYmdMenBBbXY3YnhpdmJSckhyTGtsZWIzcVE='
   ].map(k => Buffer.from(k, 'base64').toString('utf-8'));
 
-  // ── OPENROUTER CODING KEYS & ENDPOINT ─
-  const RAW_OPENROUTER_KEYS = [
-    'c2stb3ItdjEtM2U1' + 'MjMxOWY3MzNjMTEwOTUyNmUzMGM5ODExODg1NDhkNWY3ZTBlYzAwMmMwMGQ4YzJiNzJiMWYwMWZkOGFiNg==',
-    'c2stb3ItdjEtNTA3' + 'ODgwYzQwMmFkOWVjYTNlZmVlYmE5ZTAwYjI1MzViN2FiYzA1MGZmZTMzZGRiOTZhMGQ3YzQyOWMyZTZiZg=='
-  ].map(k => Buffer.from(k, 'base64').toString('utf-8'));
-
   const GEMINI_KEYS = [
     process.env.GEMINI_KEY_1, process.env.GEMINI_KEY_2, process.env.GEMINI_KEY_3,
     process.env.GEMINI_KEY_4, process.env.GEMINI_KEY_5, process.env.GEMINI_KEY_6,
     ENV_GEMINI_KEY, ...RAW_GEMINI_KEYS
   ].filter(Boolean);
 
-  const OPENROUTER_KEYS = [
-    process.env.OPENROUTER_KEY_1, process.env.OPENROUTER_KEY_2,
-    ENV_OPENROUTER_KEY, ...RAW_OPENROUTER_KEYS
-  ].filter(Boolean);
-
-  const isCodingMode = payload.mode === 'code' || rawModel.includes('coder') || rawModel.includes('coding');
-
   const targets = [];
 
-  // TIER 1: User Custom API (highest priority if provided in settings)
+  // User Custom API (if specified by client)
   if (clientCustomKey || clientCustomBase || clientCustomModel) {
     let baseUrl = clientCustomBase ? clientCustomBase.trim().replace(/\/$/, '') : '';
     let targetModel = clientCustomModel ? clientCustomModel.trim() : '';
 
-    if (clientCustomKey.startsWith('AIza') || clientCustomKey.startsWith('AQ.')) {
-      if (!baseUrl) baseUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
-      if (!targetModel) targetModel = 'gemini-2.5-flash';
-    } else if (clientCustomKey.startsWith('sk-or-') || (baseUrl && baseUrl.includes('openrouter.ai'))) {
-      if (!baseUrl) baseUrl = 'https://openrouter.ai/api/v1/chat/completions';
-      if (!targetModel) targetModel = 'openrouter/free';
-    } else {
-      if (!baseUrl) baseUrl = 'https://openrouter.ai/api/v1/chat/completions';
-      if (!targetModel) targetModel = (rawModel && rawModel !== 'auto') ? rawModel : 'openrouter/free';
-    }
+    if (!baseUrl) baseUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
+    if (!targetModel) targetModel = 'gemini-2.5-flash';
 
     if (baseUrl && !baseUrl.endsWith('/chat/completions') && !baseUrl.includes('/generateContent')) {
       baseUrl += '/chat/completions';
@@ -327,37 +305,15 @@ export default async function handler(req, res) {
     });
   }
 
-  // ── STRICT DIVISION OF WORK ──────────────────────────────────────
-  // 1. CODING MODE -> ONLY OPENROUTER CODING KEYS
-  // 2. CHAT / GENERAL MODE -> ONLY GEMINI 6-KEY API POOL
-  if (isCodingMode) {
-    const CODING_MODELS = [
-      'openrouter/free',
-      'google/gemini-2.5-flash:free',
-      'meta-llama/llama-3.3-70b-instruct:free'
-    ];
-    for (const key of OPENROUTER_KEYS) {
-      for (const modelName of CODING_MODELS) {
-        targets.push({
-          name: `OpenRouter-Coding-${modelName}`,
-          url: 'https://openrouter.ai/api/v1/chat/completions',
-          key: key,
-          model: modelName,
-          headers: { 'X-Title': 'SHESHAAI Coding Engine', 'HTTP-Referer': 'https://betaai-seven.vercel.app' }
-        });
-      }
-    }
-  } else {
-    // General Chat / Notebooks / Search / ELI5 -> Use ONLY Gemini 6 Keys Pool
-    GEMINI_KEYS.forEach((key, idx) => {
-      targets.push({
-        name: `Gemini-Key-${idx + 1}`,
-        url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
-        key: key,
-        model: 'gemini-2.5-flash'
-      });
+  // ALL FEATURES (Chat, Coding, Notebooks, Search) USE ONLY GEMINI API POOL
+  GEMINI_KEYS.forEach((key, idx) => {
+    targets.push({
+      name: `Gemini-Key-${idx + 1}`,
+      url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+      key: key,
+      model: 'gemini-2.5-flash'
     });
-  }
+  });
 
   // ── Attempt each keyed target in order ──────────────────────────
   for (const target of targets) {

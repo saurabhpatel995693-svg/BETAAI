@@ -6,164 +6,31 @@
  */
 
 export const PRECONFIGURED_KEYS = {
-  openRouter: process.env.OPENROUTER_KEY || ''
+  gemini: process.env.GEMINI_KEY || ''
 };
 
-export const DEFAULT_MODEL = "poolside/laguna-xs-2.1:free";
-export const FALLBACK_MODEL = "openai/gpt-4o-mini";
+export const DEFAULT_MODEL = "gemini-2.5-flash";
+export const FALLBACK_MODEL = "gemini-1.5-flash";
 export const DEFAULT_SYSTEM_PROMPT = "You are SHESHAAI, an intelligent, helpful, and creative AI assistant built by SAURABH. You deliver clear, precise, and well-formatted responses with Markdown styling, code highlights, and friendly helpful tone.";
-
-/**
- * OpenRouter Streaming Chat Completion
- */
-export async function streamChatCompletion({
-  messages,
-  apiKey = PRECONFIGURED_KEYS.openRouter,
-  model = DEFAULT_MODEL,
-  systemPrompt = DEFAULT_SYSTEM_PROMPT,
-  onChunk,
-  signal
-}) {
-  const effectiveKey = apiKey || PRECONFIGURED_KEYS.openRouter;
-  const effectiveModel = model || DEFAULT_MODEL;
-
-  const formattedMessages = [
-    { role: 'system', content: systemPrompt }
-  ];
-
-  // Include message history
-  messages.forEach(m => {
-    formattedMessages.push({
-      role: m.role,
-      content: m.content
-    });
-  });
-
-  try {
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${effectiveKey}`,
-        'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : 'https://sheshaai.local',
-        'X-Title': 'SHESHAAI by SAURABH',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: effectiveModel,
-        messages: formattedMessages,
-        stream: true,
-        temperature: 0.7
-      }),
-      signal
-    });
-
-    if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      throw new Error(errData?.error?.message || `OpenRouter API returned error status ${response.status}`);
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder('utf-8');
-    let fullText = '';
-    let buffer = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
-
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith(':')) continue;
-        if (trimmed === 'data: [DONE]') break;
-
-        if (trimmed.startsWith('data: ')) {
-          try {
-            const jsonStr = trimmed.substring(6);
-            const parsed = JSON.parse(jsonStr);
-            const delta = parsed.choices?.[0]?.delta?.content || '';
-            if (delta) {
-              fullText += delta;
-              if (onChunk) onChunk(delta, fullText);
-            }
-          } catch (e) {
-            // Ignore parse errors on partial lines
-          }
-        }
-      }
-    }
-
-    return fullText;
-  } catch (err) {
-    if (err.name === 'AbortError') {
-      console.log('[AI] Stream generation aborted by user.');
-      throw err;
-    }
-    console.error('[AI Stream Error]', err);
-    throw err;
-  }
-}
 
 /**
  * Image Generation Provider Dispatcher
  */
 export async function generateImage({
   prompt,
-  provider = 'pollinations',
-  apiKey = PRECONFIGURED_KEYS.openRouter,
-  model = 'stabilityai/stable-diffusion-3.5-large'
+  provider = 'pollinations'
 }) {
   const sanitizedPrompt = encodeURIComponent(prompt.trim());
-
-  if (provider === 'pollinations') {
-    // Pollinations.ai free URL-based generation
-    const seed = Math.floor(Math.random() * 1000000);
-    const imageUrl = `https://image.pollinations.ai/prompt/${sanitizedPrompt}?width=1024&height=1024&seed=${seed}&nologo=true`;
-    
-    // Pre-flight check image loadability, fallback to LoremFlickr if image fails
-    const isWorking = await testImageUrl(imageUrl);
-    if (isWorking) {
-      return { url: imageUrl, provider: 'Pollinations.ai' };
-    } else {
-      console.warn('[IMAGE] Pollinations failed, using fallback generator.');
-      const fallbackUrl = `https://loremflickr.com/1024/1024/${encodeURIComponent(prompt.split(' ')[0] || 'art')}?random=${seed}`;
-      return { url: fallbackUrl, provider: 'LoremFlickr Fallback' };
-    }
+  const seed = Math.floor(Math.random() * 1000000);
+  const imageUrl = `https://image.pollinations.ai/prompt/${sanitizedPrompt}?width=1024&height=1024&seed=${seed}&nologo=true`;
+  
+  const isWorking = await testImageUrl(imageUrl);
+  if (isWorking) {
+    return { url: imageUrl, provider: 'Pollinations.ai' };
   } else {
-    // OpenRouter Image Generation endpoint
-    const effectiveKey = apiKey || PRECONFIGURED_KEYS.openRouter;
-    try {
-      const response = await fetch('https://openrouter.ai/api/v1/images/generations', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${effectiveKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          prompt: prompt,
-          model: model || 'stabilityai/stable-diffusion-3.5-large',
-          width: 1024,
-          height: 1024
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`OpenRouter image generation failed with status ${response.status}`);
-      }
-
-      const data = await response.json();
-      const imageUrl = data.data?.[0]?.url || data.images?.[0];
-      if (!imageUrl) throw new Error('No image URL returned from API');
-      return { url: imageUrl, provider: 'OpenRouter' };
-    } catch (err) {
-      console.warn('[IMAGE OpenRouter Error] Falling back to Pollinations:', err.message);
-      const seed = Math.floor(Math.random() * 1000000);
-      const imageUrl = `https://image.pollinations.ai/prompt/${sanitizedPrompt}?width=1024&height=1024&seed=${seed}&nologo=true`;
-      return { url: imageUrl, provider: 'Pollinations.ai Fallback' };
-    }
+    console.warn('[IMAGE] Pollinations failed, using fallback generator.');
+    const fallbackUrl = `https://loremflickr.com/1024/1024/${encodeURIComponent(prompt.split(' ')[0] || 'art')}?random=${seed}`;
+    return { url: fallbackUrl, provider: 'LoremFlickr Fallback' };
   }
 }
 
