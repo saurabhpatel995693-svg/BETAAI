@@ -457,73 +457,72 @@ export default async function handler(req, res) {
     ENV_GEMINI_KEY, ...RAW_GEMINI_KEYS
   ].filter(Boolean);
 
-  const targets = [];
+  // ── 1. Unified System Prompt Enforcer ─────────────────────────────────
+  const SHESHAAI_SYSTEM_PROMPT = `You are SHESHAAI, an elite multi-modal AI platform developed by SAURABH.
+Rules & Behavior:
+- Creator & Boss: SAURABH is your creator, master, and boss. If asked about your boss/creator/owner, always state that SAURABH built and created you.
+- Tone: Highly helpful, intelligent, creative, polite, and precise.
+- Format: Use standard markdown with clean headers, bullet points, and code highlights.
+- Coding Tasks: Provide 100% production-ready, complete code blocks with no missing lines or placeholders.`;
 
-  // User Custom API Target
+  // ── 2. Message Normalization (OpenAI-standard internal schema) ──────
+  let normalizedMessages = messages.map(m => ({
+    role: m.role || 'user',
+    content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content)
+  }));
+
+  // Ensure system prompt is attached to top if not present
+  if (!normalizedMessages.some(m => m.role === 'system')) {
+    normalizedMessages.unshift({ role: 'system', content: SHESHAAI_SYSTEM_PROMPT });
+  }
+
+  // Detect query capability requirement
+  const fullTextContext = normalizedMessages.map(m => m.content).join('\n').toLowerCase();
+  const isCodingTask = fullTextContext.includes('code') || fullTextContext.includes('function') || fullTextContext.includes('javascript') || fullTextContext.includes('html') || fullTextContext.includes('css') || fullTextContext.includes('build') || fullTextContext.includes('create app') || fullTextContext.includes('game');
+
+  // ── 3. Capability-based & Sticky Target Ordering ────────────────────────
+  // Order targets based on task capability (DeepSeek/Llama preferred for code, Gemini for chat)
+  const geminiTargets = GEMINI_KEYS.map((key, idx) => ({
+    name: `Gemini-Key-${idx + 1}`,
+    url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+    key: key,
+    model: 'gemini-2.5-flash'
+  }));
+
+  const groqTargets = clientGroqKey ? [
+    { name: 'Groq-Llama-3.3-70B', url: 'https://api.groq.com/openai/v1/chat/completions', key: clientGroqKey, model: 'llama-3.3-70b-versatile' },
+    { name: 'Groq-Llama-3-8B', url: 'https://api.groq.com/openai/v1/chat/completions', key: clientGroqKey, model: 'llama3-8b-8192' }
+  ] : [];
+
+  const openRouterTargets = clientOpenRouterKey ? [
+    { name: 'OpenRouter-DeepSeek', url: 'https://openrouter.ai/api/v1/chat/completions', key: clientOpenRouterKey, model: 'deepseek/deepseek-r1:free', headers: { 'HTTP-Referer': 'https://sheshaai.vercel.app', 'X-Title': 'SHESHAAI' } },
+    { name: 'OpenRouter-Llama', url: 'https://openrouter.ai/api/v1/chat/completions', key: clientOpenRouterKey, model: 'meta-llama/llama-3.3-70b-instruct:free', headers: { 'HTTP-Referer': 'https://sheshaai.vercel.app', 'X-Title': 'SHESHAAI' } }
+  ] : [];
+
+  let targets = [];
+
+  // User Custom API Target (highest priority if specified)
   if (clientCustomKey || clientCustomBase || clientCustomModel) {
     let baseUrl = clientCustomBase ? clientCustomBase.trim().replace(/\/$/, '') : '';
     let targetModel = clientCustomModel ? clientCustomModel.trim() : '';
-
     if (!baseUrl) baseUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
     if (!targetModel) targetModel = 'gemini-2.5-flash';
-
     if (baseUrl && !baseUrl.endsWith('/chat/completions') && !baseUrl.includes('/generateContent')) {
       baseUrl += '/chat/completions';
     }
-
-    targets.push({
-      name: 'User-Custom',
-      url: baseUrl,
-      key: clientCustomKey,
-      model: targetModel
-    });
+    targets.push({ name: 'User-Custom', url: baseUrl, key: clientCustomKey, model: targetModel });
   }
 
-  // TIER 1: Gemini 6-Key Pool Rotation
-  GEMINI_KEYS.forEach((key, idx) => {
-    targets.push({
-      name: `Gemini-Key-${idx + 1}`,
-      url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
-      key: key,
-      model: 'gemini-2.5-flash'
-    });
-  });
-
-  // TIER 2: Groq High-Speed Llama-3.3 Fallback (if key configured)
-  if (clientGroqKey) {
-    targets.push({
-      name: 'Groq-Llama-3.3-70B',
-      url: 'https://api.groq.com/openai/v1/chat/completions',
-      key: clientGroqKey,
-      model: 'llama-3.3-70b-versatile'
-    });
-    targets.push({
-      name: 'Groq-Llama-3-8B',
-      url: 'https://api.groq.com/openai/v1/chat/completions',
-      key: clientGroqKey,
-      model: 'llama3-8b-8192'
-    });
+  // Task-capability optimized ordering:
+  if (isCodingTask && (openRouterTargets.length || groqTargets.length)) {
+    // For coding tasks, route to DeepSeek/Llama first if available, then Gemini Pool
+    targets.push(...openRouterTargets, ...groqTargets, ...geminiTargets);
+  } else {
+    // Standard chat/notebooks: Gemini Pool first, then Groq & OpenRouter
+    targets.push(...geminiTargets, ...groqTargets, ...openRouterTargets);
   }
 
-  // TIER 3: OpenRouter Free Models Fallback (if key configured)
-  if (clientOpenRouterKey) {
-    targets.push({
-      name: 'OpenRouter-Free-Llama',
-      url: 'https://openrouter.ai/api/v1/chat/completions',
-      key: clientOpenRouterKey,
-      model: 'meta-llama/llama-3.3-70b-instruct:free',
-      headers: { 'HTTP-Referer': 'https://sheshaai.vercel.app', 'X-Title': 'SHESHAAI' }
-    });
-    targets.push({
-      name: 'OpenRouter-Free-DeepSeek',
-      url: 'https://openrouter.ai/api/v1/chat/completions',
-      key: clientOpenRouterKey,
-      model: 'deepseek/deepseek-r1:free',
-      headers: { 'HTTP-Referer': 'https://sheshaai.vercel.app', 'X-Title': 'SHESHAAI' }
-    });
-  }
-
-  // ── Attempt each keyed target in order ──────────────────────────
+  // ── 4. Attempt each keyed target in order (Silent Failover) ──────────
   for (const target of targets) {
     try {
       const headers = {
@@ -533,7 +532,7 @@ export default async function handler(req, res) {
       if (target.key) headers['Authorization'] = `Bearer ${target.key}`;
 
       const body = JSON.stringify({
-        messages,
+        messages: normalizedMessages,
         model: target.model || 'gemini-2.5-flash',
         temperature: payload.temperature || 0.7,
         max_tokens: payload.max_tokens || 4096,
