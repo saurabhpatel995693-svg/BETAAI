@@ -646,29 +646,25 @@ import '../styles/global.css';
       </div>
     </div>
     <div class="surface-card2 rounded-md p-4 text-xs font-mono text-themed-mute space-y-1 border border-themed">
-      <div class="text-[10px] font-semibold text-themed-ink mb-2 uppercase tracking-wider">⚡ Multi-Tier AI Provider Failover Status</div>
+      <div class="text-[10px] font-semibold text-themed-ink mb-2 uppercase tracking-wider">⚡ Active AI Multi-Engine Architecture</div>
       <div class="grid gap-1.5">
         <div class="flex items-center justify-between">
-          <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan pulse-dot"></span> 🌐 OpenRouter Primary</span>
-          <span class="text-cyan text-[10px]">Configured (ACTIVE)</span>
+          <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan pulse-dot"></span> ♊ Gemini API Pool (6 Keys Active)</span>
+          <span class="text-cyan text-[10px]">Primary Chat & Notebooks</span>
         </div>
         <div class="flex items-center justify-between">
-          <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan pulse-dot"></span> 🤗 Hugging Face (Quota Safety Net)</span>
-          <span class="text-cyan text-[10px]">Configured (READY)</span>
+          <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan pulse-dot"></span> 🌐 OpenRouter Coding API (2 Keys Active)</span>
+          <span class="text-cyan text-[10px]">VibeCoding Engine</span>
         </div>
         <div class="flex items-center justify-between">
-          <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan pulse-dot"></span> 🎨 NVIDIA NIM (Compute & Vision)</span>
-          <span class="text-cyan text-[10px]">Configured (READY)</span>
-        </div>
-        <div class="flex items-center justify-between">
-          <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan pulse-dot"></span> 💻 OpenCode ZEN API</span>
-          <span class="text-cyan text-[10px]">Configured (READY)</span>
+          <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan pulse-dot"></span> 🎨 Pollinations AI</span>
+          <span class="text-cyan text-[10px]">High-Res Image Generation</span>
         </div>
       </div>
-      <div class="border-t border-themed mt-2 pt-2 space-y-1">
-        <div>✓ Quota overflow fallback active</div>
-        <div>✓ Server Proxy active (/api/chat)</div>
-        <div>✓ CORS & Authentication shield active</div>
+      <div class="border-t border-themed mt-2 pt-2 space-y-1 text-[11px]">
+        <div>✓ Vercel Design System live preview canvas active</div>
+        <div>✓ Automatic cloud & local chat storage enabled</div>
+        <div>✓ Intelligent multi-provider failover configured</div>
         <div id="s-user-info"></div>
       </div>
     </div>
@@ -900,7 +896,15 @@ async function fetchWithFailover(apiCallFn, mode = 'general') {
 
 function getSystemPrompt(userText = '') {
   let basePrompt = document.getElementById('s-system-prompt').value || PERSONAS[currentPersona];
-  let docContext = '';
+  
+  const vercelDesignPrompt = `\n\nCRITICAL DESIGN DIRECTIVE FOR ALL CODING & WEB GENERATION:
+When creating or generating HTML/CSS/JS code, web apps, components, or UI designs, YOU MUST STRICTLY USE THE VERCEL DESIGN SYSTEM AESTHETICS:
+1. Palette: Stark Ink (#171717 / #0a0a0a), modern clean surfaces (#fafafa / #141414), crisp micro-borders (1px solid #ebebeb or #2e2e2e), vibrant accent gradients (#007cf0 to #00dfd8 or #7928ca to #ff0080).
+2. Typography: Clean sans-serif fonts (Inter, system-ui) with tight tracking, JetBrains Mono for code.
+3. Component Style: Glassmorphism (backdrop-blur-md), pill buttons, subtle inset shadows, smooth hover micro-animations.
+4. Tailwind CSS v4: Always include Tailwind CDN (<script src="https://cdn.tailwindcss.com"><\/script>) in standalone HTML output so the user gets a stunning 2026 production-grade web application immediately! NEVER produce outdated 1990s HTML/CSS.`;
+
+  let docContext = vercelDesignPrompt;
   
   if (userText && typeof repoKnowledge === 'object') {
     const textLower = userText.toLowerCase();
