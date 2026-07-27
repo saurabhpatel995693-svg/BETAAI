@@ -327,16 +327,24 @@ export default async function handler(req, res) {
     });
   }
 
-  // TIER 2: Coding Mode → OpenRouter openrouter/free (using explicit keys provided)
+  // TIER 2: Coding Mode → Ultra-High Performance Coding Models (Qwen 2.5 Coder 32B, DeepSeek R1, Gemini 2.5 Flash)
   if (isCodingMode) {
-    for (const key of OPENROUTER_KEYS) {
-      targets.push({
-        name: 'OpenRouter-Coding',
-        url: 'https://openrouter.ai/api/v1/chat/completions',
-        key: key,
-        model: 'openrouter/free',
-        headers: { 'X-Title': 'SHESHAAI Coding', 'HTTP-Referer': 'https://betaai-seven.vercel.app' }
-      });
+    const CODING_MODELS = [
+      'qwen/qwen-2.5-coder-32b-instruct:free',
+      'deepseek/deepseek-r1:free',
+      'google/gemini-2.5-flash:free',
+      'openrouter/free'
+    ];
+    for (const modelName of CODING_MODELS) {
+      for (const key of OPENROUTER_KEYS) {
+        targets.push({
+          name: `OpenRouter-Coding-${modelName.split('/')[1] || modelName}`,
+          url: 'https://openrouter.ai/api/v1/chat/completions',
+          key: key,
+          model: modelName,
+          headers: { 'X-Title': 'SHESHAAI Coding Engine', 'HTTP-Referer': 'https://betaai-seven.vercel.app' }
+        });
+      }
     }
   }
 
