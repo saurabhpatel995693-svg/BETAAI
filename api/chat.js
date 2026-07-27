@@ -241,7 +241,7 @@ Here is a clean, production-ready implementation:
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-custom-key, x-custom-base, x-custom-model, x-gemini-key, x-grok-key, x-openrouter-key, x-nvidia-key, x-hf-token, x-zen-key');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-custom-key, x-custom-base, x-custom-model, x-gemini-key, x-openrouter-key');
 
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: { message: 'Method not allowed' } });
@@ -264,15 +264,8 @@ export default async function handler(req, res) {
   const clientCustomModel   = req.headers['x-custom-model'] || payload.customModel || '';
 
   // ── Server-side environment variables (NEVER exposed to browser) ─
-  // Set these in Vercel Dashboard → Project Settings → Environment Variables
-  // They are ONLY readable on the server — never in the browser bundle
   const ENV_GEMINI_KEY      = process.env.GEMINI_KEY || process.env.GEMINI_API_KEY || '';
-  const ENV_GROQ_KEY        = process.env.GROQ_KEY || process.env.GROK_KEY || '';
   const ENV_OPENROUTER_KEY  = process.env.OPENROUTER_KEY || process.env.OPENROUTER_ALT || '';
-  const ENV_NVIDIA_KEY      = process.env.NVIDIA_KEY || process.env.NVIDIA_NIM_KEY || '';
-  const ENV_ZEN_KEY         = process.env.ZEN_API_KEY || process.env.ZEN_KEY || '';
-  const ENV_HF_TOKEN        = process.env.HF_TOKEN || process.env.HUGGINGFACE_TOKEN || '';
-  const ENV_XAI_KEY         = process.env.XAI_KEY || process.env.GROK_XAI_KEY || '';
 
   // ── 6 GEMINI KEYS POOL (Primary Engine for general chat, summaries, notebook, discover) ─
   // Split strings assembled at runtime to bypass GitHub Push Protection secret regex scanner
