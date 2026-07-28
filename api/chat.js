@@ -431,6 +431,134 @@ ${topicLine ? `**${topicLine}**` : 'This topic'} is just like organizing your fa
 \`\`\``;
     }
 
+    if (isChatUi) {
+      return `### 🎯 Architecture & Approach (Thinking)
+1. **AI Chat Interface Architecture**: Full-featured chat workspace featuring dynamic model selection dropdown (Gemini 1.5 Flash, GPT-4o, Claude 3.5 Sonnet, DeepSeek R1), streaming response simulation, session management, and export modal.
+2. **Interactive Elements**: Real-time typing animation for streaming responses, syntax-highlighted code snippet copy buttons, auto-scroll feed, and session JSON/Markdown exporter.
+3. **Vercel Dark Mode Styling**: Built using Tailwind CSS with glassmorphic panels (\`backdrop-blur-md\`), crisp micro-borders (\`border-white/10\`), and cyan/violet accents.
+
+\`\`\`html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Chat Assistant Studio - SHESHAAI</title>
+  <script src="https://cdn.tailwindcss.com"><\/script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"><\/script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"><\/script>
+</head>
+<body class="bg-neutral-950 text-neutral-100 min-h-screen flex flex-col font-sans antialiased">
+  <header class="h-14 px-6 border-b border-white/10 bg-neutral-900/80 backdrop-blur-md flex items-center justify-between sticky top-0 z-20">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-purple-600 flex items-center justify-center font-bold text-black text-sm shadow-md">⚡</div>
+      <h1 class="font-bold text-sm tracking-tight text-white flex items-center gap-2">
+        AI Chat Studio
+        <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">v2.5</span>
+      </h1>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <select id="modelSelect" class="h-8 px-3 rounded-lg bg-neutral-800 border border-white/10 text-xs text-white outline-none cursor-pointer hover:border-cyan-500/40 transition">
+        <option value="gemini-1.5-flash">♊ Gemini 1.5 Flash</option>
+        <option value="gpt-4o">🧠 GPT-4o (OpenAI)</option>
+        <option value="claude-3.5-sonnet">🎭 Claude 3.5 Sonnet</option>
+        <option value="deepseek-r1">⚡ DeepSeek R1 Reasoning</option>
+      </select>
+
+      <button onclick="openExportModal()" class="h-8 px-3 rounded-lg bg-neutral-800 border border-white/10 hover:bg-neutral-700 text-xs font-medium text-white transition flex items-center gap-1">
+        ↓ Export Session
+      </button>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-4xl w-full mx-auto p-4 flex flex-col h-[calc(100vh-3.5rem)]">
+    <div id="chatFeed" class="flex-1 overflow-y-auto space-y-4 pr-2 mb-4">
+      <div class="p-4 rounded-xl bg-neutral-900 border border-white/10 text-xs text-neutral-400 space-y-1">
+        <div class="font-bold text-white text-sm">Welcome to AI Chat Assistant</div>
+        <p>Select your model from the dropdown header and start typing to stream AI responses.</p>
+      </div>
+    </div>
+
+    <form id="chatForm" onsubmit="handleSend(event)" class="relative flex items-end gap-2 bg-neutral-900 p-2 rounded-2xl border border-white/10 shadow-xl">
+      <textarea id="chatInput" rows="1" placeholder="Type your message..." class="flex-1 bg-transparent border-none outline-none resize-none text-sm text-white px-3 py-2 max-h-32"></textarea>
+      <button type="submit" id="sendBtn" class="px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs transition shadow-lg shadow-cyan-500/20">Send</button>
+    </form>
+  </main>
+
+  <div id="exportModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="max-w-md w-full bg-neutral-900 border border-white/10 rounded-2xl p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 class="font-bold text-white text-base">Export Chat Session</h3>
+        <button onclick="closeExportModal()" class="text-neutral-400 hover:text-white">✕</button>
+      </div>
+      <p class="text-xs text-neutral-400">Download conversation history as Markdown or JSON file.</p>
+      <div class="flex gap-3">
+        <button onclick="downloadSession('md')" class="flex-1 py-2.5 bg-cyan-500 text-black font-bold text-xs rounded-xl hover:bg-cyan-400 transition">Markdown (.md)</button>
+        <button onclick="downloadSession('json')" class="flex-1 py-2.5 bg-neutral-800 text-white border border-white/10 font-bold text-xs rounded-xl hover:bg-neutral-700 transition">JSON (.json)</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let messages = [];
+
+    function handleSend(e) {
+      e.preventDefault();
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const model = document.getElementById('modelSelect').value;
+      messages.push({ role: 'user', content: text, model });
+
+      appendBubble('user', text);
+      input.value = '';
+
+      const aiBubble = appendBubble('assistant', 'Thinking...');
+      const contentEl = aiBubble.querySelector('.msg-body');
+
+      const simulatedReply = \`Here is the response generated by **\${model}**:\\n\\n\`\`\`javascript\\n// Live code execution block\\nfunction executeTask() {\\n  console.log("Executing task for: \${text}");\\n  return { status: "success", model: "\${model}" };\\n}\\n\`\`\`\\n\\nCompleted successfully.\`;
+
+      let idx = 0;
+      contentEl.innerHTML = '';
+      const timer = setInterval(() => {
+        idx += 4;
+        contentEl.innerHTML = marked.parse(simulatedReply.substring(0, idx));
+        if (idx >= simulatedReply.length) {
+          clearInterval(timer);
+          messages.push({ role: 'assistant', content: simulatedReply, model });
+          contentEl.querySelectorAll('pre code').forEach(b => hljs.highlightElement(b));
+        }
+      }, 15);
+    }
+
+    function appendBubble(role, content) {
+      const isUser = role === 'user';
+      const div = document.createElement('div');
+      div.className = \`flex \${isUser ? 'justify-end' : 'justify-start'}\`;
+      div.innerHTML = \`<div class="max-w-[85%] rounded-2xl p-4 text-xs md:text-sm \${isUser ? 'bg-cyan-500 text-black font-semibold rounded-tr-none' : 'bg-neutral-900 border border-white/10 text-white rounded-tl-none markdown-body'}"><div class="msg-body">\${isUser ? content : marked.parse(content)}</div></div>\`;
+      const feed = document.getElementById('chatFeed');
+      feed.appendChild(div);
+      feed.scrollTop = feed.scrollHeight;
+      return div;
+    }
+
+    function openExportModal() { document.getElementById('exportModal').classList.remove('hidden'); }
+    function closeExportModal() { document.getElementById('exportModal').classList.add('hidden'); }
+    function downloadSession(fmt) {
+      const data = fmt === 'json' ? JSON.stringify(messages, null, 2) : messages.map(m => \`**\${m.role}** (\${m.model}): \${m.content}\`).join('\\n\\n');
+      const blob = new Blob([data], { type: fmt === 'json' ? 'application/json' : 'text/markdown' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = \`session.\${fmt}\`; a.click();
+      closeExportModal();
+    }
+  <\/script>
+</body>
+</html>
+\`\`\``;
+    }
+
     return `### 🎯 Architecture & Approach (Thinking)
 1. **Application Architecture**: Custom implementation for **${appTitle}** built using HTML5, Tailwind CSS, and vanilla JavaScript.
 2. **Layout & UI**: Dark mode Vercel aesthetics (\`#09090b\`), glassmorphic containers, sleek typography, and responsive controls.
