@@ -9,7 +9,7 @@ export const PRECONFIGURED_KEYS = {
   gemini: process.env.GEMINI_KEY || ''
 };
 
-export const DEFAULT_MODEL = "gemini-2.5-flash";
+export const DEFAULT_MODEL = "gemini-1.5-flash";
 export const FALLBACK_MODEL = "gemini-1.5-flash";
 export const DEFAULT_SYSTEM_PROMPT = "You are SHESHAAI, an intelligent, helpful, and creative AI assistant built by SAURABH. You deliver clear, precise, and well-formatted responses with Markdown styling, code highlights, and friendly helpful tone.";
 

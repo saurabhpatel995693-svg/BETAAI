@@ -694,7 +694,7 @@ Rules & Behavior:
     name: `Gemini-Key-${idx + 1}`,
     url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
     key: key,
-    model: 'gemini-2.5-flash'
+    model: 'gemini-1.5-flash'
   }));
 
   const groqTargets = clientGroqKey ? [
@@ -714,7 +714,7 @@ Rules & Behavior:
     let baseUrl = clientCustomBase ? clientCustomBase.trim().replace(/\/$/, '') : '';
     let targetModel = clientCustomModel ? clientCustomModel.trim() : '';
     if (!baseUrl) baseUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
-    if (!targetModel) targetModel = 'gemini-2.5-flash';
+    if (!targetModel) targetModel = 'gemini-1.5-flash';
     if (baseUrl && !baseUrl.endsWith('/chat/completions') && !baseUrl.includes('/generateContent')) {
       baseUrl += '/chat/completions';
     }
@@ -746,7 +746,7 @@ Rules & Behavior:
 
       const body = JSON.stringify({
         messages: normalizedMessages,
-        model: target.model || 'gemini-2.5-flash',
+        model: target.model || 'gemini-1.5-flash',
         temperature: payload.temperature || 0.7,
         max_tokens: payload.max_tokens || 4096,
         stream: wantsStream

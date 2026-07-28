@@ -30,7 +30,7 @@ const PROVIDERS = [
     name: 'openrouter',
     url: 'https://openrouter.ai/api/v1/chat/completions',
     key: process.env.OPENROUTER_KEY || process.env.GEMINI_KEY || '',
-    models: ['google/gemini-2.5-flash:free', 'meta-llama/llama-3.3-70b-instruct:free', 'qwen/qwen-2.5-coder-32b-instruct:free', 'deepseek/deepseek-r1:free'],
+    models: ['google/gemini-2.0-flash-exp:free', 'meta-llama/llama-3.3-70b-instruct:free', 'qwen/qwen-2.5-coder-32b-instruct:free', 'deepseek/deepseek-r1:free'],
     timeout: 4000,
     extraHeaders: { 'X-Title': 'SHESHAAI' }
   }
@@ -101,7 +101,7 @@ const server = http.createServer(async (req, res) => {
 
       if (customKey.startsWith('AIza')) {
         if (!baseUrl) baseUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
-        if (!targetModel) targetModel = 'gemini-2.5-flash';
+        if (!targetModel) targetModel = 'gemini-1.5-flash';
       } else if (customKey.startsWith('gsk_')) {
         if (!baseUrl) baseUrl = 'https://api.groq.com/openai/v1/chat/completions';
         if (!targetModel) targetModel = 'llama-3.3-70b-versatile';
@@ -116,7 +116,7 @@ const server = http.createServer(async (req, res) => {
       } else {
         if (!baseUrl) baseUrl = 'https://openrouter.ai/api/v1/chat/completions';
         if (!targetModel) {
-          targetModel = (rawModel && rawModel !== 'auto') ? rawModel : (isCodingMode ? 'google/gemini-2.5-flash:free' : 'meta-llama/llama-3.3-70b-instruct:free');
+          targetModel = (rawModel && rawModel !== 'auto') ? rawModel : (isCodingMode ? 'google/gemini-2.0-flash-exp:free' : 'meta-llama/llama-3.3-70b-instruct:free');
         }
       }
 
@@ -138,7 +138,7 @@ const server = http.createServer(async (req, res) => {
         name: 'Gemini-Flash-Primary',
         url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
         key: geminiKey,
-        model: 'gemini-2.5-flash'
+        model: 'gemini-1.5-flash'
       });
     }
 
