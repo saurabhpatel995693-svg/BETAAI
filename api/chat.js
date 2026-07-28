@@ -23,20 +23,18 @@ async function fetchWithTimeout(url, options, timeoutMs = 10000) {
 // ─── FREE providers that work WITHOUT any API key ─────────────────
 // Pollinations AI: completely free, no registration, real GPT-4o & Claude responses
 async function tryPollinationsAI(messages, isCoding = false, wantsStream = false) {
-  // Model selection: use openai (GPT-4o) for chat, openai for coding too
-  const model = isCoding ? 'openai' : 'openai';
+  const lastMsg = messages[messages.length - 1];
+  const userPrompt = typeof lastMsg?.content === 'string' ? lastMsg.content : (messages.map(m => typeof m.content === 'string' ? m.content : JSON.stringify(m.content)).join('\n') || 'Hello');
+  
   const body = JSON.stringify({
-    messages,
-    model,
-    temperature: 0.7,
-    max_tokens: 4096,
-    stream: wantsStream,
-    seed: Math.floor(Math.random() * 99999)
+    messages: [{ role: 'user', content: userPrompt }],
+    model: 'openai',
+    seed: Math.floor(Math.random() * 999999)
   });
 
-  const res = await fetchWithTimeout('https://text.pollinations.ai/openai', {
+  const res = await fetchWithTimeout('https://text.pollinations.ai/', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Accept': wantsStream ? 'text/event-stream' : 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body
   }, 20000);
 
@@ -44,7 +42,7 @@ async function tryPollinationsAI(messages, isCoding = false, wantsStream = false
     const txt = await res.text().catch(() => '');
     throw new Error(`Pollinations (${res.status}): ${txt.substring(0, 100)}`);
   }
-  return res; // return raw Response so caller can handle stream or json
+  return res;
 }
 
 // ─── Built-in Smart Synthesis Engine (always works as final fallback) ──
@@ -807,9 +805,16 @@ Rules & Behavior:
   // TIER 7: Pollinations AI — retry as final fallback
   try {
     const pollRes2 = await tryPollinationsAI(messages, isCodingTask, false);
-    const pollData2 = await pollRes2.json();
-    if (pollData2?.choices?.[0]?.message?.content) {
-      return res.status(200).json(pollData2);
+    const txt = await pollRes2.text();
+    let content = txt;
+    try {
+      const parsed = JSON.parse(txt);
+      content = parsed.choices?.[0]?.message?.content || parsed.content || txt;
+    } catch(e) {}
+    if (content && content.trim().length > 0) {
+      return res.status(200).json({
+        choices: [{ message: { role: 'assistant', content } }]
+      });
     }
   } catch (pollErr2) {
     console.warn('[BETAAI] Pollinations retry failed:', pollErr2.message);
