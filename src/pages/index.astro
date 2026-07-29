@@ -200,7 +200,7 @@ import '../styles/global.css';
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
         Notebooks
       </button>
-      <a href="/coconote" class="w-full h-9 px-3 rounded-sm text-[13px] font-semibold flex items-center gap-2 text-indigo-600 bg-indigo-50 border border-indigo-200 transition hover:bg-indigo-100">
+      <a href="/kiddienotes" class="w-full h-9 px-3 rounded-sm text-[13px] font-semibold flex items-center gap-2 text-indigo-600 bg-indigo-50 border border-indigo-200 transition hover:bg-indigo-100">
         <span class="text-sm">🎒</span>
         KiddieNotes (K-12)
       </a>
@@ -516,7 +516,7 @@ import '../styles/global.css';
             <div class="flex items-center justify-between mb-2">
               <div class="text-[11px] font-mono text-cyan uppercase tracking-wide flex items-center gap-1.5">
                 <span class="w-1.5 h-1.5 rounded-full bg-cyan pulse-dot"></span>
-                <span>⚡ Coconote AI Study Engine</span>
+                <span>⚡ KiddieNotes AI Study Engine</span>
               </div>
               <span class="text-[10px] font-mono text-themed-mute">Auto-transcripts & Study Packs</span>
             </div>
@@ -1752,8 +1752,37 @@ document.getElementById('generate-code-btn').onclick = async () => {
   box.prepend(card);
 
   try {
+    // Differentiate system prompt based on complexity level
+    let complexityInstruction = '';
+    if (complexity === 'Full application') {
+      complexityInstruction = `
+IMPORTANT — YOU MUST GENERATE A **FULL PRODUCTION APPLICATION**:
+- Generate a significantly large, feature-rich application (150+ lines minimum)
+- Include ALL of: multiple views/sections, filters/sorting, animations/transitions, error/empty states, input validation, responsive layout
+- Add extra features beyond the basic requirement (e.g. dark mode toggle, data persistence, keyboard shortcuts, export functionality)
+- Structure code with clear separation of concerns (HTML structure, CSS styling, JS logic clearly separated)
+- This is NOT a minimal example — build a complete, polished, deployable application`;
+    } else if (complexity === 'Complete module') {
+      complexityInstruction = `
+IMPORTANT — GENERATE A **COMPLETE MODULE**:
+- Generate a well-structured module with all core features working
+- Include proper error handling, input validation, and edge cases
+- Add basic UI states (loading, empty, error, success)
+- Include documentation-style comments for key functions
+- Medium length: fully functional but focused on core requirements`;
+    } else {
+      complexityInstruction = `
+IMPORTANT — GENERATE A **CONCISE SNIPPET**:
+- Keep it short, focused, and single-purpose (under 80 lines preferred)
+- Demonstrate ONE core concept/feature clearly
+- Minimal boilerplate — just the essential working code
+- Perfect for quick reference or learning a specific technique`;
+    }
+
     const systemPrompt = `You are VibeCoding AI — an elite Senior Principal Software Architect & UI/UX Designer by SAURABH.
-When the user asks to build or generate code for: "${prompt}", follow this structured approach:
+User asked to build: "${prompt}" (Complexity: ${complexity}).
+
+${complexityInstruction}
 
 ### 🎯 Architecture & Approach (Thinking)
 Explain step-by-step how you design the component/app, UI layout, dependencies used, and key JavaScript interactivity.
@@ -2060,10 +2089,10 @@ document.querySelectorAll('.nb-action-btn').forEach(btn => {
       quiz: 'Based on the following content, create a quiz with 8 multiple-choice questions. Format each question with A/B/C/D options. At the end, provide an ANSWER KEY. Make questions progressively harder.\n\nContent:\n' + combinedText,
       flashcard: 'Based on the following content, create 10 flashcards. Output as a JSON array: [{"front":"question","back":"answer"}]. ONLY output valid JSON, no other text.\n\nContent:\n' + combinedText,
       podcast: 'Transform the following content into an entertaining 2-person AI Podcast Script between Alex (Host) and Dr. Taylor (Expert). Highlight the key insights, analogies, and main takeaways in a conversational style.\n\nContent:\n' + combinedText,
-      summary: 'Create a comprehensive, well-structured Coconote Smart Summary & Transcript of the following content. Use markdown with headers (##), bullet points, key takeaways, and bold for key terms. Include a TL;DR at the top.\n\nContent:\n' + combinedText,
+      summary: 'Create a comprehensive, well-structured KiddieNotes Smart Summary & Transcript of the following content. Use markdown with headers (##), bullet points, key takeaways, and bold for key terms. Include a TL;DR at the top.\n\nContent:\n' + combinedText,
       mindmap: 'Extract the key concepts and relationships from the following content. Create a hierarchical outline with main topics, subtopics, and connections. Use markdown headers and nested lists.\n\nContent:\n' + combinedText,
       timeline: 'Create a chronological timeline of events, milestones, or steps from the following content. Format as a numbered list with dates/stages and descriptions.\n\nContent:\n' + combinedText,
-      practice: 'Create an interactive Coconote Study Run Game & Practice Test with 10 questions: mix of multiple-choice, true/false, and short-answer questions. Include an answer key at the end.\n\nContent:\n' + combinedText,
+      practice: 'Create an interactive KiddieNotes Study Run Game & Practice Test with 10 questions: mix of multiple-choice, true/false, and short-answer questions. Include an answer key at the end.\n\nContent:\n' + combinedText,
       explain: 'Explain the following content as if I am 5 years old. Use simple analogies, everyday examples, and fun language. Make it engaging and easy to understand.\n\nContent:\n' + combinedText,
     };
 

@@ -11,6 +11,7 @@
     }
   },
   "rewrites": [
+    { "source": "/coconote", "destination": "/kiddienotes" },
     { "source": "/api/chat", "destination": "/api/chat" },
     { "source": "/api/search", "destination": "/api/search" }
   ],

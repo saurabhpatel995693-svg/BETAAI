@@ -779,21 +779,26 @@ export default async function handler(req, res) {
   const clientCustomBase    = req.headers['x-custom-base'] || payload.customBase || '';
   const clientCustomModel   = req.headers['x-custom-model'] || payload.customModel || '';
   const clientGeminiKey     = req.headers['x-gemini-key'] || payload.geminiKey || '';
-  const clientGroqKey       = req.headers['x-groq-key'] || payload.groqKey || process.env.GROQ_KEY || process.env.GROK_KEY || '';
-  const clientGrokKey       = req.headers['x-grok-key'] || req.headers['x-xai-key'] || payload.grokKey || process.env.GROK_KEY || process.env.XAI_API_KEY || process.env.XAI_KEY || '';
+  const clientGroqKey = req.headers['x-groq-key'] || payload.groqKey || process.env.GROQ_KEY_1 || process.env.GROQ_KEY_2 || '';
+  const clientGrokKey       = req.headers['x-grok-key'] || req.headers['x-xai-key'] || payload.grokKey || '';
   const clientOpenRouterKey = req.headers['x-openrouter-key'] || payload.openrouterKey || process.env.OPENROUTER_KEY || '';
-  const clientHfKey         = req.headers['x-hf-key'] || payload.hfKey || process.env.HF_TOKEN || process.env.HUGGINGFACE_KEY || '';
+  const clientHfKey         = req.headers['x-hf-key'] || payload.hfKey || '';
 
-  // ── Server-side environment variables ─────────────────────────────────
-  const ENV_GEMINI_KEY      = process.env.GEMINI_KEY || process.env.GEMINI_API_KEY || '';
-
-  // ── 7 GEMINI KEYS POOL (Includes Client Key + Server Env Keys) ─
+  // ── 6 GEMINI KEYS POOL (Includes Client Key + Server Env Keys) ─
   const GEMINI_KEYS = [
     clientGeminiKey,
     process.env.GEMINI_KEY_1, process.env.GEMINI_KEY_2, process.env.GEMINI_KEY_3,
     process.env.GEMINI_KEY_4, process.env.GEMINI_KEY_5, process.env.GEMINI_KEY_6,
-    ENV_GEMINI_KEY
   ].filter(Boolean);
+
+  // Build Gemini API targets from the key pool
+  const geminiTargets = GEMINI_KEYS.map((key, i) => ({
+    name: `Gemini-${i}`,
+    url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+    key,
+    model: 'gemini-2.0-flash',
+    timeout: 8000
+  }));
 
   // ── 1. Unified System Prompt Enforcer ─────────────────────────────────
   const SHESHAAI_SYSTEM_PROMPT = `You are SHESHAAI, an elite multi-modal AI platform developed by SAURABH.
@@ -802,6 +807,13 @@ Rules & Behavior:
 - Tone: Highly helpful, intelligent, creative, polite, and precise.
 - Format: Use standard markdown with clean headers, bullet points, and code highlights.
 - Coding Tasks: Provide 100% production-ready, complete code blocks with no missing lines or placeholders.`;
+
+  // ── 1b. Frontend / Coding Quality System Prompt (always injected for coding tasks) ──
+  const FRONTEND_ENGINEER_SYSTEM_PROMPT = `You are a Principal-Level Frontend Engineer. When a coding/app request is made, ALWAYS follow these rules:
+
+DESIGN: Modern premium UI with soft shadows, rounded corners, consistent theme (dark bg = always set light/white text explicitly, never rely on browser-default text color), clean typography, hover/focus states, smooth transitions (200-300ms), mobile-responsive, use icons where appropriate.
+
+FUNCTIONALITY: Implement the FULL feature (no TODO/incomplete code), handle empty-states with friendly messages, provide basic error/validation handling, include counter/status display for list-based apps, load ONLY ONE CSS framework (never both a link-tag AND a CDN-script for the same framework), ensure code is fully self-contained and working.`;
 
   // ── 2. Message Normalization (OpenAI-standard internal schema) ──────
   let normalizedMessages = messages.map(m => ({
@@ -822,9 +834,6 @@ Rules & Behavior:
 
   if (process.env.NVIDIA_KEY_1) {
     codingProviders.push({ name: 'NVIDIA-1', url: 'https://integrate.api.nvidia.com/v1/chat/completions', key: process.env.NVIDIA_KEY_1, model: 'nvidia/llama-3.1-nemotron-70b-instruct', timeout: 8000 });
-  }
-  if (process.env.NVIDIA_KEY_2) {
-    codingProviders.push({ name: 'NVIDIA-2', url: 'https://integrate.api.nvidia.com/v1/chat/completions', key: process.env.NVIDIA_KEY_2, model: 'nvidia/llama-3.1-nemotron-70b-instruct', timeout: 8000 });
   }
   if (process.env.GROQ_1) {
     codingProviders.push({ name: 'Groq-1', url: 'https://api.groq.com/openai/v1/chat/completions', key: process.env.GROQ_1, model: 'llama-3.3-70b-versatile', timeout: 8000 });
@@ -891,16 +900,16 @@ Rules & Behavior:
     switch (complexity) {
       case 'Full application':
         maxTokens = payload.max_tokens || 8000;
-        complexityInstruction = 'Instruction: Generate a COMPLETE, feature-rich FULL APPLICATION with all CRUD operations, comprehensive error handling, validation, logging, configuration management, and production-ready polish. This is NOT a minimal example or snippet — include database models, API routes, middleware, authentication, tests, and documentation structure.';
+        complexityInstruction = 'INSTRUCTION: This is a FULL APPLICATION request. CRITICAL: Generate a VERY LARGE, feature-rich application (150+ lines minimum). Include: multiple views/sections with navigation, search/filter/sort functionality, animations and transitions, error states and empty states with friendly messages, input validation, responsive mobile-first design, dark/light theme toggle or persistent data (localStorage). Add extra polish features beyond the basic requirement. Structure as a complete, deployable production app. DO NOT generate a minimal snippet or a medium-sized module — this must be a full, comprehensive application.';
         break;
       case 'Complete module':
         maxTokens = payload.max_tokens || 5000;
-        complexityInstruction = 'Instruction: Generate a COMPLETE, well-structured MODULE with proper separation of concerns, error handling, input validation, and documentation. Include class/function definitions, exports, and usage examples.';
+        complexityInstruction = 'INSTRUCTION: This is a COMPLETE MODULE request. Generate a well-structured module with: all core features working end-to-end, proper error handling and input validation, multiple UI states (loading, empty, error, success, edge cases), documentation-style comments for public functions, and clean separation of concerns. Medium length — fully functional but focused on core requirements without extra peripheral features.';
         break;
       case 'Simple snippet':
       default:
         maxTokens = payload.max_tokens || 2048;
-        complexityInstruction = 'Instruction: Generate a concise, minimal SNIPPET demonstrating the core concept. Focus on clarity and brevity — no boilerplate, no extra files.';
+        complexityInstruction = 'INSTRUCTION: This is a SIMPLE SNIPPET request. Generate a concise, minimal snippet (under 80 lines preferred) demonstrating ONE specific concept or technique. Focus on clarity and brevity — minimal boilerplate, no extra features, no peripheral functionality. Just the essential working code for a single purpose.';
         break;
     }
   } else {
@@ -909,6 +918,11 @@ Rules & Behavior:
   
   if (complexityInstruction) {
     normalizedMessages.push({ role: 'system', content: complexityInstruction });
+  }
+
+  // Inject Frontend Engineer quality prompt for coding tasks
+  if (isCodingTask) {
+    normalizedMessages.push({ role: 'system', content: FRONTEND_ENGINEER_SYSTEM_PROMPT });
   }
 
   const logPrefix = isCodingTask ? '[CODING FAILOVER]' : '[BETAAI]';

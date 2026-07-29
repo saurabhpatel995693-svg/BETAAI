@@ -187,7 +187,7 @@ const {
       <!-- Footer Bar -->
       <footer class="mt-auto pt-16 pb-8 border-t border-hairline flex flex-col md:flex-row items-center justify-between gap-4 text-caption text-mute font-mono">
         <div>
-          <span>&copy; 2026 JustTall. Science-backed growth optimization. Inspired by Vercel Design.</span>
+          <span>&copy; 2026 SHESHAAI. Made by SAURABH.</span>
         </div>
         <div class="flex items-center gap-4">
           <a href="#" class="hover:text-ink transition-colors">Methodology</a>
@@ -226,7 +226,7 @@ const {
         </div>
         
         <p class="text-body-sm text-body leading-relaxed">
-          Enter your <strong class="text-ink">Google Gemini API Key</strong> below to activate personalized wellness, exercise coaching, and nutritional advice.
+          Enter your <strong class="text-ink">Google Gemini API Key</strong> to unlock unlimited KiddieNotes generation for your child's study packs.
         </p>
         
         <div class="flex flex-col gap-2">
@@ -272,8 +272,25 @@ const {
 
     <!-- Client-Side Key Management Script -->
     <script>
-      function initApiKeyStatus() {
-        const key = localStorage.getItem('GEMINI_API_KEY');
+      async function checkServerHealth() {
+        // Lightweight health check: POST to /api/chat with a minimal ping
+        // The server should respond even if it just falls back to built-in engine
+        try {
+          const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages: [{ role: 'user', content: 'ping' }], mode: 'general' })
+          });
+          // Any response (even 429 rate-limit or 200 OK) means server is reachable
+          return true;
+        } catch {
+          return false;
+        }
+      }
+
+      async function initApiKeyStatus() {
+        // Check ALL possible key storage locations (unified)
+        const key = localStorage.getItem('GEMINI_API_KEY') || localStorage.getItem('sheshaai_user_key') || localStorage.getItem('sheshaai_gemini_key') || '';
         const indicators = {
           ping: document.getElementById('api-indicator-ping'),
           dot: document.getElementById('api-indicator-dot'),
@@ -282,6 +299,7 @@ const {
         const keyInput = document.getElementById('gemini-key-input') as HTMLInputElement;
 
         if (key && key.trim().length > 0) {
+          // Custom key is set — engine is Active
           if (indicators.ping) indicators.ping.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75";
           if (indicators.dot) indicators.dot.className = "relative inline-flex rounded-full h-2 w-2 bg-emerald-500";
           if (indicators.text) {
@@ -289,6 +307,18 @@ const {
             indicators.text.className = "text-emerald-500 font-semibold";
           }
           if (keyInput) keyInput.value = key;
+          return;
+        }
+
+        // No custom key — check server health; server has its own key pool
+        const serverOnline = await checkServerHealth();
+        if (serverOnline) {
+          if (indicators.ping) indicators.ping.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75";
+          if (indicators.dot) indicators.dot.className = "relative inline-flex rounded-full h-2 w-2 bg-emerald-500";
+          if (indicators.text) {
+            indicators.text.textContent = "Online (Server Pool)";
+            indicators.text.className = "text-emerald-500 font-semibold";
+          }
         } else {
           if (indicators.ping) indicators.ping.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75";
           if (indicators.dot) indicators.dot.className = "relative inline-flex rounded-full h-2 w-2 bg-red-500";
@@ -296,8 +326,8 @@ const {
             indicators.text.textContent = "Offline";
             indicators.text.className = "text-red-500 font-semibold";
           }
-          if (keyInput) keyInput.value = "";
         }
+        if (keyInput) keyInput.value = "";
       }
 
       const trigger = document.getElementById('api-settings-trigger');
@@ -345,24 +375,24 @@ const {
       }
 
       if (saveBtn && keyInput) {
-        saveBtn.addEventListener('click', () => {
+        saveBtn.addEventListener('click', async () => {
           const val = keyInput.value.trim();
           if (val) {
             localStorage.setItem('GEMINI_API_KEY', val);
           } else {
             localStorage.removeItem('GEMINI_API_KEY');
           }
-          initApiKeyStatus();
+          await initApiKeyStatus();
           closeModal();
           window.dispatchEvent(new Event('api-key-updated'));
         });
       }
 
       if (clearBtn) {
-        clearBtn.addEventListener('click', () => {
+        clearBtn.addEventListener('click', async () => {
           localStorage.removeItem('GEMINI_API_KEY');
           if (keyInput) keyInput.value = "";
-          initApiKeyStatus();
+          await initApiKeyStatus();
           closeModal();
           window.dispatchEvent(new Event('api-key-updated'));
         });
@@ -388,8 +418,8 @@ const {
         });
       }
 
-      initApiKeyStatus();
-      document.addEventListener('astro:after-swap', initApiKeyStatus);
+      (async () => { await initApiKeyStatus(); })();
+      document.addEventListener('astro:after-swap', async () => { await initApiKeyStatus(); });
     </script>
   </body>
 </html>
