@@ -1766,6 +1766,7 @@ Provide the FULL, working code in a single code block tagged with the appropriat
     const res = await fetchWithFailover(async (config) => {
       return await fetchChatCompletion(config, {
         temperature: 0.3,
+        complexity: complexity,
         messages: [{role:'system',content:systemPrompt},{role:'user',content:prompt}]
       });
     }, 'code');

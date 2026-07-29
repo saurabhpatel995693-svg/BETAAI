@@ -884,8 +884,32 @@ Rules & Behavior:
   }
 
   // ── 4. Attempt each target (per-provider timeout: 8s via AbortController) ──
-  const targetTimeout = isCodingTask ? 14000 : 10000;
-  const maxTokens = payload.max_tokens || (isCodingTask ? 8192 : 4096);
+  const complexity = payload.complexity || 'Simple snippet';
+  let maxTokens, complexityInstruction = '';
+  
+  if (isCodingTask) {
+    switch (complexity) {
+      case 'Full application':
+        maxTokens = payload.max_tokens || 8000;
+        complexityInstruction = 'Instruction: Generate a COMPLETE, feature-rich FULL APPLICATION with all CRUD operations, comprehensive error handling, validation, logging, configuration management, and production-ready polish. This is NOT a minimal example or snippet — include database models, API routes, middleware, authentication, tests, and documentation structure.';
+        break;
+      case 'Complete module':
+        maxTokens = payload.max_tokens || 5000;
+        complexityInstruction = 'Instruction: Generate a COMPLETE, well-structured MODULE with proper separation of concerns, error handling, input validation, and documentation. Include class/function definitions, exports, and usage examples.';
+        break;
+      case 'Simple snippet':
+      default:
+        maxTokens = payload.max_tokens || 2048;
+        complexityInstruction = 'Instruction: Generate a concise, minimal SNIPPET demonstrating the core concept. Focus on clarity and brevity — no boilerplate, no extra files.';
+        break;
+    }
+  } else {
+    maxTokens = payload.max_tokens || 4096;
+  }
+  
+  if (complexityInstruction) {
+    normalizedMessages.push({ role: 'system', content: complexityInstruction });
+  }
 
   const logPrefix = isCodingTask ? '[CODING FAILOVER]' : '[BETAAI]';
   for (const target of targets) {
