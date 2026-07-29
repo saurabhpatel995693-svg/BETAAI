@@ -101,13 +101,13 @@ const server = http.createServer(async (req, res) => {
 
       if (customKey.startsWith('AIza')) {
         if (!baseUrl) baseUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
-        if (!targetModel) targetModel = 'gemini-1.5-flash';
+        if (!targetModel) targetModel = 'gemini-flash-latest';
       } else if (customKey.startsWith('gsk_')) {
         if (!baseUrl) baseUrl = 'https://api.groq.com/openai/v1/chat/completions';
         if (!targetModel) targetModel = 'llama-3.3-70b-versatile';
       } else if (customKey.startsWith('xai-')) {
         if (!baseUrl) baseUrl = 'https://api.x.ai/v1/chat/completions';
-        if (!targetModel) targetModel = 'grok-3-mini';
+        if (!targetModel) targetModel = 'grok-2-latest';
       } else if (customKey.startsWith('sk-proj-') || (baseUrl && baseUrl.includes('openai.com'))) {
         if (!baseUrl) baseUrl = 'https://api.openai.com/v1/chat/completions';
         if (!targetModel) {
@@ -138,7 +138,7 @@ const server = http.createServer(async (req, res) => {
         name: 'Gemini-Flash-Primary',
         url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
         key: geminiKey,
-        model: 'gemini-1.5-flash'
+        model: 'gemini-flash-latest'
       });
     }
 

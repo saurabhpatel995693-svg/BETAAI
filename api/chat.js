@@ -778,14 +778,18 @@ export default async function handler(req, res) {
   const clientCustomKey     = req.headers['x-custom-key'] || payload.customKey || '';
   const clientCustomBase    = req.headers['x-custom-base'] || payload.customBase || '';
   const clientCustomModel   = req.headers['x-custom-model'] || payload.customModel || '';
-  const clientGroqKey       = req.headers['x-groq-key'] || process.env.GROQ_KEY || process.env.GROK_KEY || '';
-  const clientOpenRouterKey = req.headers['x-openrouter-key'] || process.env.OPENROUTER_KEY || '';
+  const clientGeminiKey     = req.headers['x-gemini-key'] || payload.geminiKey || '';
+  const clientGroqKey       = req.headers['x-groq-key'] || payload.groqKey || process.env.GROQ_KEY || process.env.GROK_KEY || '';
+  const clientGrokKey       = req.headers['x-grok-key'] || req.headers['x-xai-key'] || payload.grokKey || process.env.GROK_KEY || process.env.XAI_API_KEY || '';
+  const clientOpenRouterKey = req.headers['x-openrouter-key'] || payload.openrouterKey || process.env.OPENROUTER_KEY || '';
+  const clientHfKey         = req.headers['x-hf-key'] || payload.hfKey || process.env.HF_TOKEN || process.env.HUGGINGFACE_KEY || '';
 
   // ── Server-side environment variables ─────────────────────────────────
   const ENV_GEMINI_KEY      = process.env.GEMINI_KEY || process.env.GEMINI_API_KEY || '';
 
-  // ── 6 GEMINI KEYS POOL (Primary Engine from Environment Variables) ─
+  // ── 7 GEMINI KEYS POOL (Includes Client Key + Server Env Keys) ─
   const GEMINI_KEYS = [
+    clientGeminiKey,
     process.env.GEMINI_KEY_1, process.env.GEMINI_KEY_2, process.env.GEMINI_KEY_3,
     process.env.GEMINI_KEY_4, process.env.GEMINI_KEY_5, process.env.GEMINI_KEY_6,
     ENV_GEMINI_KEY
@@ -812,25 +816,33 @@ Rules & Behavior:
 
   // Detect query capability requirement
   const fullTextContext = normalizedMessages.map(m => m.content).join('\n').toLowerCase();
-  const isCodingTask = fullTextContext.includes('code') || fullTextContext.includes('function') || fullTextContext.includes('javascript') || fullTextContext.includes('html') || fullTextContext.includes('css') || fullTextContext.includes('build') || fullTextContext.includes('create app') || fullTextContext.includes('game');
+  const isCodingTask = payload.mode === 'code' || fullTextContext.includes('code') || fullTextContext.includes('function') || fullTextContext.includes('javascript') || fullTextContext.includes('html') || fullTextContext.includes('css') || fullTextContext.includes('build') || fullTextContext.includes('create app') || fullTextContext.includes('game');
 
   // ── 3. Capability-based & Sticky Target Ordering ────────────────────────
-  // Order targets based on task capability (DeepSeek/Llama preferred for code, Gemini for chat)
+  // Order targets based on task capability (DeepSeek/Llama/Grok preferred for code, Gemini for chat)
   const geminiTargets = GEMINI_KEYS.map((key, idx) => ({
     name: `Gemini-Key-${idx + 1}`,
     url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
     key: key,
-    model: 'gemini-1.5-flash'
+    model: 'gemini-flash-latest'
   }));
 
   const groqTargets = clientGroqKey ? [
     { name: 'Groq-Llama-3.3-70B', url: 'https://api.groq.com/openai/v1/chat/completions', key: clientGroqKey, model: 'llama-3.3-70b-versatile' },
-    { name: 'Groq-Llama-3-8B', url: 'https://api.groq.com/openai/v1/chat/completions', key: clientGroqKey, model: 'llama3-8b-8192' }
+    { name: 'Groq-Llama-3.1-8B', url: 'https://api.groq.com/openai/v1/chat/completions', key: clientGroqKey, model: 'llama-3.1-8b-instant' }
+  ] : [];
+
+  const grokTargets = clientGrokKey ? [
+    { name: 'xAI-Grok-2', url: 'https://api.x.ai/v1/chat/completions', key: clientGrokKey, model: 'grok-2-latest' }
   ] : [];
 
   const openRouterTargets = clientOpenRouterKey ? [
     { name: 'OpenRouter-DeepSeek', url: 'https://openrouter.ai/api/v1/chat/completions', key: clientOpenRouterKey, model: 'deepseek/deepseek-r1:free', headers: { 'HTTP-Referer': 'https://sheshaai.vercel.app', 'X-Title': 'SHESHAAI' } },
     { name: 'OpenRouter-Llama', url: 'https://openrouter.ai/api/v1/chat/completions', key: clientOpenRouterKey, model: 'meta-llama/llama-3.3-70b-instruct:free', headers: { 'HTTP-Referer': 'https://sheshaai.vercel.app', 'X-Title': 'SHESHAAI' } }
+  ] : [];
+
+  const hfTargets = clientHfKey ? [
+    { name: 'HuggingFace-Qwen', url: 'https://router.huggingface.co/v1/chat/completions', key: clientHfKey, model: 'Qwen/Qwen2.5-72B-Instruct' }
   ] : [];
 
   let targets = [];
@@ -840,7 +852,7 @@ Rules & Behavior:
     let baseUrl = clientCustomBase ? clientCustomBase.trim().replace(/\/$/, '') : '';
     let targetModel = clientCustomModel ? clientCustomModel.trim() : '';
     if (!baseUrl) baseUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
-    if (!targetModel) targetModel = 'gemini-1.5-flash';
+    if (!targetModel) targetModel = 'gemini-flash-latest';
     if (baseUrl && !baseUrl.endsWith('/chat/completions') && !baseUrl.includes('/generateContent')) {
       baseUrl += '/chat/completions';
     }
@@ -848,12 +860,12 @@ Rules & Behavior:
   }
 
   // Task-capability optimized ordering:
-  if (isCodingTask && (openRouterTargets.length || groqTargets.length)) {
-    // For coding tasks, route to DeepSeek/Llama first if available, then Gemini Pool
-    targets.push(...openRouterTargets, ...groqTargets, ...geminiTargets);
+  if (isCodingTask && (openRouterTargets.length || groqTargets.length || grokTargets.length)) {
+    // For coding tasks, route to DeepSeek/Llama/Grok first if available, then Gemini Pool
+    targets.push(...openRouterTargets, ...groqTargets, ...grokTargets, ...hfTargets, ...geminiTargets);
   } else {
-    // Standard chat/notebooks: Gemini Pool first, then Groq & OpenRouter
-    targets.push(...geminiTargets, ...groqTargets, ...openRouterTargets);
+    // Standard chat/notebooks: Gemini Pool first, then Groq, Grok, OpenRouter & HF
+    targets.push(...geminiTargets, ...groqTargets, ...grokTargets, ...openRouterTargets, ...hfTargets);
   }
 
   // Fast failover: if no valid targets configured, use Pollinations AI directly
@@ -861,7 +873,10 @@ Rules & Behavior:
     targets.push({ name: 'Pollinations-Default', url: 'https://text.pollinations.ai/openai', key: '', model: 'openai' });
   }
 
-  // ── 4. Attempt each keyed target in order (Fast Failover: 6s timeout per target) ──
+  // ── 4. Attempt each keyed target in order (Timeout: 14s for code, 10s for chat) ──
+  const targetTimeout = isCodingTask ? 14000 : 10000;
+  const maxTokens = payload.max_tokens || (isCodingTask ? 8192 : 4096);
+
   for (const target of targets) {
     try {
       const headers = {
@@ -872,13 +887,13 @@ Rules & Behavior:
 
       const body = JSON.stringify({
         messages: normalizedMessages,
-        model: target.model || 'gemini-1.5-flash',
+        model: target.model || 'gemini-flash-latest',
         temperature: payload.temperature || 0.7,
-        max_tokens: payload.max_tokens || 4096,
+        max_tokens: maxTokens,
         stream: wantsStream
       });
 
-      const apiRes = await fetchWithTimeout(target.url, { method: 'POST', headers, body }, 6000);
+      const apiRes = await fetchWithTimeout(target.url, { method: 'POST', headers, body }, targetTimeout);
 
       if (!apiRes.ok) {
         const txt = await apiRes.text().catch(() => '');

@@ -200,6 +200,10 @@ import '../styles/global.css';
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
         Notebooks
       </button>
+      <a href="/coconote" class="w-full h-9 px-3 rounded-sm text-[13px] font-semibold flex items-center gap-2 text-indigo-600 bg-indigo-50 border border-indigo-200 transition hover:bg-indigo-100">
+        <span class="text-sm">🎒</span>
+        KiddieNotes (K-12)
+      </a>
       <button data-mode="search" class="mode-btn w-full h-9 px-3 rounded-sm text-[13px] font-medium flex items-center gap-2 text-themed-body transition hover-card2">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
         Web Search
@@ -509,15 +513,22 @@ import '../styles/global.css';
 
           <!-- Actions -->
           <div id="nb-actions" class="hidden">
-            <div class="text-[11px] font-mono text-themed-mute uppercase tracking-wide mb-2">Generate from sources</div>
+            <div class="flex items-center justify-between mb-2">
+              <div class="text-[11px] font-mono text-cyan uppercase tracking-wide flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-cyan pulse-dot"></span>
+                <span>⚡ Coconote AI Study Engine</span>
+              </div>
+              <span class="text-[10px] font-mono text-themed-mute">Auto-transcripts & Study Packs</span>
+            </div>
             <div class="flex items-center gap-2 flex-wrap mb-6">
-              <button data-action="quiz" class="nb-action-btn h-9 px-4 rounded-pill border border-themed text-sm font-medium text-themed-ink hover-card2 transition shadow-level-2">📝 Quiz</button>
+              <button data-action="quiz" class="nb-action-btn h-9 px-4 rounded-pill border border-themed text-sm font-medium text-themed-ink hover-card2 transition shadow-level-2">📝 Quiz & Test</button>
               <button data-action="flashcard" class="nb-action-btn h-9 px-4 rounded-pill border border-themed text-sm font-medium text-themed-ink hover-card2 transition shadow-level-2">🃏 Flashcards</button>
-              <button data-action="summary" class="nb-action-btn h-9 px-4 rounded-pill border border-themed text-sm font-medium text-themed-ink hover-card2 transition shadow-level-2">📋 Summary</button>
+              <button data-action="podcast" class="nb-action-btn h-9 px-4 rounded-pill border border-themed text-sm font-medium text-themed-ink hover-card2 transition shadow-level-2 bg-gradient-to-r from-violet/10 to-cyan/10">🎙️ AI Audio Podcast</button>
+              <button data-action="summary" class="nb-action-btn h-9 px-4 rounded-pill border border-themed text-sm font-medium text-themed-ink hover-card2 transition shadow-level-2">📋 Smart Notes & Transcript</button>
               <button data-action="mindmap" class="nb-action-btn h-9 px-4 rounded-pill border border-themed text-sm font-medium text-themed-ink hover-card2 transition shadow-level-2">🧠 Key Concepts</button>
-              <button data-action="timeline" class="nb-action-btn h-9 px-4 rounded-pill border border-themed text-sm font-medium text-themed-ink hover-card2 transition shadow-level-2">📅 Timeline</button>
-              <button data-action="practice" class="nb-action-btn h-9 px-4 rounded-pill border border-themed text-sm font-medium text-themed-ink hover-card2 transition shadow-level-2">🎯 Practice Test</button>
-              <button data-action="explain" class="nb-action-btn h-9 px-4 rounded-pill border border-themed text-sm font-medium text-themed-ink hover-card2 transition shadow-level-2">💡 ELI5</button>
+              <button data-action="timeline" class="nb-action-btn h-9 px-4 rounded-pill border border-themed text-sm font-medium text-themed-ink hover-card2 transition shadow-level-2">📅 Lecture Timeline</button>
+              <button data-action="practice" class="nb-action-btn h-9 px-4 rounded-pill border border-themed text-sm font-medium text-themed-ink hover-card2 transition shadow-level-2">🎯 Study Run Game</button>
+              <button data-action="explain" class="nb-action-btn h-9 px-4 rounded-pill border border-themed text-sm font-medium text-themed-ink hover-card2 transition shadow-level-2">💡 ELI5 Mode</button>
             </div>
           </div>
           <div id="nb-output" class="space-y-6"></div>
@@ -2045,10 +2056,11 @@ document.querySelectorAll('.nb-action-btn').forEach(btn => {
     const prompts = {
       quiz: 'Based on the following content, create a quiz with 8 multiple-choice questions. Format each question with A/B/C/D options. At the end, provide an ANSWER KEY. Make questions progressively harder.\n\nContent:\n' + combinedText,
       flashcard: 'Based on the following content, create 10 flashcards. Output as a JSON array: [{"front":"question","back":"answer"}]. ONLY output valid JSON, no other text.\n\nContent:\n' + combinedText,
-      summary: 'Create a comprehensive, well-structured summary of the following content. Use markdown with headers (##), bullet points, and bold for key terms. Include a TL;DR at the top.\n\nContent:\n' + combinedText,
+      podcast: 'Transform the following content into an entertaining 2-person AI Podcast Script between Alex (Host) and Dr. Taylor (Expert). Highlight the key insights, analogies, and main takeaways in a conversational style.\n\nContent:\n' + combinedText,
+      summary: 'Create a comprehensive, well-structured Coconote Smart Summary & Transcript of the following content. Use markdown with headers (##), bullet points, key takeaways, and bold for key terms. Include a TL;DR at the top.\n\nContent:\n' + combinedText,
       mindmap: 'Extract the key concepts and relationships from the following content. Create a hierarchical outline with main topics, subtopics, and connections. Use markdown headers and nested lists.\n\nContent:\n' + combinedText,
       timeline: 'Create a chronological timeline of events, milestones, or steps from the following content. Format as a numbered list with dates/stages and descriptions.\n\nContent:\n' + combinedText,
-      practice: 'Create a practice test based on the following content with 10 questions: mix of multiple-choice, true/false, and short-answer questions. Include an answer key at the end.\n\nContent:\n' + combinedText,
+      practice: 'Create an interactive Coconote Study Run Game & Practice Test with 10 questions: mix of multiple-choice, true/false, and short-answer questions. Include an answer key at the end.\n\nContent:\n' + combinedText,
       explain: 'Explain the following content as if I am 5 years old. Use simple analogies, everyday examples, and fun language. Make it engaging and easy to understand.\n\nContent:\n' + combinedText,
     };
 
@@ -2091,35 +2103,32 @@ async function performLiveWebSearch(query) {
   let resultsText = '';
   const cleanQ = encodeURIComponent(query);
 
-  // 1. Live Web Search & News via DuckDuckGo JSON API
+  // 1. Live Web Search via serverless /api/search (Tavily/Serper/Brave)
   try {
-    const ddgUrl = `https://api.duckduckgo.com/?q=${cleanQ}&format=json&no_html=1&skip_disambig=1`;
-    const ddgRes = await fetch(ddgUrl);
-    if (ddgRes.ok) {
-      const ddgData = await ddgRes.json();
-      if (ddgData.AbstractText) {
-        resultsText += `[Live Abstract]\nHeading: ${ddgData.Heading}\nSummary: ${ddgData.AbstractText}\nURL: ${ddgData.AbstractURL}\n\n`;
-      }
-      if (ddgData.RelatedTopics && ddgData.RelatedTopics.length > 0) {
-        resultsText += `[Live News & Related Topics]\n`;
-        ddgData.RelatedTopics.slice(0, 5).forEach(t => {
-          if (t.Text && t.FirstURL) resultsText += `- ${t.Text} (URL: ${t.FirstURL})\n`;
-        });
+    const searchRes = await fetch(`/api/search?q=${cleanQ}`);
+    if (searchRes.ok) {
+      const searchData = await searchRes.json();
+      if (searchData.formattedText) {
+        resultsText = searchData.formattedText;
       }
     }
-  } catch(e) {}
+  } catch(e) {
+    console.warn('[CLIENT SEARCH] Server search endpoint fallback:', e.message);
+  }
 
-  // 2. Live Wikipedia Summary
-  try {
-    const wikiUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${cleanQ}`;
-    const wikiRes = await fetch(wikiUrl);
-    if (wikiRes.ok) {
-      const wikiData = await wikiRes.json();
-      if (wikiData.extract) {
-        resultsText += `\n[Live Knowledge Base]\nTitle: ${wikiData.title}\nExtract: ${wikiData.extract}\nURL: ${wikiData.content_urls?.desktop?.page || ''}\n`;
+  // 2. Client-side fallback if server search was empty
+  if (!resultsText) {
+    try {
+      const ddgUrl = `https://api.duckduckgo.com/?q=${cleanQ}&format=json&no_html=1&skip_disambig=1`;
+      const ddgRes = await fetch(ddgUrl);
+      if (ddgRes.ok) {
+        const ddgData = await ddgRes.json();
+        if (ddgData.AbstractText) {
+          resultsText += `[Live Abstract]\nHeading: ${ddgData.Heading}\nSummary: ${ddgData.AbstractText}\nURL: ${ddgData.AbstractURL}\n\n`;
+        }
       }
-    }
-  } catch(e) {}
+    } catch(e) {}
+  }
 
   // 3. Live Video Search Integration (DuckDuckGo Video / YouTube Direct Embed Links)
   try {

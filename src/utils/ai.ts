@@ -19,7 +19,7 @@ export async function askGemini(prompt: string, apiKey: string): Promise<string>
     throw new Error("Gemini API Key is missing. Please click the 'AI Key' button in the navbar to configure it.");
   }
 
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
 
   const response = await fetch(endpoint, {
     method: "POST",

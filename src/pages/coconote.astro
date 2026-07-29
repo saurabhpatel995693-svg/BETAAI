@@ -1,0 +1,501 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="KiddieNotes AI — Coconote for K-12 Students (Nursery to 12th)" wide={true} noSidebars={true}>
+  <!-- Top Hero Bar (Vercel stark aesthetic according to DESIGN.md) -->
+  <section class="relative pt-16 pb-12 overflow-hidden border-b border-hairline bg-canvas">
+    <div class="max-w-[1200px] mx-auto px-4 text-center relative z-10">
+      
+      <!-- Mesh Gradient Glow Tag -->
+      <div class="inline-flex items-center gap-2 px-3.5 py-1 bg-canvas-soft border border-hairline rounded-full shadow-level-2 mb-4">
+        <span class="w-2 h-2 rounded-full bg-cyan animate-pulse"></span>
+        <span class="text-caption-mono text-mute font-semibold uppercase tracking-wider">Coconote Engine for Nursery to 12th Class</span>
+      </div>
+
+      <h1 class="text-display-xl md:text-[52px] leading-[1.05] font-semibold text-ink tracking-[-2.4px] mb-4">
+        Turn YouTube & Lectures into <span class="bg-gradient-to-r from-violet via-pink-500 to-cyan bg-clip-text text-transparent">KiddieNotes AI</span>.
+      </h1>
+      <p class="text-body-lg text-body max-w-2xl mx-auto mb-8">
+        Convert school video links and classroom voice audio into easy bullet notes, interactive quizzes, flashcard packs, and study games.
+      </p>
+
+      <!-- Grade Filter Chips -->
+      <div class="flex flex-wrap justify-center gap-2">
+        <button class="grade-chip px-4 py-1.5 rounded-pill text-xs font-mono font-medium bg-primary text-on-primary border border-primary transition shadow-level-2 active-grade" data-grade="all">
+          🌟 All Grades (Nursery - 12th)
+        </button>
+        <button class="grade-chip px-4 py-1.5 rounded-pill text-xs font-mono font-medium bg-canvas-soft text-body border border-hairline hover:border-hairline-strong transition" data-grade="nursery-5">
+          🧸 Nursery to 5th Class
+        </button>
+        <button class="grade-chip px-4 py-1.5 rounded-pill text-xs font-mono font-medium bg-canvas-soft text-body border border-hairline hover:border-hairline-strong transition" data-grade="6-10">
+          📚 6th to 10th Class
+        </button>
+        <button class="grade-chip px-4 py-1.5 rounded-pill text-xs font-mono font-medium bg-canvas-soft text-body border border-hairline hover:border-hairline-strong transition" data-grade="11-12">
+          🎓 11th & 12th Class
+        </button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Interactive App Workplace -->
+  <section class="max-w-[1200px] mx-auto px-4 py-10">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      
+      <!-- LEFT PANEL: Inputs (5 cols) -->
+      <div class="lg:col-span-5 flex flex-col gap-6">
+        
+        <!-- Input 1: YouTube & Voice Audio -->
+        <div class="bg-canvas p-6 rounded-lg border border-hairline shadow-level-3">
+          <div class="flex items-center gap-2 mb-4">
+            <span class="w-7 h-7 rounded bg-primary text-on-primary font-mono text-xs flex items-center justify-center font-bold">1</span>
+            <div>
+              <h2 class="text-display-sm text-ink text-base">YouTube or Class Audio</h2>
+              <p class="text-caption-mono text-mute">Paste video link or record teacher lecture</p>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <div>
+              <label class="block text-caption-mono text-ink font-semibold mb-1">YouTube URL / Video Link</label>
+              <input 
+                type="url" 
+                id="yt-url-input" 
+                placeholder="https://youtu.be/E_4gRy4O03w" 
+                class="w-full px-3 py-2 text-xs font-mono bg-canvas-soft border border-hairline rounded-sm text-ink focus:outline-none focus:border-link transition"
+                value="https://youtu.be/E_4gRy4O03w"
+              />
+            </div>
+
+            <!-- YouTube Presets -->
+            <div>
+              <span class="block text-[10px] font-mono text-mute uppercase tracking-wider mb-2">Try Kid Study Demos:</span>
+              <div class="flex flex-wrap gap-2">
+                <button class="demo-btn text-[11px] font-mono px-2.5 py-1 bg-canvas-soft border border-hairline rounded text-ink hover:bg-canvas-soft-2 transition" data-url="https://youtu.be/E_4gRy4O03w" data-topic="Coconote AI Study Demo">
+                  📹 YT Coconote Demo
+                </button>
+                <button class="demo-btn text-[11px] font-mono px-2.5 py-1 bg-canvas-soft border border-hairline rounded text-ink hover:bg-canvas-soft-2 transition" data-url="https://youtube.com/watch?v=solar_system" data-topic="Solar System & Planets (Class 4-8)">
+                  🪐 Solar System
+                </button>
+                <button class="demo-btn text-[11px] font-mono px-2.5 py-1 bg-canvas-soft border border-hairline rounded text-ink hover:bg-canvas-soft-2 transition" data-url="https://youtube.com/watch?v=photosynthesis" data-topic="Photosynthesis Science (Class 9-10)">
+                  🌱 Photosynthesis
+                </button>
+                <button class="demo-btn text-[11px] font-mono px-2.5 py-1 bg-canvas-soft border border-hairline rounded text-ink hover:bg-canvas-soft-2 transition" data-url="https://youtube.com/watch?v=calculus_basics" data-topic="Calculus & Physics (Class 11-12)">
+                  📐 Math/Physics 12th
+                </button>
+              </div>
+            </div>
+
+            <!-- Audio Recording -->
+            <div class="pt-2 border-t border-hairline">
+              <label class="block text-caption-mono text-ink font-semibold mb-1">Live Classroom Microphone</label>
+              <button id="record-mic-btn" class="w-full py-2 px-3 bg-error text-white rounded-sm text-xs font-mono font-medium flex items-center justify-center gap-2 hover:bg-error-deep transition shadow-level-2">
+                <span id="mic-icon">🎙️</span>
+                <span id="mic-text">Start Classroom Voice Recording</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input 2: Output Selector -->
+        <div class="bg-canvas p-6 rounded-lg border border-hairline shadow-level-3">
+          <div class="flex items-center gap-2 mb-4">
+            <span class="w-7 h-7 rounded bg-primary text-on-primary font-mono text-xs flex items-center justify-center font-bold">2</span>
+            <div>
+              <h2 class="text-display-sm text-ink text-base">Select Study Format</h2>
+              <p class="text-caption-mono text-mute">Pick what KiddieNotes AI should generate</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 mb-4">
+            <button class="mode-select-btn p-3 bg-primary text-on-primary rounded-sm text-left border border-primary transition shadow-level-2 font-medium text-xs flex flex-col gap-1 active-mode" data-type="notes">
+              <span class="text-base">📋</span>
+              <span>Easy Kid Notes</span>
+            </button>
+            <button class="mode-select-btn p-3 bg-canvas-soft text-ink rounded-sm text-left border border-hairline hover:border-hairline-strong transition font-medium text-xs flex flex-col gap-1" data-type="quiz">
+              <span class="text-base">📝</span>
+              <span>Interactive Quiz</span>
+            </button>
+            <button class="mode-select-btn p-3 bg-canvas-soft text-ink rounded-sm text-left border border-hairline hover:border-hairline-strong transition font-medium text-xs flex flex-col gap-1" data-type="flashcard">
+              <span class="text-base">🃏</span>
+              <span>Flashcard Deck</span>
+            </button>
+            <button class="mode-select-btn p-3 bg-canvas-soft text-ink rounded-sm text-left border border-hairline hover:border-hairline-strong transition font-medium text-xs flex flex-col gap-1" data-type="game">
+              <span class="text-base">🏃</span>
+              <span>Study Run Game</span>
+            </button>
+          </div>
+
+          <div class="mb-4">
+            <label class="block text-caption-mono text-ink font-semibold mb-1">Class Grade Complexity</label>
+            <select id="tone-select" class="w-full px-3 py-2 bg-canvas-soft border border-hairline rounded-sm text-xs font-mono text-ink focus:outline-none">
+              <option value="nursery">🧸 Nursery / KG (Emoji & Simple Sentences)</option>
+              <option value="middle" selected>📚 Class 1st to 8th (Structured Bullet Points)</option>
+              <option value="high">🎓 Class 9th to 12th (Board Exam Formulas & Notes)</option>
+            </select>
+          </div>
+
+          <button id="generate-btn" class="w-full py-3 bg-primary text-on-primary rounded-pill text-xs font-mono font-semibold uppercase tracking-wider hover:bg-black transition shadow-level-4 flex items-center justify-center gap-2 cursor-pointer">
+            <span>⚡</span> Generate KiddieNotes
+          </button>
+        </div>
+
+      </div>
+
+      <!-- RIGHT PANEL: Display (7 cols) -->
+      <div class="lg:col-span-7 flex flex-col gap-6">
+        
+        <div class="bg-canvas p-6 rounded-lg border border-hairline shadow-level-3 min-h-[500px] flex flex-col">
+          
+          <div class="flex items-center justify-between border-b border-hairline pb-4 mb-4">
+            <div class="flex items-center gap-2">
+              <span id="output-badge-icon" class="text-lg">📋</span>
+              <h3 id="output-title" class="text-display-sm text-ink text-base">Generated Study Notes</h3>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="read-aloud-btn" class="px-3 py-1 bg-link-bg-soft text-link-deep rounded-sm text-xs font-mono font-semibold hover:bg-blue-200 transition">
+                🔊 Read Aloud
+              </button>
+              <button id="copy-btn" class="px-3 py-1 bg-canvas-soft text-ink border border-hairline rounded-sm text-xs font-mono font-semibold hover:bg-canvas-soft-2 transition">
+                📋 Copy
+              </button>
+            </div>
+          </div>
+
+          <!-- Dynamic Output View -->
+          <div id="output-content-box" class="flex-1">
+            
+            <!-- Default Idle State -->
+            <div id="default-preview" class="h-full flex flex-col items-center justify-center text-center p-8 border border-dashed border-hairline rounded-lg bg-canvas-soft">
+              <div class="w-14 h-14 rounded-lg bg-primary text-on-primary flex items-center justify-center text-2xl mb-3 shadow-level-2">
+                ✨
+              </div>
+              <h4 class="text-display-sm text-ink text-base mb-2">Ready to convert YouTube to Notes!</h4>
+              <p class="text-body-sm text-body max-w-sm mb-4">
+                Click "Generate KiddieNotes" to transform your video link into active study materials for Nursery - 12th class kids.
+              </p>
+            </div>
+
+            <!-- 1. Notes View -->
+            <div id="notes-view" class="hidden space-y-4">
+              <div class="p-4 bg-canvas-soft border border-hairline rounded-md">
+                <h4 class="text-body-sm-strong font-semibold text-ink mb-1 flex items-center justify-between">
+                  <span id="notes-topic-heading">📌 Coconote AI Study Notes (K-12 Edition)</span>
+                  <span class="text-caption-mono text-cyan-deep bg-cyan-soft px-2 py-0.5 rounded font-mono">Transcribed</span>
+                </h4>
+                <p id="notes-summary-text" class="text-body-sm text-body leading-relaxed">
+                  This note summarizes YouTube content into key educational concepts designed for quick school revision from Nursery to 12th Class.
+                </p>
+              </div>
+
+              <div>
+                <h5 class="text-caption-mono text-mute uppercase tracking-wider mb-2 font-semibold">Key Bullet Points</h5>
+                <ul id="notes-bullets-list" class="space-y-2 text-body-sm text-body">
+                  <li class="p-2.5 bg-canvas-soft rounded border border-hairline flex items-start gap-2">
+                    <span class="text-link font-bold">•</span>
+                    <span><strong>Automated Video Transcripts:</strong> AI extracts text from YouTube videos to eliminate manual note-taking.</span>
+                  </li>
+                  <li class="p-2.5 bg-canvas-soft rounded border border-hairline flex items-start gap-2">
+                    <span class="text-link font-bold">•</span>
+                    <span><strong>Active Recall Quizzes:</strong> Auto-generated questions test formulas, vocabulary, and science facts.</span>
+                  </li>
+                  <li class="p-2.5 bg-canvas-soft rounded border border-hairline flex items-start gap-2">
+                    <span class="text-link font-bold">•</span>
+                    <span><strong>Interactive Flashcards:</strong> Tap to flip terms and definitions for rapid memorization.</span>
+                  </li>
+                </ul>
+              </div>
+
+              <!-- AI Question Box -->
+              <div class="pt-4 border-t border-hairline">
+                <h5 class="text-caption-mono text-ink font-semibold mb-2">💬 Ask AI Study Teacher</h5>
+                <div class="flex gap-2">
+                  <input type="text" id="ai-chat-input" placeholder="Ask e.g. Explain line 1 in simpler terms..." class="flex-1 px-3 py-1.5 bg-canvas-soft border border-hairline rounded-sm text-xs text-ink focus:outline-none"/>
+                  <button id="ai-chat-btn" class="px-4 py-1.5 bg-primary text-on-primary rounded-sm text-xs font-mono font-medium hover:bg-black transition">Ask</button>
+                </div>
+                <div id="ai-chat-response" class="hidden mt-2 p-3 bg-warning-soft border border-warning text-warning-deep rounded-sm text-xs font-mono"></div>
+              </div>
+            </div>
+
+            <!-- 2. Quiz View -->
+            <div id="quiz-view" class="hidden space-y-4">
+              <div class="flex items-center justify-between bg-canvas-soft p-3 rounded border border-hairline">
+                <span class="text-caption-mono text-ink font-semibold">Score: <span id="quiz-score">0</span> / <span id="quiz-total">3</span></span>
+                <span class="text-caption-mono text-mute">Question <span id="quiz-curr-idx">1</span> of 3</span>
+              </div>
+
+              <div id="quiz-card-box" class="p-6 bg-canvas border border-hairline rounded-md shadow-level-2 space-y-4">
+                <h4 id="quiz-question-text" class="text-display-sm text-ink text-sm">1. What is the main purpose of KiddieNotes AI?</h4>
+                <div id="quiz-options-box" class="space-y-2"></div>
+              </div>
+            </div>
+
+            <!-- 3. Flashcard View -->
+            <div id="flashcard-view" class="hidden space-y-4">
+              <div class="text-center text-caption-mono text-mute">Click card to flip 🔄</div>
+              
+              <div id="flashcard-element" class="w-full h-52 bg-primary text-on-primary rounded-lg shadow-level-4 p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-transform duration-200">
+                <span class="text-caption-mono text-mute uppercase mb-2">Term 1 of 3</span>
+                <h4 id="flashcard-text-front" class="text-display-sm text-white text-base">What does KiddieNotes AI do?</h4>
+                <p id="flashcard-text-back" class="hidden text-body-sm text-slate-200 mt-2 bg-white/10 p-3 rounded-sm">Converts YouTube video lectures and voice recordings into easy notes, quizzes, and flashcards!</p>
+              </div>
+
+              <div class="flex justify-between items-center">
+                <button id="fc-prev-btn" class="px-4 py-1.5 bg-canvas-soft border border-hairline rounded-sm text-xs font-mono font-medium text-ink hover:bg-canvas-soft-2">← Previous</button>
+                <span id="fc-counter" class="text-caption-mono text-mute">Card 1 of 3</span>
+                <button id="fc-next-btn" class="px-4 py-1.5 bg-primary text-on-primary rounded-sm text-xs font-mono font-medium hover:bg-black">Next →</button>
+              </div>
+            </div>
+
+            <!-- 4. Game View -->
+            <div id="game-view" class="hidden space-y-4">
+              <div class="p-4 bg-canvas-soft border border-hairline rounded flex items-center justify-between">
+                <div>
+                  <h4 class="text-caption-mono text-ink font-semibold">🎮 Study Run: Kids Revision Game</h4>
+                  <p class="text-caption-mono text-mute">Select correct answers to collect stars ⭐</p>
+                </div>
+                <div class="text-right">
+                  <span class="text-caption-mono text-ink font-bold">Stars: <span id="game-stars">120</span> ⭐</span>
+                </div>
+              </div>
+
+              <div id="game-canvas-area" class="relative h-60 bg-primary rounded-lg p-4 text-on-primary flex flex-col justify-between border border-hairline shadow-level-4">
+                <div class="flex justify-between items-center text-caption-mono text-mute">
+                  <span>Level 1: Nursery-12th Basics</span>
+                  <span class="animate-pulse text-cyan">Running Speed: 2x</span>
+                </div>
+
+                <div id="game-prompt-box" class="my-auto text-center">
+                  <div class="text-3xl mb-2">🏃‍♂️💨</div>
+                  <h5 id="game-q-text" class="text-display-sm text-white text-base mb-3">Is 5 + 5 equal to 10?</h5>
+                  <div class="flex justify-center gap-4">
+                    <button class="game-ans-btn px-6 py-2 bg-link text-white rounded-sm text-xs font-mono font-bold hover:bg-link-deep transition" data-correct="true">
+                      YES ✅ (Jump)
+                    </button>
+                    <button class="game-ans-btn px-6 py-2 bg-error text-white rounded-sm text-xs font-mono font-bold hover:bg-error-deep transition" data-correct="false">
+                      NO ❌ (Duck)
+                    </button>
+                  </div>
+                </div>
+
+                <div id="game-feedback" class="text-center text-caption-mono text-cyan h-4"></div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Interactive JavaScript Engine -->
+  <script is:inline>
+    let currentMode = 'notes';
+    let isRecording = false;
+    let quizScore = 0;
+    let currentQuizIdx = 0;
+    let flashcardIdx = 0;
+    let flashcardFlipped = false;
+    let gameStars = 120;
+
+    const sampleQuizzes = [
+      {
+        q: "What is the main feature of KiddieNotes AI?",
+        options: ["Turn YouTube videos to Kid Notes & Quizzes", "Order Pizza", "Play Movies", "Do Car Repairs"],
+        answer: 0
+      },
+      {
+        q: "Which grade classes can use this app?",
+        options: ["Only College", "Nursery to 12th Class Kids", "Only Teachers", "Nobody"],
+        answer: 1
+      },
+      {
+        q: "How do flashcards help kids study?",
+        options: ["By active recall & quick testing", "By making noise", "By slowing down", "They don't help"],
+        answer: 0
+      }
+    ];
+
+    const sampleFlashcards = [
+      { front: "What does KiddieNotes AI do?", back: "It converts YouTube video lectures and voice recordings into easy notes, quizzes, and flashcards!" },
+      { front: "What is Photosynthesis?", back: "The process by which green plants use sunlight to make food from carbon dioxide and water!" },
+      { front: "What is 12th Class Calculus basic rule?", back: "Derivative of x² is 2x! Integral of 1/x is ln|x| + C." }
+    ];
+
+    // Mode Selector Handler
+    document.querySelectorAll('.mode-select-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.mode-select-btn').forEach(b => {
+          b.classList.remove('bg-primary', 'text-on-primary', 'border-primary', 'active-mode');
+          b.classList.add('bg-canvas-soft', 'text-ink', 'border-hairline');
+        });
+        const targetBtn = e.currentTarget;
+        targetBtn.classList.remove('bg-canvas-soft', 'text-ink', 'border-hairline');
+        targetBtn.classList.add('bg-primary', 'text-on-primary', 'border-primary', 'active-mode');
+        currentMode = targetBtn.getAttribute('data-type');
+      });
+    });
+
+    // Preset Video Buttons
+    document.querySelectorAll('.demo-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const url = btn.getAttribute('data-url');
+        document.getElementById('yt-url-input').value = url;
+      });
+    });
+
+    // Mic Toggle
+    document.getElementById('record-mic-btn')?.addEventListener('click', () => {
+      isRecording = !isRecording;
+      const micText = document.getElementById('mic-text');
+      const micIcon = document.getElementById('mic-icon');
+      if (isRecording) {
+        micText.innerText = "Listening to Lecture... Click to Stop";
+        micIcon.innerText = "🔴";
+      } else {
+        micText.innerText = "Start Classroom Voice Recording";
+        micIcon.innerText = "🎙️";
+      }
+    });
+
+    // Generate Button Click
+    document.getElementById('generate-btn')?.addEventListener('click', () => {
+      document.getElementById('default-preview').classList.add('hidden');
+      document.getElementById('notes-view').classList.add('hidden');
+      document.getElementById('quiz-view').classList.add('hidden');
+      document.getElementById('flashcard-view').classList.add('hidden');
+      document.getElementById('game-view').classList.add('hidden');
+
+      const tone = document.getElementById('tone-select').value;
+      const heading = document.getElementById('notes-topic-heading');
+      const titleBadge = document.getElementById('output-title');
+
+      if (currentMode === 'notes') {
+        document.getElementById('notes-view').classList.remove('hidden');
+        titleBadge.innerText = "Generated Easy Notes";
+        if (tone === 'nursery') {
+          heading.innerText = "🧸 Nursery Story Notes: ABC & Fun Facts!";
+        } else if (tone === 'high') {
+          heading.innerText = "🎓 Class 11-12 Board Exam Prep Notes";
+        } else {
+          heading.innerText = "📚 Class 1-8 Key Study Takeaways";
+        }
+      } else if (currentMode === 'quiz') {
+        document.getElementById('quiz-view').classList.remove('hidden');
+        titleBadge.innerText = "Interactive Revision Quiz";
+        renderQuizCard();
+      } else if (currentMode === 'flashcard') {
+        document.getElementById('flashcard-view').classList.remove('hidden');
+        titleBadge.innerText = "Study Flashcards";
+        renderFlashcard();
+      } else if (currentMode === 'game') {
+        document.getElementById('game-view').classList.remove('hidden');
+        titleBadge.innerText = "Study Run Game";
+      }
+    });
+
+    // Quiz Render Function
+    function renderQuizCard() {
+      const qObj = sampleQuizzes[currentQuizIdx];
+      document.getElementById('quiz-curr-idx').innerText = currentQuizIdx + 1;
+      document.getElementById('quiz-question-text').innerText = `${currentQuizIdx + 1}. ${qObj.q}`;
+      
+      const optBox = document.getElementById('quiz-options-box');
+      optBox.innerHTML = '';
+
+      qObj.options.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = "w-full text-left p-3 rounded border border-hairline text-xs font-mono hover:border-hairline-strong hover:bg-canvas-soft transition";
+        btn.innerText = opt;
+        btn.onclick = () => {
+          if (idx === qObj.answer) {
+            btn.className = "w-full text-left p-3 rounded border border-cyan-deep bg-cyan-soft text-ink text-xs font-mono font-bold";
+            quizScore++;
+            document.getElementById('quiz-score').innerText = quizScore;
+          } else {
+            btn.className = "w-full text-left p-3 rounded border border-error bg-error-soft text-error-deep text-xs font-mono font-bold";
+          }
+          setTimeout(() => {
+            if (currentQuizIdx < sampleQuizzes.length - 1) {
+              currentQuizIdx++;
+              renderQuizCard();
+            }
+          }, 800);
+        };
+        optBox.appendChild(btn);
+      });
+    }
+
+    // Flashcard Render Function
+    function renderFlashcard() {
+      const card = sampleFlashcards[flashcardIdx];
+      document.getElementById('flashcard-text-front').innerText = card.front;
+      document.getElementById('flashcard-text-back').innerText = card.back;
+      document.getElementById('fc-counter').innerText = `Card ${flashcardIdx + 1} of ${sampleFlashcards.length}`;
+      
+      document.getElementById('flashcard-text-back').classList.add('hidden');
+      flashcardFlipped = false;
+    }
+
+    document.getElementById('flashcard-element')?.addEventListener('click', () => {
+      flashcardFlipped = !flashcardFlipped;
+      if (flashcardFlipped) {
+        document.getElementById('flashcard-text-back').classList.remove('hidden');
+      } else {
+        document.getElementById('flashcard-text-back').classList.add('hidden');
+      }
+    });
+
+    document.getElementById('fc-next-btn')?.addEventListener('click', () => {
+      if (flashcardIdx < sampleFlashcards.length - 1) {
+        flashcardIdx++;
+        renderFlashcard();
+      }
+    });
+
+    document.getElementById('fc-prev-btn')?.addEventListener('click', () => {
+      if (flashcardIdx > 0) {
+        flashcardIdx--;
+        renderFlashcard();
+      }
+    });
+
+    // Game Answer Buttons
+    document.querySelectorAll('.game-ans-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const isCorrect = e.currentTarget.getAttribute('data-correct') === 'true';
+        const feedback = document.getElementById('game-feedback');
+        if (isCorrect) {
+          gameStars += 20;
+          document.getElementById('game-stars').innerText = gameStars;
+          feedback.innerText = "✨ Correct Answer! +20 Stars ⭐";
+        } else {
+          feedback.innerText = "💥 Oops! Duck next time!";
+        }
+      });
+    });
+
+    // AI Chat Question
+    document.getElementById('ai-chat-btn')?.addEventListener('click', () => {
+      const q = document.getElementById('ai-chat-input').value;
+      const respBox = document.getElementById('ai-chat-response');
+      if (q) {
+        respBox.classList.remove('hidden');
+        respBox.innerText = `🤖 Kiddie Teacher: "${q}" -> Simple answer: AI transcribes the YouTube lecture and breaks hard concepts into easy steps for your class level!`;
+      }
+    });
+
+    // Speech Synthesis
+    document.getElementById('read-aloud-btn')?.addEventListener('click', () => {
+      const text = document.getElementById('notes-summary-text').innerText;
+      if ('speechSynthesis' in window) {
+        const msg = new SpeechSynthesisUtterance(text);
+        window.speechSynthesis.speak(msg);
+      }
+    });
+  </script>
+</Layout>
