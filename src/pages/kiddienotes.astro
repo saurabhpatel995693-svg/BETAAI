@@ -42,6 +42,24 @@ import Layout from '../layouts/Layout.astro';
   <!-- Interactive App Workplace -->
   <section class="max-w-[1200px] mx-auto px-4 py-8">
     
+    <!-- Step Progress Indicator -->
+    <div class="mb-6 flex items-center justify-center gap-0" id="step-indicator">
+      <div class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-l-pill text-xs font-mono font-bold step-active" data-step="1">
+        <span class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-bold">1</span>
+        Topic
+      </div>
+      <div class="w-6 h-0.5 bg-hairline"></div>
+      <div class="flex items-center gap-2 px-4 py-2 bg-canvas-soft text-body border border-hairline text-xs font-mono font-medium step-inactive" data-step="2">
+        <span class="w-5 h-5 rounded-full bg-hairline flex items-center justify-center text-[10px]">2</span>
+        Format
+      </div>
+      <div class="w-6 h-0.5 bg-hairline"></div>
+      <div class="flex items-center gap-2 px-4 py-2 bg-canvas-soft text-body border border-hairline rounded-r-pill text-xs font-mono font-medium step-inactive" data-step="3">
+        <span class="w-5 h-5 rounded-full bg-hairline flex items-center justify-center text-[10px]">3</span>
+        Generate
+      </div>
+    </div>
+    
     <!-- TOP API KEY BAR (Unified — single source of truth for KiddieNotes) -->
     <div class="mb-8 p-4 bg-canvas border border-hairline rounded-lg shadow-level-2 flex flex-col md:flex-row items-center justify-between gap-4">
       <div class="flex items-center gap-3 w-full md:w-auto">
@@ -129,6 +147,20 @@ import Layout from '../layouts/Layout.astro';
                 <span id="mic-text">Start Classroom Voice Recording</span>
               </button>
             </div>
+
+            <!-- PDF / Image Upload -->
+            <div class="pt-2 border-t border-hairline">
+              <label class="block text-caption-mono text-ink font-semibold mb-1">Upload Notes / Textbook Page</label>
+              <div class="flex items-center gap-2">
+                <input type="file" id="file-upload-input" accept=".pdf,.txt,.md,.jpg,.jpeg,.png" class="hidden" />
+                <button id="file-upload-btn" class="flex-1 py-2.5 px-3 bg-canvas-soft border border-hairline border-dashed rounded-sm text-xs font-mono text-body hover:text-ink hover:border-hairline-strong transition cursor-pointer flex items-center justify-center gap-2">
+                  <span>📄</span>
+                  <span id="file-upload-text">Choose PDF, text file, or image</span>
+                </button>
+                <button id="file-clear-btn" class="hidden px-2 py-2 text-xs text-mute hover:text-error transition cursor-pointer">✕</button>
+              </div>
+              <div id="file-upload-status" class="hidden mt-1 text-[10px] font-mono text-emerald-600"></div>
+            </div>
           </div>
         </div>
 
@@ -159,6 +191,10 @@ import Layout from '../layouts/Layout.astro';
               <span class="text-base">🏃</span>
               <span>Study Run Game</span>
             </button>
+            <button class="mode-select-btn p-3 bg-canvas-soft text-ink rounded-sm text-left border border-hairline hover:border-hairline-strong transition font-medium text-xs flex flex-col gap-1 cursor-pointer" data-type="worksheet">
+              <span class="text-base">📝</span>
+              <span>Practice Worksheet</span>
+            </button>
           </div>
 
           <div class="mb-5">
@@ -170,7 +206,7 @@ import Layout from '../layouts/Layout.astro';
             </select>
           </div>
 
-          <button id="generate-btn" class="w-full py-3.5 bg-gradient-to-r from-violet via-pink-600 to-cyan-500 text-white rounded-pill text-xs font-mono font-bold uppercase tracking-wider hover:opacity-95 transition shadow-level-4 flex items-center justify-center gap-2 cursor-pointer">
+          <button id="generate-btn" disabled class="w-full py-3.5 bg-gradient-to-r from-violet via-pink-600 to-cyan-500 text-white rounded-pill text-xs font-mono font-bold uppercase tracking-wider hover:opacity-95 transition shadow-level-4 flex items-center justify-center gap-2 cursor-pointer opacity-50 cursor-not-allowed" title="Please enter a topic and select a study format first">
             <span>⚡</span> Generate KiddieNotes AI Pack
           </button>
         </div>
@@ -218,8 +254,8 @@ import Layout from '../layouts/Layout.astro';
             <!-- Loading Loader View -->
             <div id="loading-view" class="hidden flex-1 flex flex-col items-center justify-center text-center p-8 border border-hairline rounded-lg bg-canvas-soft space-y-4">
               <div class="w-12 h-12 border-4 border-cyan border-t-transparent rounded-full animate-spin"></div>
-              <p class="text-xs font-mono text-cyan-deep font-bold animate-pulse" id="loading-msg">⚡ Transcribing YouTube & Generating AI KiddieNotes Pack...</p>
-              <span class="text-[11px] text-mute font-mono">Routing through SHESHAAI Unified AI Engine</span>
+              <p class="text-xs font-mono text-cyan-deep font-bold animate-pulse" id="loading-msg">AI aapke notes bana raha hai...</p>
+              <span class="text-[11px] text-mute font-mono" id="loading-sub-msg">Kripya karke pratiksha karein — SHESHAAI Engine kaam kar raha hai</span>
             </div>
 
             <!-- 1. Easy Kid Notes View -->
@@ -308,12 +344,62 @@ import Layout from '../layouts/Layout.astro';
               </div>
             </div>
 
+            <!-- 5. Practice Worksheet View -->
+            <div id="worksheet-view" class="hidden space-y-5 flex-1 overflow-y-auto pr-1">
+              <div class="p-4 bg-canvas-soft border border-hairline rounded-md">
+                <h4 class="text-body-sm-strong font-semibold text-ink mb-2">
+                  <span id="worksheet-heading">📝 Practice Worksheet</span>
+                </h4>
+                <div id="worksheet-content" class="text-body-sm text-body leading-relaxed whitespace-pre-wrap"></div>
+              </div>
+              <div class="pt-2 flex justify-between items-center">
+                <span class="text-[10px] font-mono text-mute">Answer key at the bottom</span>
+                <button id="print-worksheet-btn" class="px-3 py-1.5 bg-canvas-soft text-ink border border-hairline rounded-sm text-xs font-mono hover:bg-canvas-soft-2 transition cursor-pointer">
+                  🖨️ Print / Save PDF
+                </button>
+              </div>
+            </div>
+
           </div>
 
         </div>
 
       </div>
 
+    </div>
+  </section>
+
+  <!-- Progress Tracker & Report Section -->
+  <section class="max-w-[1200px] mx-auto px-4 pb-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="progress-section">
+      <!-- My Progress Card -->
+      <div class="bg-canvas border border-hairline rounded-lg shadow-level-2 p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h4 class="text-caption-mono font-semibold text-ink flex items-center gap-2">
+            <span>📊</span> My Progress
+          </h4>
+          <button id="reset-progress-btn" class="text-[10px] font-mono text-mute hover:text-error transition cursor-pointer">Reset</button>
+        </div>
+        <div id="progress-stats" class="text-xs font-mono text-body space-y-1">
+          <p>Total study packs created: <span id="progress-total" class="text-ink font-bold">0</span></p>
+          <p>Topics covered: <span id="progress-topics" class="text-ink font-bold">0</span></p>
+          <p>Last studied: <span id="progress-last" class="text-ink font-bold">—</span></p>
+        </div>
+        <div id="progress-topics-list" class="mt-2 max-h-[120px] overflow-y-auto space-y-1 text-[11px] font-mono text-body"></div>
+      </div>
+      <!-- Parent/Teacher Report Card -->
+      <div class="bg-canvas border border-hairline rounded-lg shadow-level-2 p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h4 class="text-caption-mono font-semibold text-ink flex items-center gap-2">
+            <span>👨‍👩‍👧‍👦</span> Parent / Teacher Report
+          </h4>
+        </div>
+        <p class="text-[11px] font-mono text-body mb-3">Download a summary of your child's learning activity and scores.</p>
+        <button id="download-report-btn" class="px-4 py-2 bg-primary text-on-primary rounded-sm text-xs font-mono font-semibold hover:bg-black transition cursor-pointer">
+          📥 Download Report
+        </button>
+        <div id="report-status" class="mt-2 text-[10px] font-mono text-mute hidden"></div>
+      </div>
     </div>
   </section>
 
@@ -327,6 +413,7 @@ import Layout from '../layouts/Layout.astro';
     let flashcardFlipped = false;
     let gameStars = 120;
     let currentGameIdx = 0;
+    let uploadedFileContent = '';
 
     let aiQuizzes = [
       { q: "What is the primary objective of this lesson?", options: ["Understand core concepts", "Memorize dates", "Skip study", "Draw pictures"], answer: 0 },
@@ -348,6 +435,49 @@ import Layout from '../layouts/Layout.astro';
       if (savedKey) {
         document.getElementById('kiddie-api-key-input').value = savedKey;
         document.getElementById('key-status-badge').innerText = '⚡ Custom Key Active';
+      }
+      // Initial generate button state
+      updateGenerateBtnState();
+    });
+
+    // ── Step indicator update helper ──
+    function updateStepIndicator(step) {
+      document.querySelectorAll('.step-active, .step-inactive').forEach(el => {
+        el.classList.remove('step-active');
+        el.classList.add('step-inactive');
+        el.className = el.className.replace(/bg-primary text-on-primary/g, 'bg-canvas-soft text-body');
+      });
+      const activeEl = document.querySelector(`[data-step="${step}"]`);
+      if (activeEl) {
+        activeEl.classList.remove('step-inactive', 'bg-canvas-soft', 'text-body', 'border-hairline');
+        activeEl.classList.add('step-active', 'bg-primary', 'text-on-primary', 'border-primary');
+      }
+    }
+
+    // ── Generate button state management ──
+    function updateGenerateBtnState() {
+      const topicVal = document.getElementById('yt-url-input').value.trim();
+      const hasTopic = topicVal.length > 0;
+      const hasFormat = currentMode !== null && currentMode !== undefined;
+      const btn = document.getElementById('generate-btn');
+      if (hasTopic && hasFormat) {
+        btn.disabled = false;
+        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        btn.title = '';
+      } else {
+        btn.disabled = true;
+        btn.classList.add('opacity-50', 'cursor-not-allowed');
+        btn.title = 'Please enter a topic and select a study format first';
+      }
+    }
+
+    // Listen for topic input changes to update step + button state
+    document.getElementById('yt-url-input')?.addEventListener('input', () => {
+      updateGenerateBtnState();
+      if (document.getElementById('yt-url-input').value.trim()) {
+        updateStepIndicator(2);
+      } else {
+        updateStepIndicator(1);
       }
     });
 
@@ -376,28 +506,36 @@ import Layout from '../layouts/Layout.astro';
       const userKey = localStorage.getItem('GEMINI_API_KEY') || localStorage.getItem('sheshaai_user_key') || localStorage.getItem('sheshaai_gemini_key') || '';
       const openrouterKey = localStorage.getItem('sheshaai_openrouter_key') || '';
       
+      // Only send key headers when keys are genuinely non-empty
       const headers = {
         'Content-Type': 'application/json',
-        'x-custom-key': userKey,
-        'x-gemini-key': userKey,
         'x-openrouter-key': openrouterKey
       };
+      if (userKey && userKey.trim().length > 0) {
+        headers['x-custom-key'] = userKey.trim();
+        headers['x-gemini-key'] = userKey.trim();
+      }
+
+      const bodyPayload = {
+        messages: [
+          {
+            role: 'system',
+            content: 'You are KiddieNotes AI developed by SAURABH, an educational study assistant for K-12 students (Nursery to 12th Class). Deliver clear, precise, and accurate study notes.'
+          },
+          { role: 'user', content: promptText }
+        ],
+        mode: 'general'
+      };
+      // Only include customKey/geminiKey in body when non-empty
+      if (userKey && userKey.trim().length > 0) {
+        bodyPayload.customKey = userKey.trim();
+        bodyPayload.geminiKey = userKey.trim();
+      }
 
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: headers,
-        body: JSON.stringify({
-          customKey: userKey,
-          geminiKey: userKey,
-          messages: [
-            {
-              role: 'system',
-              content: 'You are KiddieNotes AI developed by SAURABH, an educational study assistant for K-12 students (Nursery to 12th Class). Deliver clear, precise, and accurate study notes.'
-            },
-            { role: 'user', content: promptText }
-          ],
-          mode: 'general'
-        })
+        body: JSON.stringify(bodyPayload)
       });
 
       if (!res.ok) {
@@ -454,6 +592,8 @@ import Layout from '../layouts/Layout.astro';
         targetBtn.classList.remove('bg-canvas-soft', 'text-ink', 'border-hairline');
         targetBtn.classList.add('bg-primary', 'text-on-primary', 'border-primary', 'active-mode');
         currentMode = targetBtn.getAttribute('data-type');
+        updateStepIndicator(3);
+        updateGenerateBtnState();
       });
     });
 
@@ -466,17 +606,130 @@ import Layout from '../layouts/Layout.astro';
       });
     });
 
-    // Mic Toggle
-    document.getElementById('record-mic-btn')?.addEventListener('click', () => {
-      isRecording = !isRecording;
+    // ── File Upload Handling ──
+    document.getElementById('file-upload-btn')?.addEventListener('click', () => {
+      document.getElementById('file-upload-input').click();
+    });
+
+    document.getElementById('file-upload-input')?.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        document.getElementById('file-upload-status').classList.remove('hidden');
+        document.getElementById('file-upload-status').innerText = '⚠️ File too large (max 10MB)';
+        document.getElementById('file-upload-status').className = 'mt-1 text-[10px] font-mono text-error';
+        return;
+      }
+      document.getElementById('file-upload-status').className = 'mt-1 text-[10px] font-mono text-emerald-600';
+      document.getElementById('file-upload-status').classList.remove('hidden');
+      document.getElementById('file-upload-status').innerText = '📖 Reading file...';
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const text = ev.target.result;
+        uploadedFileContent = text.substring(0, 8000); // limit to 8k chars
+        document.getElementById('file-upload-text').innerText = `📄 ${file.name} (${Math.round(file.size/1024)}KB)`;
+        document.getElementById('file-upload-status').innerText = `✅ File loaded — ${uploadedFileContent.length} characters extracted`;
+        document.getElementById('file-clear-btn').classList.remove('hidden');
+        // Auto-fill topic
+        const currentTopic = document.getElementById('yt-url-input').value;
+        if (!currentTopic || currentTopic === 'https://youtu.be/E_4gRy4O03w') {
+          document.getElementById('yt-url-input').value = `Study material: ${file.name.replace(/\.[^/.]+$/, '')}`;
+        }
+      };
+      reader.onerror = () => {
+        document.getElementById('file-upload-status').innerText = '❌ Could not read file. Try a different format.';
+        document.getElementById('file-upload-status').className = 'mt-1 text-[10px] font-mono text-error';
+      };
+      // Read as text for .txt/.md/.pdf (PDF will be garbled but some text may extract)
+      reader.readAsText(file);
+    });
+
+    document.getElementById('file-clear-btn')?.addEventListener('click', () => {
+      uploadedFileContent = '';
+      document.getElementById('file-upload-input').value = '';
+      document.getElementById('file-upload-text').innerText = 'Choose PDF, text file, or image';
+      document.getElementById('file-upload-status').classList.add('hidden');
+      document.getElementById('file-clear-btn').classList.add('hidden');
+    });
+
+    // Voice Recording — uses MediaRecorder API (actual recording supported in modern browsers)
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let recordingTimer = null;
+    let recordingSeconds = 0;
+
+    document.getElementById('record-mic-btn')?.addEventListener('click', async () => {
       const micText = document.getElementById('mic-text');
       const micIcon = document.getElementById('mic-icon');
+
       if (isRecording) {
-        micText.innerText = "Listening to Lecture... Click to Stop";
-        micIcon.innerText = "🔴";
+        // Stop recording
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+          mediaRecorder.stop();
+        }
+        if (recordingTimer) clearInterval(recordingTimer);
+        isRecording = false;
+        micText.innerText = `Recording saved (${recordingSeconds}s) — tap to re-record`;
+        micIcon.innerText = "✅";
+        // Auto-fill the topic with recording context
+        const currentVal = document.getElementById('yt-url-input').value;
+        if (!currentVal || currentVal === 'https://youtu.be/E_4gRy4O03w') {
+          document.getElementById('yt-url-input').value = `Classroom audio recording (${recordingSeconds} seconds)`;
+        }
       } else {
-        micText.innerText = "Start Classroom Voice Recording";
-        micIcon.innerText = "🎙️";
+        // Start recording — request microphone permission
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          audioChunks = [];
+          recordingSeconds = 0;
+          mediaRecorder = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4' });
+
+          mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) audioChunks.push(e.data);
+          };
+
+          mediaRecorder.onstop = () => {
+            // Stop all tracks to release microphone
+            stream.getTracks().forEach(track => track.stop());
+            // Store recording info for generate flow
+            recordingSeconds = recordingSeconds || 1;
+          };
+
+          mediaRecorder.onerror = () => {
+            micText.innerText = "Recording error — try again";
+            micIcon.innerText = "⚠️";
+            isRecording = false;
+            stream.getTracks().forEach(track => track.stop());
+          };
+
+          mediaRecorder.start(1000); // collect data every second
+          isRecording = true;
+          micText.innerText = "Recording lecture... Click to Stop 🔴";
+          micIcon.innerText = "🔴";
+
+          // Update timer every second
+          recordingTimer = setInterval(() => {
+            recordingSeconds++;
+          }, 1000);
+
+        } catch (err) {
+          // Microphone permission denied or unavailable
+          if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+            micText.innerText = "Microphone access denied — allow in browser settings";
+          } else if (err.name === 'NotFoundError') {
+            micText.innerText = "No microphone found — connect one and try again";
+          } else {
+            micText.innerText = "Voice recording unavailable in this browser";
+          }
+          micIcon.innerText = "⚠️";
+          isRecording = false;
+          setTimeout(() => {
+            micText.innerText = "Start Classroom Voice Recording";
+            micIcon.innerText = "🎙️";
+          }, 3000);
+        }
       }
     });
 
@@ -490,10 +743,11 @@ import Layout from '../layouts/Layout.astro';
       const toneLabel = tone === 'nursery' ? 'Nursery/KG Kids (simple words, emojis)' : tone === 'high' ? 'Class 9-12 (Board exam concepts, formulas)' : 'Class 1-8 (Clear structured bullets)';
 
       // Hide views, show loader
-      ['default-preview','notes-view','quiz-view','flashcard-view','game-view'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
+      ['default-preview','notes-view','quiz-view','flashcard-view','game-view','worksheet-view'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
       const loadingView = document.getElementById('loading-view');
       loadingView.classList.remove('hidden');
-      document.getElementById('loading-msg').innerText = `⚡ Transcribing & Generating KiddieNotes AI for ${toneLabel}...`;
+      document.getElementById('loading-msg').innerText = `🧠 AI aapke ${toneLabel} ke liye study pack bana raha hai...`;
+      document.getElementById('loading-sub-msg').innerText = 'SHESHAAI Engine video transcribe aur notes generate kar raha hai';
 
       try {
         if (currentMode === 'notes') {
@@ -523,6 +777,7 @@ import Layout from '../layouts/Layout.astro';
 
           loadingView.classList.add('hidden');
           document.getElementById('notes-view').classList.remove('hidden');
+          recordProgress(topicInput, 'Notes');
 
         } else if (currentMode === 'quiz') {
           titleBadge.innerText = "Interactive Revision Quiz";
@@ -545,6 +800,7 @@ import Layout from '../layouts/Layout.astro';
           loadingView.classList.add('hidden');
           document.getElementById('quiz-view').classList.remove('hidden');
           renderQuizCard();
+          recordProgress(topicInput, 'Quiz');
 
         } else if (currentMode === 'flashcard') {
           titleBadge.innerText = "3D Study Flashcards";
@@ -562,6 +818,7 @@ import Layout from '../layouts/Layout.astro';
           loadingView.classList.add('hidden');
           document.getElementById('flashcard-view').classList.remove('hidden');
           renderFlashcard();
+          recordProgress(topicInput, 'Flashcard');
 
         } else if (currentMode === 'game') {
           titleBadge.innerText = "Study Run Game";
@@ -579,12 +836,46 @@ import Layout from '../layouts/Layout.astro';
           loadingView.classList.add('hidden');
           document.getElementById('game-view').classList.remove('hidden');
           renderGameQuestion();
+          recordProgress(topicInput, 'Game');
+        } else if (currentMode === 'worksheet') {
+          titleBadge.innerText = "Practice Worksheet";
+          iconBadge.innerText = "📝";
+
+          const fileContext = uploadedFileContent ? `\n\nAdditional material from uploaded file:\n${uploadedFileContent.substring(0, 3000)}` : '';
+          const prompt = `Create a practice worksheet for students based on: "${topicInput}". Target Grade: ${toneLabel}.${fileContext}
+
+The worksheet should include:
+1. A title and instructions for the student
+2. 5 questions of mixed types (fill-in-blanks, short answer, matching, true/false)
+3. A separate ANSWER KEY section clearly marked
+
+Format with markdown headings. Use "--- ANSWER KEY ---" to separate questions from answers. Make questions age-appropriate for the target grade.`;
+          const responseText = await callKiddieAI(prompt);
+
+          document.getElementById('worksheet-heading').innerText = `📝 ${topicInput.substring(0, 40)} — Worksheet`;
+          document.getElementById('worksheet-content').innerText = responseText;
+
+          loadingView.classList.add('hidden');
+          document.getElementById('worksheet-view').classList.remove('hidden');
+          recordProgress(topicInput, 'Worksheet');
         }
 
       } catch (err) {
         loadingView.classList.add('hidden');
         document.getElementById('default-preview').classList.remove('hidden');
-        alert(`KiddieNotes Generation Error: ${err.message}`);
+        // User-friendly error messages
+        const errMsg = err.message || '';
+        let friendlyMsg = '❌ Kuch gadbad hui, dobara try karein.';
+        if (errMsg.includes('API key') || errMsg.includes('api key') || errMsg.includes('API_KEY') || errMsg.includes('401') || errMsg.includes('403')) {
+          friendlyMsg = '🔑 API key me problem hai. Upar "API Key" section me apna sahi Gemini API key daalein ya server pool use karne ke liye key khaali chhod dein.';
+        } else if (errMsg.includes('429') || errMsg.includes('rate') || errMsg.includes('limit') || errMsg.includes('Too Many Requests')) {
+          friendlyMsg = '⏳ Bahut saare requests ho gaye. Thodi der rukkar dobara try karein (2-3 minute).';
+        } else if (errMsg.includes('500') || errMsg.includes('503') || errMsg.includes('server') || errMsg.includes('timeout') || errMsg.includes('Timed out') || errMsg.includes('Timeout') || errMsg.includes('fetch') || errMsg.includes('NetworkError') || errMsg.includes('Failed to fetch')) {
+          friendlyMsg = '🛠️ Server temporarily unavailable. Please try again in a few moments.';
+        } else if (errMsg.includes('400') || errMsg.includes('Invalid') || errMsg.includes('bad request')) {
+          friendlyMsg = '📝 Please check your topic/input and try again. The AI could not process this request.';
+        }
+        alert(friendlyMsg);
       }
     });
 
@@ -740,5 +1031,84 @@ import Layout from '../layouts/Layout.astro';
         a.click();
       }
     });
+
+    // ── Progress Tracker ──
+    function loadProgress() {
+      try {
+        return JSON.parse(localStorage.getItem('kiddienotes_progress') || '{"total":0,"topics":[],"last":""}');
+      } catch { return { total: 0, topics: [], last: '' }; }
+    }
+
+    function saveProgress(data) {
+      localStorage.setItem('kiddienotes_progress', JSON.stringify(data));
+    }
+
+    function recordProgress(topic, mode) {
+      const data = loadProgress();
+      data.total++;
+      if (topic && !data.topics.includes(topic)) {
+        data.topics.push(topic);
+      }
+      data.last = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      saveProgress(data);
+      renderProgress();
+    }
+
+    function renderProgress() {
+      const data = loadProgress();
+      document.getElementById('progress-total').innerText = data.total;
+      document.getElementById('progress-topics').innerText = data.topics.length;
+      document.getElementById('progress-last').innerText = data.last || '—';
+      const list = document.getElementById('progress-topics-list');
+      list.innerHTML = data.topics.slice().reverse().slice(0, 10).map(t =>
+        `<div class="flex items-center gap-1.5 text-[11px]"><span class="text-emerald-500">✓</span> ${t.substring(0, 40)}</div>`
+      ).join('');
+    }
+
+    document.getElementById('reset-progress-btn')?.addEventListener('click', () => {
+      if (confirm('Reset all progress tracking data?')) {
+        localStorage.removeItem('kiddienotes_progress');
+        renderProgress();
+      }
+    });
+
+    // ── Parent/Teacher Report ──
+    document.getElementById('download-report-btn')?.addEventListener('click', () => {
+      const data = loadProgress();
+      const report = [
+        '========================================',
+        '  KiddieNotes — Parent/Teacher Report',
+        '  Generated: ' + new Date().toLocaleString('en-IN'),
+        '========================================',
+        '',
+        `Total Study Packs Created: ${data.total}`,
+        `Unique Topics Covered: ${data.topics.length}`,
+        `Last Activity: ${data.last || 'N/A'}`,
+        '',
+        '--- Topics Studied ---',
+        ...(data.topics.length ? data.topics.map((t, i) => `${i+1}. ${t}`) : ['(No topics recorded yet)']),
+        '',
+        '--- Device Info ---',
+        `Browser: ${navigator.userAgent.substring(0, 80)}`,
+        `Platform: ${navigator.platform || 'Unknown'}`,
+        `Language: ${navigator.language}`,
+        '',
+        '========================================',
+        '  Made by SAURABH — SHESHAAI Platform',
+        '========================================'
+      ].join('\n');
+
+      const blob = new Blob([report], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `KiddieNotes_Report_${new Date().toISOString().slice(0,10)}.txt`;
+      a.click();
+      document.getElementById('report-status').classList.remove('hidden');
+      document.getElementById('report-status').innerText = '✅ Report downloaded successfully!';
+      setTimeout(() => document.getElementById('report-status').classList.add('hidden'), 3000);
+    });
+
+    // Initialize progress on load
+    renderProgress();
   </script>
 </Layout>

@@ -867,8 +867,9 @@ FUNCTIONALITY: Implement the FULL feature (no TODO/incomplete code), handle empt
 
   let targets = [];
 
-  // User Custom API Target (highest priority if specified)
-  if (clientCustomKey || clientCustomBase || clientCustomModel) {
+  // User Custom API Target (highest priority if specified, only if key is truly non-empty)
+  const hasValidCustomKey = clientCustomKey && clientCustomKey.trim().length > 0;
+  if ((hasValidCustomKey || clientCustomBase || clientCustomModel) && (hasValidCustomKey || clientCustomBase)) {
     let baseUrl = clientCustomBase ? clientCustomBase.trim().replace(/\/$/, '') : '';
     let targetModel = clientCustomModel ? clientCustomModel.trim() : '';
     if (!baseUrl) baseUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
@@ -876,7 +877,7 @@ FUNCTIONALITY: Implement the FULL feature (no TODO/incomplete code), handle empt
     if (baseUrl && !baseUrl.endsWith('/chat/completions') && !baseUrl.includes('/generateContent')) {
       baseUrl += '/chat/completions';
     }
-    targets.push({ name: 'User-Custom', url: baseUrl, key: clientCustomKey, model: targetModel, timeout: 10000 });
+    targets.push({ name: 'User-Custom', url: baseUrl, key: hasValidCustomKey ? clientCustomKey.trim() : '', model: targetModel, timeout: 10000 });
   }
 
   // Coding mode failover chain (NVIDIA → Groq → OpenRouter → GitHub Models)
