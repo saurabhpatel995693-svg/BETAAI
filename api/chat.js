@@ -823,10 +823,13 @@ Rules & Behavior:
     { name: 'NVIDIA-Nemotron', url: 'https://integrate.api.nvidia.com/v1/chat/completions', key: process.env.NVIDIA_KEY, model: 'nvidia/llama-3.1-nemotron-70b-instruct', timeout: 8000 }
   ] : [];
 
-  const groqPoolKeys = [clientGroqKey, process.env.GROQ_KEY, process.env.GROQ_KEY_1, process.env.GROQ_KEY_2].filter(Boolean);
-  const groqTargets = groqPoolKeys.length > 0 ? [
-    { name: 'Groq-1', url: 'https://api.groq.com/openai/v1/chat/completions', key: groqPoolKeys[0], model: 'llama-3.3-70b-versatile', timeout: 8000 },
-    { name: 'Groq-2', url: 'https://api.groq.com/openai/v1/chat/completions', key: groqPoolKeys[1] || groqPoolKeys[0], model: 'llama-3.1-8b-instant', timeout: 8000 }
+  const groqTargets = clientGroqKey ? [
+    { name: 'Groq', url: 'https://api.groq.com/openai/v1/chat/completions', key: clientGroqKey, model: 'llama-3.3-70b-versatile', timeout: 8000 }
+  ] : [];
+
+  const codingGroqTargets = (process.env.GROQ_KEY_1 || process.env.GROQ_KEY_2) ? [
+    { name: 'Groq-1', url: 'https://api.groq.com/openai/v1/chat/completions', key: process.env.GROQ_KEY_1, model: 'llama-3.3-70b-versatile', timeout: 8000 },
+    { name: 'Groq-2', url: 'https://api.groq.com/openai/v1/chat/completions', key: process.env.GROQ_KEY_2, model: 'llama-3.1-8b-instant', timeout: 8000 }
   ] : [];
 
   const openRouterPoolKey = clientOpenRouterKey || process.env.OPENROUTER_KEY || '';
@@ -862,7 +865,7 @@ Rules & Behavior:
 
   // Coding mode failover chain
   if (isCodingTask) {
-    targets.push(...nvidiaTargets, ...groqTargets, ...openRouterTargets, ...githubTargets);
+    targets.push(...nvidiaTargets, ...codingGroqTargets, ...openRouterTargets, ...githubTargets);
   } else {
     // For non-coding tasks, use the existing Gemini/General pool logic
     targets.push(...geminiTargets, ...groqTargets, ...grokTargets, ...openRouterTargets, ...hfTargets);
