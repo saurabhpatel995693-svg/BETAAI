@@ -819,31 +819,31 @@ Rules & Behavior:
   const isCodingTask = payload.mode === 'code' || fullTextContext.includes('code') || fullTextContext.includes('function') || fullTextContext.includes('javascript') || fullTextContext.includes('html') || fullTextContext.includes('css') || fullTextContext.includes('build') || fullTextContext.includes('create app') || fullTextContext.includes('game');
 
   // ── 3. Capability-based & Sticky Target Ordering ────────────────────────
-  // Order targets based on task capability (DeepSeek/Llama/Grok preferred for code, Gemini for chat)
-const geminiTargets = GEMINI_KEYS.map((key, idx) => ({
-    name: `Gemini-Key-${idx + 1}`,
-    url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
-    key: key,
-    model: 'gemini-2.0-flash',
-    timeout: 8000
-  }));
+  const nvidiaTargets = process.env.NVIDIA_KEY ? [
+    { name: 'NVIDIA-Nemotron', url: 'https://integrate.api.nvidia.com/v1/chat/completions', key: process.env.NVIDIA_KEY, model: 'nvidia/llama-3.1-nemotron-70b-instruct', timeout: 8000 }
+  ] : [];
 
-  const groqTargets = clientGroqKey ? [
-    { name: 'Groq-Llama-3.3-70B', url: 'https://api.groq.com/openai/v1/chat/completions', key: clientGroqKey, model: 'llama-3.3-70b-versatile', timeout: 10000 },
-    { name: 'Groq-Llama-3.1-8B', url: 'https://api.groq.com/openai/v1/chat/completions', key: clientGroqKey, model: 'llama-3.1-8b-instant', timeout: 10000 }
+  const groqPoolKeys = [clientGroqKey, process.env.GROQ_KEY, process.env.GROQ_KEY_1, process.env.GROQ_KEY_2].filter(Boolean);
+  const groqTargets = groqPoolKeys.length > 0 ? [
+    { name: 'Groq-1', url: 'https://api.groq.com/openai/v1/chat/completions', key: groqPoolKeys[0], model: 'llama-3.3-70b-versatile', timeout: 8000 },
+    { name: 'Groq-2', url: 'https://api.groq.com/openai/v1/chat/completions', key: groqPoolKeys[1] || groqPoolKeys[0], model: 'llama-3.1-8b-instant', timeout: 8000 }
+  ] : [];
+
+  const openRouterPoolKey = clientOpenRouterKey || process.env.OPENROUTER_KEY || '';
+  const openRouterTargets = openRouterPoolKey ? [
+    { name: 'OpenRouter', url: 'https://openrouter.ai/api/v1/chat/completions', key: openRouterPoolKey, model: 'deepseek/deepseek-r1:free', headers: { 'HTTP-Referer': 'https://sheshaai.vercel.app', 'X-Title': 'SHESHAAI' }, timeout: 8000 }
+  ] : [];
+
+  const githubTargets = process.env.GITHUB_TOKEN ? [
+    { name: 'GitHub-Models', url: 'https://models.inference.ai.azure.com/chat/completions', key: process.env.GITHUB_TOKEN, model: 'gpt-4o', timeout: 8000 }
   ] : [];
 
   const grokTargets = clientGrokKey ? [
-    { name: 'xAI-Grok-2', url: 'https://api.x.ai/v1/chat/completions', key: clientGrokKey, model: 'grok-2-latest', timeout: 10000 }
-  ] : [];
-
-  const openRouterTargets = clientOpenRouterKey ? [
-    { name: 'OpenRouter-DeepSeek', url: 'https://openrouter.ai/api/v1/chat/completions', key: clientOpenRouterKey, model: 'deepseek/deepseek-r1:free', headers: { 'HTTP-Referer': 'https://sheshaai.vercel.app', 'X-Title': 'SHESHAAI' }, timeout: 10000 },
-    { name: 'OpenRouter-Llama', url: 'https://openrouter.ai/api/v1/chat/completions', key: clientOpenRouterKey, model: 'meta-llama/llama-3.3-70b-instruct:free', headers: { 'HTTP-Referer': 'https://sheshaai.vercel.app', 'X-Title': 'SHESHAAI' }, timeout: 10000 }
+    { name: 'xAI-Grok-2', url: 'https://api.x.ai/v1/chat/completions', key: clientGrokKey, model: 'grok-2-latest', timeout: 8000 }
   ] : [];
 
   const hfTargets = clientHfKey ? [
-    { name: 'HuggingFace-Qwen', url: 'https://router.huggingface.co/v1/chat/completions', key: clientHfKey, model: 'Qwen/Qwen2.5-72B-Instruct', timeout: 10000 }
+    { name: 'HuggingFace-Qwen', url: 'https://router.huggingface.co/v1/chat/completions', key: clientHfKey, model: 'Qwen/Qwen2.5-72B-Instruct', timeout: 8000 }
   ] : [];
 
   let targets = [];
@@ -860,12 +860,11 @@ const geminiTargets = GEMINI_KEYS.map((key, idx) => ({
     targets.push({ name: 'User-Custom', url: baseUrl, key: clientCustomKey, model: targetModel, timeout: 10000 });
   }
 
-  // Task-capability optimized ordering:
-  if (isCodingTask && (openRouterTargets.length || groqTargets.length || grokTargets.length)) {
-    // For coding tasks, route to DeepSeek/Llama/Grok first if available, then Gemini Pool
-    targets.push(...openRouterTargets, ...groqTargets, ...grokTargets, ...hfTargets, ...geminiTargets);
+  // Coding mode failover chain
+  if (isCodingTask) {
+    targets.push(...nvidiaTargets, ...groqTargets, ...openRouterTargets, ...githubTargets);
   } else {
-    // Standard chat/notebooks: Gemini Pool first, then Groq, Grok, OpenRouter & HF
+    // For non-coding tasks, use the existing Gemini/General pool logic
     targets.push(...geminiTargets, ...groqTargets, ...grokTargets, ...openRouterTargets, ...hfTargets);
   }
 
