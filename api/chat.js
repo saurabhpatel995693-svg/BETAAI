@@ -818,31 +818,32 @@ Rules & Behavior:
   const fullTextContext = normalizedMessages.map(m => m.content).join('\n').toLowerCase();
   const isCodingTask = payload.mode === 'code' || fullTextContext.includes('code') || fullTextContext.includes('function') || fullTextContext.includes('javascript') || fullTextContext.includes('html') || fullTextContext.includes('css') || fullTextContext.includes('build') || fullTextContext.includes('create app') || fullTextContext.includes('game');
 
-  // ── 3. Capability-based & Sticky Target Ordering ────────────────────────
-  const nvidiaTargets = process.env.NVIDIA_KEY ? [
-    { name: 'NVIDIA-Nemotron', url: 'https://integrate.api.nvidia.com/v1/chat/completions', key: process.env.NVIDIA_KEY, model: 'nvidia/llama-3.1-nemotron-70b-instruct', timeout: 8000 }
-  ] : [];
+  const codingProviders = [];
+
+  if (process.env.NVIDIA_KEY_1) {
+    codingProviders.push({ name: 'NVIDIA', url: 'https://integrate.api.nvidia.com/v1/chat/completions', key: process.env.NVIDIA_KEY_1, model: 'nvidia/llama-3.1-nemotron-70b-instruct', timeout: 8000 });
+  }
+  if (process.env.GROQ_1) {
+    codingProviders.push({ name: 'Groq', url: 'https://api.groq.com/openai/v1/chat/completions', key: process.env.GROQ_1, model: 'llama-3.3-70b-versatile', timeout: 8000 });
+  }
+  if (process.env.OPENROUTER_KEY) {
+    codingProviders.push({ name: 'OpenRouter', url: 'https://openrouter.ai/api/v1/chat/completions', key: process.env.OPENROUTER_KEY, model: 'deepseek/deepseek-r1:free', headers: { 'HTTP-Referer': 'https://sheshaai.vercel.app', 'X-Title': 'SHESHAAI' }, timeout: 8000 });
+  }
+  if (process.env.GITHUB_TOKEN) {
+    codingProviders.push({ name: 'GitHub-Models', url: 'https://models.inference.ai.azure.com/chat/completions', key: process.env.GITHUB_TOKEN, model: 'gpt-4o', timeout: 8000 });
+  }
 
   const groqTargets = clientGroqKey ? [
     { name: 'Groq', url: 'https://api.groq.com/openai/v1/chat/completions', key: clientGroqKey, model: 'llama-3.3-70b-versatile', timeout: 8000 }
   ] : [];
 
-  const codingGroqTargets = (process.env.GROQ_KEY_1 || process.env.GROQ_KEY_2) ? [
-    { name: 'Groq-1', url: 'https://api.groq.com/openai/v1/chat/completions', key: process.env.GROQ_KEY_1, model: 'llama-3.3-70b-versatile', timeout: 8000 },
-    { name: 'Groq-2', url: 'https://api.groq.com/openai/v1/chat/completions', key: process.env.GROQ_KEY_2, model: 'llama-3.1-8b-instant', timeout: 8000 }
+  const grokTargets = clientGrokKey ? [
+    { name: 'xAI-Grok-2', url: 'https://api.x.ai/v1/chat/completions', key: clientGrokKey, model: 'grok-2-latest', timeout: 8000 }
   ] : [];
 
   const openRouterPoolKey = clientOpenRouterKey || process.env.OPENROUTER_KEY || '';
   const openRouterTargets = openRouterPoolKey ? [
     { name: 'OpenRouter', url: 'https://openrouter.ai/api/v1/chat/completions', key: openRouterPoolKey, model: 'deepseek/deepseek-r1:free', headers: { 'HTTP-Referer': 'https://sheshaai.vercel.app', 'X-Title': 'SHESHAAI' }, timeout: 8000 }
-  ] : [];
-
-  const githubTargets = process.env.GITHUB_TOKEN ? [
-    { name: 'GitHub-Models', url: 'https://models.inference.ai.azure.com/chat/completions', key: process.env.GITHUB_TOKEN, model: 'gpt-4o', timeout: 8000 }
-  ] : [];
-
-  const grokTargets = clientGrokKey ? [
-    { name: 'xAI-Grok-2', url: 'https://api.x.ai/v1/chat/completions', key: clientGrokKey, model: 'grok-2-latest', timeout: 8000 }
   ] : [];
 
   const hfTargets = clientHfKey ? [
@@ -863,9 +864,9 @@ Rules & Behavior:
     targets.push({ name: 'User-Custom', url: baseUrl, key: clientCustomKey, model: targetModel, timeout: 10000 });
   }
 
-  // Coding mode failover chain
+  // Coding mode failover chain (NVIDIA → Groq → OpenRouter → GitHub Models)
   if (isCodingTask) {
-    targets.push(...nvidiaTargets, ...codingGroqTargets, ...openRouterTargets, ...githubTargets);
+    targets.push(...codingProviders);
   } else {
     // For non-coding tasks, use the existing Gemini/General pool logic
     targets.push(...geminiTargets, ...groqTargets, ...grokTargets, ...openRouterTargets, ...hfTargets);
@@ -876,11 +877,13 @@ Rules & Behavior:
     targets.push({ name: 'Pollinations-Default', url: 'https://text.pollinations.ai/openai', key: '', model: 'openai', timeout: 10000 });
   }
 
-  // ── 4. Attempt each keyed target in order (Per-target timeout: Gemini=8s, others=10s/14s) ──
+  // ── 4. Attempt each target (per-provider timeout: 8s via AbortController) ──
   const targetTimeout = isCodingTask ? 14000 : 10000;
   const maxTokens = payload.max_tokens || (isCodingTask ? 8192 : 4096);
 
+  const logPrefix = isCodingTask ? '[CODING FAILOVER]' : '[BETAAI]';
   for (const target of targets) {
+    const providerStart = Date.now();
     try {
       const headers = {
         'Content-Type': 'application/json',
@@ -896,12 +899,13 @@ Rules & Behavior:
         stream: wantsStream
       });
 
-      const apiRes = await fetchWithTimeout(target.url, { method: 'POST', headers, body }, target.timeout || targetTimeout);
+       const apiRes = await fetchWithTimeout(target.url, { method: 'POST', headers, body }, target.timeout || targetTimeout);
+       console.log(`${logPrefix} ${target.name} responded in ${Date.now() - providerStart}ms`);
 
       if (!apiRes.ok) {
         const txt = await apiRes.text().catch(() => '');
         lastErr = `${target.name} (${apiRes.status}): ${txt.substring(0, 120)}`;
-        console.warn('[BETAAI]', lastErr);
+        console.warn(logPrefix, lastErr);
         if (target.name === 'User-Custom') {
           let customErrMsg = txt.substring(0, 300) || apiRes.statusText;
           try {
@@ -941,10 +945,11 @@ Rules & Behavior:
       if (cacheKey && data?.choices?.[0]?.message?.content) {
         responseCache.set(cacheKey, { timestamp: now, data });
       }
+      console.log(`${logPrefix} ${target.name} succeeded in ${Date.now() - providerStart}ms`);
       return res.status(200).json(data);
     } catch (err) {
       lastErr = `${target.name}: ${err.message}`;
-      console.warn('[BETAAI]', lastErr);
+      console.warn(`${logPrefix} ${target.name} failed after ${Date.now() - providerStart}ms: ${err.message}`);
     }
   }
 
