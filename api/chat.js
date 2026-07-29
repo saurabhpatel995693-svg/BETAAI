@@ -952,16 +952,9 @@ FUNCTIONALITY: Implement the FULL feature (no TODO/incomplete code), handle empt
         lastErr = `${target.name} (${apiRes.status}): ${txt.substring(0, 120)}`;
         console.warn(logPrefix, lastErr);
         if (target.name === 'User-Custom') {
-          let customErrMsg = txt.substring(0, 300) || apiRes.statusText;
-          try {
-            const parsed = JSON.parse(txt);
-            customErrMsg = parsed.error?.message || parsed.message || customErrMsg;
-          } catch(e) {}
-          return res.status(apiRes.status).json({
-            error: {
-              message: `Provided Custom API/Endpoint Error (${apiRes.status}): ${customErrMsg}`
-            }
-          });
+          console.warn(`[User-Custom] ${target.name} failed (${apiRes.status}) — falling through to server pool`);
+          // Don't return — let the loop try server-side targets next
+          continue;
         }
         continue;
       }

@@ -679,6 +679,16 @@ import Layout from '../layouts/Layout.astro';
           document.getElementById('yt-url-input').value = `Classroom audio recording (${recordingSeconds} seconds)`;
         }
       } else {
+        // Check browser support first
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          micText.innerText = "Recording not supported in this browser — use Chrome/Edge";
+          micIcon.innerText = "⚠️";
+          setTimeout(() => {
+            micText.innerText = "Start Classroom Voice Recording";
+            micIcon.innerText = "🎙️";
+          }, 3000);
+          return;
+        }
         // Start recording — request microphone permission
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });

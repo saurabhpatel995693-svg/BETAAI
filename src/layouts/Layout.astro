@@ -73,14 +73,14 @@ const {
             <span class="text-[12px] font-mono text-body group-hover:text-ink">AI Engine: <span id="api-indicator-text" class="text-red-500 font-semibold">Offline</span></span>
           </button>
 
-          <!-- Action Button -->
-          <button 
-            type="button" 
-            id="nav-log-btn"
+          <!-- Nav Button -->
+          <a 
+            href="/kiddienotes"
+            id="nav-kiddie-btn"
             class="flex items-center justify-center h-8 px-3 bg-primary text-on-primary rounded-sm text-[13px] font-medium hover:bg-black transition-colors duration-200 shadow-level-3"
           >
-            Log Height
-          </button>
+            🎒 KiddieNotes
+          </a>
         </div>
       </div>
     </header>
@@ -141,18 +141,6 @@ const {
                   <polyline points="2 12 17 22 12"></polyline>
                 </svg>
                 AI Assistant
-              </a>
-              <a 
-                href="/justtall" 
-                class="flex items-center gap-3 px-3 py-2 text-body hover:text-ink hover:bg-canvas-soft-2 rounded-sm text-body-sm transition-colors duration-150"
-                id="menu-justtall"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="18" y1="3" x2="6" y2="21"></line>
-                  <line x1="14" y1="3" x2="14" y2="21"></line>
-                  <line x1="10" y1="3" x2="10" y2="21"></line>
-                </svg>
-                JustTall
               </a>
               <hr class="border-hairline my-3" />
               <button 
@@ -411,19 +399,10 @@ const {
       if (resetDbBtn) {
         resetDbBtn.addEventListener('click', (e) => {
           e.preventDefault();
-          if (confirm('Are you sure you want to reset all JustTall application data? This will clear your metrics, height logs, and active streaks.')) {
-            localStorage.removeItem('justtall_profile');
-            localStorage.removeItem('justtall_logs');
-            localStorage.removeItem('justtall_habits');
+          if (confirm('Reset all application data?')) {
+            localStorage.clear();
             window.location.reload();
           }
-        });
-      }
-
-      const logHeightBtn = document.getElementById('nav-log-btn');
-      if (logHeightBtn) {
-        logHeightBtn.addEventListener('click', () => {
-          window.dispatchEvent(new CustomEvent('open-log-height-dialog'));
         });
       }
 
