@@ -821,7 +821,10 @@ Rules & Behavior:
   const codingProviders = [];
 
   if (process.env.NVIDIA_KEY_1) {
-    codingProviders.push({ name: 'NVIDIA', url: 'https://integrate.api.nvidia.com/v1/chat/completions', key: process.env.NVIDIA_KEY_1, model: 'nvidia/llama-3.1-nemotron-70b-instruct', timeout: 8000 });
+    codingProviders.push({ name: 'NVIDIA-1', url: 'https://integrate.api.nvidia.com/v1/chat/completions', key: process.env.NVIDIA_KEY_1, model: 'nvidia/llama-3.1-nemotron-70b-instruct', timeout: 8000 });
+  }
+  if (process.env.NVIDIA_KEY_2) {
+    codingProviders.push({ name: 'NVIDIA-2', url: 'https://integrate.api.nvidia.com/v1/chat/completions', key: process.env.NVIDIA_KEY_2, model: 'nvidia/llama-3.1-nemotron-70b-instruct', timeout: 8000 });
   }
   if (process.env.GROQ_1) {
     codingProviders.push({ name: 'Groq', url: 'https://api.groq.com/openai/v1/chat/completions', key: process.env.GROQ_1, model: 'llama-3.3-70b-versatile', timeout: 8000 });
