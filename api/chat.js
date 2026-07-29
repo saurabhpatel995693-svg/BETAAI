@@ -780,7 +780,7 @@ export default async function handler(req, res) {
   const clientCustomModel   = req.headers['x-custom-model'] || payload.customModel || '';
   const clientGeminiKey     = req.headers['x-gemini-key'] || payload.geminiKey || '';
   const clientGroqKey       = req.headers['x-groq-key'] || payload.groqKey || process.env.GROQ_KEY || process.env.GROK_KEY || '';
-  const clientGrokKey       = req.headers['x-grok-key'] || req.headers['x-xai-key'] || payload.grokKey || process.env.GROK_KEY || process.env.XAI_API_KEY || '';
+  const clientGrokKey       = req.headers['x-grok-key'] || req.headers['x-xai-key'] || payload.grokKey || process.env.GROK_KEY || process.env.XAI_API_KEY || process.env.XAI_KEY || '';
   const clientOpenRouterKey = req.headers['x-openrouter-key'] || payload.openrouterKey || process.env.OPENROUTER_KEY || '';
   const clientHfKey         = req.headers['x-hf-key'] || payload.hfKey || process.env.HF_TOKEN || process.env.HUGGINGFACE_KEY || '';
 
@@ -820,11 +820,11 @@ Rules & Behavior:
 
   // ── 3. Capability-based & Sticky Target Ordering ────────────────────────
   // Order targets based on task capability (DeepSeek/Llama/Grok preferred for code, Gemini for chat)
-  const geminiTargets = GEMINI_KEYS.map((key, idx) => ({
+const geminiTargets = GEMINI_KEYS.map((key, idx) => ({
     name: `Gemini-Key-${idx + 1}`,
     url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
     key: key,
-    model: 'gemini-flash-latest'
+    model: 'gemini-2.0-flash'
   }));
 
   const groqTargets = clientGroqKey ? [
@@ -852,7 +852,7 @@ Rules & Behavior:
     let baseUrl = clientCustomBase ? clientCustomBase.trim().replace(/\/$/, '') : '';
     let targetModel = clientCustomModel ? clientCustomModel.trim() : '';
     if (!baseUrl) baseUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
-    if (!targetModel) targetModel = 'gemini-flash-latest';
+    if (!targetModel) targetModel = 'gemini-2.0-flash';
     if (baseUrl && !baseUrl.endsWith('/chat/completions') && !baseUrl.includes('/generateContent')) {
       baseUrl += '/chat/completions';
     }
@@ -887,7 +887,7 @@ Rules & Behavior:
 
       const body = JSON.stringify({
         messages: normalizedMessages,
-        model: target.model || 'gemini-flash-latest',
+        model: target.model || 'gemini-2.0-flash',
         temperature: payload.temperature || 0.7,
         max_tokens: maxTokens,
         stream: wantsStream

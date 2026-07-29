@@ -816,6 +816,7 @@ async function fetchChatCompletion(config, bodyParams, signal = null) {
     'x-custom-base':  customBase,
     'x-custom-model': customModel,
     'x-gemini-key':   localStorage.getItem('sheshaai_gemini_key') || '',
+    'x-groq-key':     localStorage.getItem('sheshaai_groq_key') || '',
     'x-openrouter-key': localStorage.getItem('sheshaai_openrouter_key') || ''
   };
 
@@ -825,6 +826,7 @@ async function fetchChatCompletion(config, bodyParams, signal = null) {
     customModel,
     model: customModel || config.model || '',
     geminiKey:     localStorage.getItem('sheshaai_gemini_key') || '',
+    groqKey:       localStorage.getItem('sheshaai_groq_key') || '',
     openrouterKey: localStorage.getItem('sheshaai_openrouter_key') || '',
     mode: config.mode === 'code' ? 'code' : 'general',
     ...bodyParams

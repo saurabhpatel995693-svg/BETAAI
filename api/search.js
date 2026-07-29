@@ -44,7 +44,7 @@ export default async function handler(req, res) {
   }
 
   // 1. Tavily Real-Time Web Search API
-  const tavilyKey = process.env.TAVILY_API_KEY || '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';
+  const tavilyKey = process.env.TAVILY_API_KEY || '';
   if (tavilyKey) {
     try {
       const tavilyRes = await fetchWithTimeout('https://api.tavily.com/search', {
