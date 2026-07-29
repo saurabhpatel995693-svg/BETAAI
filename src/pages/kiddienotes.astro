@@ -206,7 +206,8 @@ import Layout from '../layouts/Layout.astro';
             </select>
           </div>
 
-          <button id="generate-btn" disabled class="w-full py-3.5 bg-gradient-to-r from-violet via-pink-600 to-cyan-500 text-white rounded-pill text-xs font-mono font-bold uppercase tracking-wider hover:opacity-95 transition shadow-level-4 flex items-center justify-center gap-2 cursor-pointer opacity-50 cursor-not-allowed" title="Please enter a topic and select a study format first">
+          <button id="generate-btn" class="w-full py-3.5 bg-gradient-to-r from-violet via-pink-600 to-cyan-500 text-white rounded-pill text-xs font-mono font-bold uppercase tracking-wider hover:opacity-95 transition shadow-level-4 flex items-center justify-center gap-2 cursor-pointer"
+            title="Please enter a topic and select a study format first">
             <span>⚡</span> Generate KiddieNotes AI Pack
           </button>
         </div>
@@ -436,8 +437,9 @@ import Layout from '../layouts/Layout.astro';
         document.getElementById('kiddie-api-key-input').value = savedKey;
         document.getElementById('key-status-badge').innerText = '⚡ Custom Key Active';
       }
-      // Initial generate button state
+      // Initial generate button state — enable since topic has default value and notes format is active
       updateGenerateBtnState();
+      updateStepIndicator(1);
     });
 
     // ── Step indicator update helper ──
@@ -461,12 +463,15 @@ import Layout from '../layouts/Layout.astro';
       const hasFormat = currentMode !== null && currentMode !== undefined;
       const btn = document.getElementById('generate-btn');
       if (hasTopic && hasFormat) {
-        btn.disabled = false;
-        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        btn.style.opacity = '1';
+        btn.style.pointerEvents = 'auto';
+        btn.style.cursor = 'pointer';
         btn.title = '';
+        btn.classList.remove('opacity-50', 'cursor-not-allowed');
       } else {
-        btn.disabled = true;
-        btn.classList.add('opacity-50', 'cursor-not-allowed');
+        btn.style.opacity = '0.5';
+        btn.style.pointerEvents = 'none';
+        btn.style.cursor = 'not-allowed';
         btn.title = 'Please enter a topic and select a study format first';
       }
     }
@@ -603,6 +608,8 @@ import Layout from '../layouts/Layout.astro';
         const url = btn.getAttribute('data-url');
         const topic = btn.getAttribute('data-topic');
         document.getElementById('yt-url-input').value = topic ? `${topic} (${url})` : url;
+        // Manually trigger input event so button state + step update
+        document.getElementById('yt-url-input').dispatchEvent(new Event('input'));
       });
     });
 
@@ -636,6 +643,7 @@ import Layout from '../layouts/Layout.astro';
         const currentTopic = document.getElementById('yt-url-input').value;
         if (!currentTopic || currentTopic === 'https://youtu.be/E_4gRy4O03w') {
           document.getElementById('yt-url-input').value = `Study material: ${file.name.replace(/\.[^/.]+$/, '')}`;
+          document.getElementById('yt-url-input').dispatchEvent(new Event('input'));
         }
       };
       reader.onerror = () => {
@@ -677,6 +685,7 @@ import Layout from '../layouts/Layout.astro';
         const currentVal = document.getElementById('yt-url-input').value;
         if (!currentVal || currentVal === 'https://youtu.be/E_4gRy4O03w') {
           document.getElementById('yt-url-input').value = `Classroom audio recording (${recordingSeconds} seconds)`;
+          document.getElementById('yt-url-input').dispatchEvent(new Event('input'));
         }
       } else {
         // Check browser support first
@@ -764,8 +773,12 @@ import Layout from '../layouts/Layout.astro';
           titleBadge.innerText = "Generated Easy Notes";
           iconBadge.innerText = "📋";
 
-          const prompt = `Create comprehensive educational study notes based on this video/topic: "${topicInput}". Target Grade Level: ${toneLabel}.\n\nProvide:\n1. A summary overview paragraph (3-4 sentences).\n2. 4-6 key bullet points explaining main facts.\n3. 3 key vocabulary terms with short definitions.`;
-          const responseText = await callKiddieAI(prompt);
+          const prompt = `Create comprehensive educational study notes on this topic: "${topicInput}". Target Grade Level: ${toneLabel}.\n\nProvide:\n1. A summary overview paragraph (5-6 sentences).\n2. 8-12 key bullet points explaining core concepts.\n3. 5-7 key vocabulary terms with short definitions.\n4. 3-4 important formulas or facts to remember.`;
+
+          // For file upload context, append it
+          const fileContext = uploadedFileContent ? `\n\nAdditional context from uploaded file:\n${uploadedFileContent.substring(0, 4000)}` : '';
+          const finalPrompt = fileContext ? prompt + fileContext : prompt;
+          const responseText = await callKiddieAI(finalPrompt);
 
           document.getElementById('notes-topic-heading').innerText = `📌 ${topicInput.substring(0, 45)}`;
           document.getElementById('notes-summary-text').innerText = responseText;
@@ -793,7 +806,7 @@ import Layout from '../layouts/Layout.astro';
           titleBadge.innerText = "Interactive Revision Quiz";
           iconBadge.innerText = "📝";
 
-          const prompt = `Generate 3 multiple-choice quiz questions based on: "${topicInput}". Target Grade: ${toneLabel}.\n\nReturn ONLY a valid JSON array of 3 objects with exact keys: "q" (question string), "options" (array of 4 string options), "answer" (index number 0-3 of the correct option). No extra text outside JSON.`;
+          const prompt = `Generate EXACTLY 20 multiple-choice quiz questions based on this topic: "${topicInput}". Target Grade: ${toneLabel}.\n\nReturn ONLY a valid JSON array of EXACTLY 20 objects with keys: "q" (question string), "options" (array of 4 string options), "answer" (index number 0-3 of correct option). No extra text outside the JSON array. Make questions progressively harder — first 5 easy, next 10 medium, last 5 advanced.`;
           const raw = await callKiddieAI(prompt);
           const parsed = extractJSONArray(raw);
 
@@ -816,7 +829,7 @@ import Layout from '../layouts/Layout.astro';
           titleBadge.innerText = "3D Study Flashcards";
           iconBadge.innerText = "🃏";
 
-          const prompt = `Generate 4 study flashcards based on: "${topicInput}". Target Grade: ${toneLabel}.\n\nReturn ONLY a valid JSON array of objects with keys: "front" (question or term) and "back" (answer or concise explanation). No extra text outside JSON.`;
+          const prompt = `Generate EXACTLY 20 study flashcards based on this topic: "${topicInput}". Target Grade: ${toneLabel}.\n\nReturn ONLY a valid JSON array of EXACTLY 20 objects with keys: "front" (question or term) and "back" (answer or concise explanation). Cover the topic comprehensively from basics to advanced concepts. No extra text outside the JSON array.`;
           const raw = await callKiddieAI(prompt);
           const parsed = extractJSONArray(raw);
 
@@ -834,7 +847,7 @@ import Layout from '../layouts/Layout.astro';
           titleBadge.innerText = "Study Run Game";
           iconBadge.innerText = "🏃";
 
-          const prompt = `Generate 3 fun true/false or quick choice game questions for kids based on: "${topicInput}". Target Grade: ${toneLabel}.\n\nReturn ONLY a valid JSON array of objects with keys: "q" (question string), "options" (array of 2 string options e.g. ["YES ✅ (Jump)", "NO ❌ (Duck)"]), "answer" (0 or 1 index), "explanation" (short string). No extra text.`;
+          const prompt = `Generate EXACTLY 20 fun true/false or quick-choice game questions for kids based on this topic: "${topicInput}". Target Grade: ${toneLabel}.\n\nReturn ONLY a valid JSON array of EXACTLY 20 objects with keys: "q" (question string), "options" (array of 2 string options e.g. ["YES ✅ (Jump)", "NO ❌ (Duck)"]), "answer" (0 or 1 index), "explanation" (short learning point string). Make questions progressively harder. No extra text outside the JSON array.`;
           const raw = await callKiddieAI(prompt);
           const parsed = extractJSONArray(raw);
 
@@ -852,14 +865,14 @@ import Layout from '../layouts/Layout.astro';
           iconBadge.innerText = "📝";
 
           const fileContext = uploadedFileContent ? `\n\nAdditional material from uploaded file:\n${uploadedFileContent.substring(0, 3000)}` : '';
-          const prompt = `Create a practice worksheet for students based on: "${topicInput}". Target Grade: ${toneLabel}.${fileContext}
+          const prompt = `Create a comprehensive practice worksheet for students on this topic: "${topicInput}". Target Grade: ${toneLabel}.${fileContext}
 
-The worksheet should include:
-1. A title and instructions for the student
-2. 5 questions of mixed types (fill-in-blanks, short answer, matching, true/false)
-3. A separate ANSWER KEY section clearly marked
+The worksheet MUST include:
+1. A title and clear instructions
+2. EXACTLY 20 questions of mixed types: 5 fill-in-the-blanks, 5 short-answer, 5 matching/true-false, 5 word problems or application questions
+3. A separate "--- ANSWER KEY ---" section at the bottom with correct answers
 
-Format with markdown headings. Use "--- ANSWER KEY ---" to separate questions from answers. Make questions age-appropriate for the target grade.`;
+Format with markdown headings. Make questions age-appropriate and progressively harder.`;
           const responseText = await callKiddieAI(prompt);
 
           document.getElementById('worksheet-heading').innerText = `📝 ${topicInput.substring(0, 40)} — Worksheet`;
