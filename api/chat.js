@@ -824,25 +824,26 @@ const geminiTargets = GEMINI_KEYS.map((key, idx) => ({
     name: `Gemini-Key-${idx + 1}`,
     url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
     key: key,
-    model: 'gemini-2.0-flash'
+    model: 'gemini-2.0-flash',
+    timeout: 8000
   }));
 
   const groqTargets = clientGroqKey ? [
-    { name: 'Groq-Llama-3.3-70B', url: 'https://api.groq.com/openai/v1/chat/completions', key: clientGroqKey, model: 'llama-3.3-70b-versatile' },
-    { name: 'Groq-Llama-3.1-8B', url: 'https://api.groq.com/openai/v1/chat/completions', key: clientGroqKey, model: 'llama-3.1-8b-instant' }
+    { name: 'Groq-Llama-3.3-70B', url: 'https://api.groq.com/openai/v1/chat/completions', key: clientGroqKey, model: 'llama-3.3-70b-versatile', timeout: 10000 },
+    { name: 'Groq-Llama-3.1-8B', url: 'https://api.groq.com/openai/v1/chat/completions', key: clientGroqKey, model: 'llama-3.1-8b-instant', timeout: 10000 }
   ] : [];
 
   const grokTargets = clientGrokKey ? [
-    { name: 'xAI-Grok-2', url: 'https://api.x.ai/v1/chat/completions', key: clientGrokKey, model: 'grok-2-latest' }
+    { name: 'xAI-Grok-2', url: 'https://api.x.ai/v1/chat/completions', key: clientGrokKey, model: 'grok-2-latest', timeout: 10000 }
   ] : [];
 
   const openRouterTargets = clientOpenRouterKey ? [
-    { name: 'OpenRouter-DeepSeek', url: 'https://openrouter.ai/api/v1/chat/completions', key: clientOpenRouterKey, model: 'deepseek/deepseek-r1:free', headers: { 'HTTP-Referer': 'https://sheshaai.vercel.app', 'X-Title': 'SHESHAAI' } },
-    { name: 'OpenRouter-Llama', url: 'https://openrouter.ai/api/v1/chat/completions', key: clientOpenRouterKey, model: 'meta-llama/llama-3.3-70b-instruct:free', headers: { 'HTTP-Referer': 'https://sheshaai.vercel.app', 'X-Title': 'SHESHAAI' } }
+    { name: 'OpenRouter-DeepSeek', url: 'https://openrouter.ai/api/v1/chat/completions', key: clientOpenRouterKey, model: 'deepseek/deepseek-r1:free', headers: { 'HTTP-Referer': 'https://sheshaai.vercel.app', 'X-Title': 'SHESHAAI' }, timeout: 10000 },
+    { name: 'OpenRouter-Llama', url: 'https://openrouter.ai/api/v1/chat/completions', key: clientOpenRouterKey, model: 'meta-llama/llama-3.3-70b-instruct:free', headers: { 'HTTP-Referer': 'https://sheshaai.vercel.app', 'X-Title': 'SHESHAAI' }, timeout: 10000 }
   ] : [];
 
   const hfTargets = clientHfKey ? [
-    { name: 'HuggingFace-Qwen', url: 'https://router.huggingface.co/v1/chat/completions', key: clientHfKey, model: 'Qwen/Qwen2.5-72B-Instruct' }
+    { name: 'HuggingFace-Qwen', url: 'https://router.huggingface.co/v1/chat/completions', key: clientHfKey, model: 'Qwen/Qwen2.5-72B-Instruct', timeout: 10000 }
   ] : [];
 
   let targets = [];
@@ -856,7 +857,7 @@ const geminiTargets = GEMINI_KEYS.map((key, idx) => ({
     if (baseUrl && !baseUrl.endsWith('/chat/completions') && !baseUrl.includes('/generateContent')) {
       baseUrl += '/chat/completions';
     }
-    targets.push({ name: 'User-Custom', url: baseUrl, key: clientCustomKey, model: targetModel });
+    targets.push({ name: 'User-Custom', url: baseUrl, key: clientCustomKey, model: targetModel, timeout: 10000 });
   }
 
   // Task-capability optimized ordering:
@@ -870,10 +871,10 @@ const geminiTargets = GEMINI_KEYS.map((key, idx) => ({
 
   // Fast failover: if no valid targets configured, use Pollinations AI directly
   if (targets.length === 0) {
-    targets.push({ name: 'Pollinations-Default', url: 'https://text.pollinations.ai/openai', key: '', model: 'openai' });
+    targets.push({ name: 'Pollinations-Default', url: 'https://text.pollinations.ai/openai', key: '', model: 'openai', timeout: 10000 });
   }
 
-  // ── 4. Attempt each keyed target in order (Timeout: 14s for code, 10s for chat) ──
+  // ── 4. Attempt each keyed target in order (Per-target timeout: Gemini=8s, others=10s/14s) ──
   const targetTimeout = isCodingTask ? 14000 : 10000;
   const maxTokens = payload.max_tokens || (isCodingTask ? 8192 : 4096);
 
@@ -893,7 +894,7 @@ const geminiTargets = GEMINI_KEYS.map((key, idx) => ({
         stream: wantsStream
       });
 
-      const apiRes = await fetchWithTimeout(target.url, { method: 'POST', headers, body }, targetTimeout);
+      const apiRes = await fetchWithTimeout(target.url, { method: 'POST', headers, body }, target.timeout || targetTimeout);
 
       if (!apiRes.ok) {
         const txt = await apiRes.text().catch(() => '');
