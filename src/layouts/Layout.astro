@@ -290,7 +290,7 @@ const {
 
       async function initApiKeyStatus() {
         // Check ALL possible key storage locations (unified)
-        const key = localStorage.getItem('GEMINI_API_KEY') || localStorage.getItem('sheshaai_user_key') || localStorage.getItem('sheshaai_gemini_key') || '';
+        const key = localStorage.getItem('GEMINI_API_KEY') || localStorage.getItem('sheshaai_user_key') || localStorage.getItem('sheshaai_gemini_key') || localStorage.getItem('betaai_custom_key') || '';
         const indicators = {
           ping: document.getElementById('api-indicator-ping'),
           dot: document.getElementById('api-indicator-dot'),
@@ -342,7 +342,7 @@ const {
         if (overlay) {
           overlay.classList.remove('hidden');
           overlay.classList.add('flex');
-          const key = localStorage.getItem('GEMINI_API_KEY') || "";
+          const key = localStorage.getItem('GEMINI_API_KEY') || localStorage.getItem('sheshaai_gemini_key') || localStorage.getItem('sheshaai_user_key') || localStorage.getItem('betaai_custom_key') || "";
           if (keyInput) keyInput.value = key;
         }
       }
@@ -379,8 +379,14 @@ const {
           const val = keyInput.value.trim();
           if (val) {
             localStorage.setItem('GEMINI_API_KEY', val);
+            localStorage.setItem('sheshaai_gemini_key', val);
+            localStorage.setItem('sheshaai_user_key', val);
+            localStorage.setItem('betaai_custom_key', val);
           } else {
             localStorage.removeItem('GEMINI_API_KEY');
+            localStorage.removeItem('sheshaai_gemini_key');
+            localStorage.removeItem('sheshaai_user_key');
+            localStorage.removeItem('betaai_custom_key');
           }
           await initApiKeyStatus();
           closeModal();
@@ -391,6 +397,9 @@ const {
       if (clearBtn) {
         clearBtn.addEventListener('click', async () => {
           localStorage.removeItem('GEMINI_API_KEY');
+          localStorage.removeItem('sheshaai_gemini_key');
+          localStorage.removeItem('sheshaai_user_key');
+          localStorage.removeItem('betaai_custom_key');
           if (keyInput) keyInput.value = "";
           await initApiKeyStatus();
           closeModal();

@@ -815,7 +815,7 @@ async function fetchChatCompletion(config, bodyParams, signal = null) {
     'x-custom-key':   customKey,
     'x-custom-base':  customBase,
     'x-custom-model': customModel,
-    'x-gemini-key':   localStorage.getItem('sheshaai_gemini_key') || '',
+    'x-gemini-key':   localStorage.getItem('GEMINI_API_KEY') || localStorage.getItem('sheshaai_gemini_key') || '',
     'x-groq-key':     localStorage.getItem('sheshaai_groq_key') || '',
     'x-openrouter-key': localStorage.getItem('sheshaai_openrouter_key') || ''
   };
@@ -825,7 +825,7 @@ async function fetchChatCompletion(config, bodyParams, signal = null) {
     customBase,
     customModel,
     model: customModel || config.model || '',
-    geminiKey:     localStorage.getItem('sheshaai_gemini_key') || '',
+    geminiKey:     localStorage.getItem('GEMINI_API_KEY') || localStorage.getItem('sheshaai_gemini_key') || '',
     groqKey:       localStorage.getItem('sheshaai_groq_key') || '',
     openrouterKey: localStorage.getItem('sheshaai_openrouter_key') || '',
     mode: config.mode === 'code' ? 'code' : 'general',
@@ -2338,8 +2338,11 @@ document.getElementById('save-settings').onclick = () => {
   if (customKey) {
     localStorage.setItem('betaai_custom_key', customKey);
     localStorage.setItem('GEMINI_API_KEY', customKey);
+    localStorage.setItem('sheshaai_gemini_key', customKey);
   } else {
     localStorage.removeItem('betaai_custom_key');
+    localStorage.removeItem('GEMINI_API_KEY');
+    localStorage.removeItem('sheshaai_gemini_key');
   }
 
   if (customBase) localStorage.setItem('betaai_custom_base', customBase);
@@ -2361,7 +2364,7 @@ document.getElementById('save-settings').onclick = () => {
 
 // Load saved settings
 (function() {
-  const k = localStorage.getItem('betaai_custom_key') || localStorage.getItem('GEMINI_API_KEY');
+  const k = localStorage.getItem('betaai_custom_key') || localStorage.getItem('GEMINI_API_KEY') || localStorage.getItem('sheshaai_gemini_key');
   const b = localStorage.getItem('betaai_custom_base');
   const m = localStorage.getItem('betaai_custom_model');
   if (k && document.getElementById('custom-api-key')) document.getElementById('custom-api-key').value = k;
@@ -2382,6 +2385,12 @@ document.getElementById('clear-all-data').onclick = () => {
     localStorage.removeItem('betaai_convs');
     localStorage.removeItem('betaai_settings');
     localStorage.removeItem('betaai_byok');
+    localStorage.removeItem('betaai_custom_key');
+    localStorage.removeItem('GEMINI_API_KEY');
+    localStorage.removeItem('sheshaai_gemini_key');
+    localStorage.removeItem('sheshaai_user_key');
+    localStorage.removeItem('sheshaai_groq_key');
+    localStorage.removeItem('sheshaai_openrouter_key');
     newChat(); renderHistory(); toast('All data & keys cleared');
   }
 };
