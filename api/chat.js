@@ -50,6 +50,30 @@ function generateSmartAIResponse(userPrompt, messages = []) {
   const prompt = (userPrompt || '').trim();
   const lower = prompt.toLowerCase();
 
+  // ── Extract actual transcript/content from the prompt (all """ blocks) ──
+  const contentBlocks = prompt.match(/"""\s*([\s\S]*?)\s*"""/g);
+  const actualContent = contentBlocks
+    ? contentBlocks.map(b => b.replace(/^"""\s*/, '').replace(/\s*"""$/, '').trim()).filter(Boolean).join('\n\n')
+    : '';
+
+  // Helper: extract meaningful sentences from content for use in fallback responses
+  function extractContentSentences(content, maxCount = 5) {
+    if (!content || content.length < 30) return [];
+    const sentences = content.split(/[.!?]+/).map(s => s.trim()).filter(s => s.length > 20 && s.length < 300);
+    return sentences.slice(0, maxCount);
+  }
+
+  // Helper: build a content-aware summary from actual transcript when AI is unavailable
+  function buildContentFallback(content, label = 'Content') {
+    if (!content || content.length < 30) return null;
+    const sentences = extractContentSentences(content, 8);
+    if (sentences.length === 0) {
+      // If no clean sentences, show first portion of raw content
+      return `**Extracted ${label} (first ${Math.min(content.length, 500)} characters):**\n> ${content.substring(0, 500)}`;
+    }
+    return `**Extracted ${label} Key Points:**\n` + sentences.map((s, i) => `${i+1}. ${s}`).join('\n') + '\n\n> ⚠️ **Note:** AI backend temporarily unavailable — showing raw extracted content above. Add a Gemini API Key for AI-powered study packs.';
+  }
+
   const isLightPhysics = lower.includes('light') || lower.includes('reflection') || lower.includes('refraction') || lower.includes('science') || lower.includes('mirror') || lower.includes('lens') || lower.includes('prashant');
   const isWebDev = lower.includes('tailwind') || lower.includes('web development') || lower.includes('next.js') || lower.includes('astro') || lower.includes('react');
   const isAiBreakthrough = lower.includes('ai breakthrough') || lower.includes('deepseek') || lower.includes('open models') || lower.includes('llm');
@@ -73,7 +97,7 @@ function generateSmartAIResponse(userPrompt, messages = []) {
   // Notebook Actions Handler (Quiz, Flashcards, Summary, Mindmap, Timeline, Practice, ELI5)
   if (lower.includes('based on the following content') || lower.includes('flashcard') || lower.includes('output as a json array') || lower.includes('create a quiz') || lower.includes('comprehensive, well-structured summary') || lower.includes('hierarchical outline') || lower.includes('chronological timeline') || lower.includes('practice test') || lower.includes('5 years old')) {
     
-    // Extract topic title or clean content text — handle both "Content:\nTopic" and "topic: "Topic"" formats
+    // Extract topic title or clean content text
     let topicLine = '';
     const topicMatch = prompt.match(/topic:\s*"([^"]+)"/i) || prompt.match(/topic:\s*'([^']+)'/i) || prompt.match(/based on this topic:\s*"([^"]+)"/i) || prompt.match(/based on this topic:\s*'([^']+)'/i);
     if (topicMatch) {
@@ -84,11 +108,68 @@ function generateSmartAIResponse(userPrompt, messages = []) {
     }
     const displayTopic = topicLine || 'this subject';
 
-    // If prompt asks for JSON array (KiddieNotes quiz/flashcard/game), return valid JSON
+    // ── CONTENT-AWARE FALLBACK ──
+    // When actual content (transcript/PDF text) is provided, use it instead of generic templates
+    const contentFallback = actualContent ? buildContentFallback(actualContent, 'video/PDF content') : null;
+
+    // If prompt asks for JSON array (KiddieNotes quiz/flashcard/game)
     if (lower.includes('json array') || lower.includes('return only a valid json')) {
-      // Determine type from prompt
+      // When real content is available but AI is down, build content-based JSON
+      if (actualContent && actualContent.length > 100) {
+        const sentences = extractContentSentences(actualContent, 20);
+
+        if (lower.includes('multiple-choice') || lower.includes('quiz')) {
+          const questions = [];
+          // Generate quiz questions using actual content sentences
+          for (let i = 0; i < 20; i++) {
+            if (i < sentences.length) {
+              const sentence = sentences[i].substring(0, 80);
+              questions.push({
+                q: `Based on the content: "${sentence}"`,
+                options: ['This is correct according to the content', 'This contradicts the content', 'Not mentioned in the content', 'Cannot be determined'],
+                answer: 0
+              });
+            } else {
+              const j = i % sentences.length;
+              questions.push({
+                q: `Fill in: According to the content, "${sentences[j]?.substring(0, 30) || displayTopic}..." is related to what?`,
+                options: ['The main topic being discussed', 'An unrelated side note', 'A definition or explanation', 'A question from the audience'],
+                answer: 0
+              });
+            }
+          }
+          return JSON.stringify(questions, null, 2);
+        } else if (lower.includes('flashcard') || lower.includes('card')) {
+          const cards = [];
+          for (let i = 0; i < 20; i++) {
+            if (i < sentences.length) {
+              const parts = sentences[i].split(/[,;]/);
+              const front = parts[0].substring(0, 60).trim();
+              const back = (parts.slice(1).join('; ') || sentences[i]).substring(0, 120).trim();
+              cards.push({ front: front || `Content point ${i+1}`, back });
+            } else {
+              cards.push({ front: `${displayTopic} — Key Fact ${i+1}`, back: `Important concept from the study material about ${displayTopic}.` });
+            }
+          }
+          return JSON.stringify(cards, null, 2);
+        } else if (lower.includes('game') || lower.includes('true/false') || lower.includes('true or false')) {
+          const questions = [];
+          for (let i = 0; i < 20; i++) {
+            const useContent = i < sentences.length;
+            const snippet = useContent ? sentences[i].substring(0, 60) : displayTopic;
+            questions.push({
+              q: `About "${snippet}": Is this discussed in the study content?`,
+              options: ['YES ✅ (Jump)', 'NO ❌ (Duck)'],
+              answer: 0,
+              explanation: useContent ? `Yes, the content discusses: ${sentences[i].substring(0, 100)}` : `${displayTopic} is part of the study material.`
+            });
+          }
+          return JSON.stringify(questions, null, 2);
+        }
+      }
+
+      // No real content — use old generic JSON generation
       if (lower.includes('multiple-choice') || lower.includes('quiz')) {
-        // Generate 20 quiz questions as JSON
         const questions = [];
         for (let i = 1; i <= 20; i++) {
           const qNum = i;
@@ -131,12 +212,15 @@ function generateSmartAIResponse(userPrompt, messages = []) {
         }
         return JSON.stringify(questions, null, 2);
       } else {
-        // Generic JSON fallback for any unknown JSON-request type
         return JSON.stringify([{ q: `What is ${displayTopic}?`, options: ['Core concept', 'Overview', 'Application', 'All'], answer: 0 }], null, 2);
       }
     }
 
+    // Non-JSON quiz output
     if ((lower.includes('quiz') || lower.includes('multiple-choice')) && !lower.includes('output as a json array')) {
+      if (contentFallback) {
+        return `## 📝 Interactive Quiz on: ${displayTopic}\n\n${contentFallback}\n\n---\n### Sample Questions\n1. Based on the extracted content, what is the main topic being discussed?\n2. What key points are mentioned?\n3. How can you apply this knowledge?`;
+      }
       return `## 📝 Interactive Quiz on: ${displayTopic}
 
 ### Question 1: What is the main concept of ${displayTopic}?
@@ -159,7 +243,16 @@ function generateSmartAIResponse(userPrompt, messages = []) {
 2. C`;
     }
 
+    // Flashcard non-JSON output
     if (lower.includes('flashcard') || lower.includes('output as a json array')) {
+      if (contentFallback) {
+        return JSON.stringify([
+          { front: displayTopic, back: contentFallback.substring(0, 200) },
+          { front: `Key detail from content`, back: extractContentSentences(actualContent, 1).join(' ') || 'Study material content' },
+          { front: `Important concept`, back: `Review the extracted content above for ${displayTopic}.` },
+          { front: "Summary", back: `Study material on ${displayTopic}.` }
+        ], null, 2);
+      }
       return JSON.stringify([
         { front: displayTopic, back: `Key principles and fundamentals of ${displayTopic}.` },
         { front: `Importance of ${displayTopic}`, back: `Why ${displayTopic} matters in real-world contexts.` },
@@ -168,7 +261,11 @@ function generateSmartAIResponse(userPrompt, messages = []) {
       ], null, 2);
     }
 
+    // Timeline
     if (lower.includes('timeline')) {
+      if (contentFallback) {
+        return `## 📅 Chronological Timeline of ${displayTopic}\n\n${contentFallback}\n\n1. **Introduction**: The content begins by discussing ${displayTopic}.\n2. **Main Discussion**: Key concepts and explanations are provided.\n3. **Summary**: The content concludes with important takeaways.`;
+      }
       return `## 📅 Chronological Timeline of ${displayTopic}
 
 1. **Introduction**: Conceptual overview of ${displayTopic}.
@@ -177,7 +274,11 @@ function generateSmartAIResponse(userPrompt, messages = []) {
 4. **Future Directions**: How ${displayTopic} continues to evolve.`;
     }
 
+    // Explain Like I'm 5
     if (lower.includes('5 years old') || lower.includes('explain')) {
+      if (contentFallback) {
+        return `## 💡 ${displayTopic} — Explained Simply\n\nHere is what the content says about this topic:\n\n${contentFallback}`;
+      }
       return `## 💡 ${displayTopic} — Explained Simply
 
 Imagine you are exploring something new and exciting! 🎉
@@ -185,7 +286,10 @@ Imagine you are exploring something new and exciting! 🎉
 **${displayTopic}** is like organizing your favorite toys — when you understand the basics, everything makes sense and works together! Just think of it as a fun puzzle where each piece teaches you something new about ${displayTopic}.`;
     }
 
-    // Default Notebook Summary / Mindmap / Practice
+    // Default: Study Notes Summary / Mindmap / Practice
+    if (contentFallback) {
+      return `## 📋 Study Notes: ${displayTopic}\n\n${contentFallback}\n\n### Key Takeaways\n1. Review the extracted content above for complete details.\n2. ${displayTopic} covers important concepts worth studying.\n3. Use practice and review to reinforce your understanding.`;
+    }
     return `## 📋 Study Notes: ${displayTopic}
 
 ### 🎯 Overview
@@ -748,7 +852,15 @@ Imagine you are exploring something new and exciting! 🎉
     return jokes[Math.floor(Math.random() * jokes.length)];
   }
 
-  // General fallback
+  // General fallback — content-aware when transcript/content is in the prompt
+  const fbContentBlocks = prompt.match(/"""\s*([\s\S]*?)\s*"""/g);
+  const fbActualContent = fbContentBlocks
+    ? fbContentBlocks.map(b => b.replace(/^"""\s*/, '').replace(/\s*"""$/, '').trim()).filter(Boolean).join('\n\n')
+    : '';
+  if (fbActualContent && fbActualContent.length > 50) {
+    const excerpt = fbActualContent.substring(0, 800);
+    return `## 📋 Content Analysis\n\nHere is the extracted content from your source:\n\n> ${excerpt}${fbActualContent.length > 800 ? '...' : ''}\n\n**Note:** AI backend temporarily unavailable — showing raw extracted content above. To get AI-powered study notes, please add your Gemini API Key in the settings above.\n\n**How else can I assist you?**`;
+  }
   return `I am **SHESHAAI**, developed by **SAURABH**.
 
 I have processed your query: "${prompt}".

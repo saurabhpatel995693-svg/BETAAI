@@ -1,33 +1,36 @@
 ---
 ---
-<header class="h-16 border-b border-themed bg-surface flex items-center justify-between px-4 md:px-8 sticky top-0 z-30 backdrop-blur-md bg-opacity-90">
+
+<header class="h-14 border-b border-themed surface-card flex items-center justify-between px-4 md:px-6 sticky top-0 z-30 backdrop-blur-md bg-opacity-90">
   <div class="flex items-center gap-3">
-    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center text-slate-950 font-bold text-lg shadow-md shadow-amber-500/20">
-      ⚡
+    <div class="w-9 h-9 rounded-md mesh-gradient flex items-center justify-center text-white text-lg font-semibold shadow-level-2">
+      Š
     </div>
     <div>
-      <h1 class="font-syne font-bold text-lg tracking-tight text-themed-ink flex items-center gap-2">
+      <h1 class="font-display font-semibold text-lg tracking-tight text-themed-ink flex items-center gap-2">
         SHESHAAI
-        <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20 font-mono">by SAURABH</span>
+        <span class="text-[10px] px-2 py-0.5 rounded-full surface-card2 border border-themed text-themed-mute font-mono">by SAURABH</span>
       </h1>
     </div>
   </div>
 
   <div class="flex items-center gap-2">
     <!-- Mode Switcher -->
-    <div class="hidden sm:flex bg-themed-card p-1 rounded-xl border border-themed text-xs font-medium">
-      <button id="nav-chat-btn" class="px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-semibold shadow-sm transition-all">Chat & Code</button>
-      <button id="nav-notebook-btn" class="px-3 py-1.5 rounded-lg text-themed-mute hover:text-themed-ink transition-all">Notebooks</button>
+    <div class="hidden sm:flex surface-card2 p-0.5 rounded-md border border-themed text-xs font-medium">
+      <button id="nav-chat-btn" class="px-3 py-1.5 rounded-sm btn-ink font-medium shadow-level-2 transition-all">Chat & Code</button>
+      <button id="nav-notebook-btn" class="px-3 py-1.5 rounded-sm text-themed-body hover:text-themed-ink transition-all">Notebooks</button>
     </div>
 
     <!-- Theme Toggle -->
-    <button id="theme-toggle-btn" class="p-2 rounded-xl border border-themed bg-themed-card text-themed-ink hover:border-amber-500/50 transition-all text-sm" title="Toggle Dark/Light Mode">
-      🌙
+    <button id="theme-toggle-btn" class="w-8 h-8 rounded-md border border-themed surface-card text-themed-body hover:text-themed-ink transition-all flex items-center justify-center" title="Toggle Dark/Light Mode">
+      <span id="theme-icon">🌙</span>
     </button>
 
     <!-- Clear Chat -->
-    <button id="clear-chat-btn" class="p-2 rounded-xl border border-themed bg-themed-card text-themed-mute hover:text-red-400 hover:border-red-500/30 transition-all text-sm" title="Clear Chat History">
-      🗑️
+    <button id="clear-chat-btn" class="w-8 h-8 rounded-md border border-themed surface-card text-themed-body hover:text-error transition-all flex items-center justify-center" title="Clear Chat History">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/>
+      </svg>
     </button>
   </div>
 </header>

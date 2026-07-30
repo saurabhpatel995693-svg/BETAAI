@@ -415,6 +415,39 @@ import Layout from '../layouts/Layout.astro';
     let gameStars = 120;
     let currentGameIdx = 0;
     let uploadedFileContent = '';
+    let uploadedFileName = '';
+
+    // ── Load PDF.js from CDN dynamically (for PDF text extraction) ──
+    function loadPDFJS() {
+      return new Promise((resolve, reject) => {
+        if (window.pdfjsLib) {
+          resolve(window.pdfjsLib);
+          return;
+        }
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+        script.onload = () => {
+          window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+          resolve(window.pdfjsLib);
+        };
+        script.onerror = () => reject(new Error('PDF.js library could not be loaded. Check internet connection.'));
+        document.head.appendChild(script);
+      });
+    }
+
+    // ── Extract text from PDF using PDF.js ──
+    async function extractPDFText(arrayBuffer) {
+      const pdfjsLib = await loadPDFJS();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let fullText = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        const pageText = content.items.map(item => item.str).join(' ');
+        fullText += `[Page ${i}]\n${pageText}\n\n`;
+      }
+      return fullText.trim();
+    }
 
     let aiQuizzes = [
       { q: "What is the primary objective of this lesson?", options: ["Understand core concepts", "Memorize dates", "Skip study", "Draw pictures"], answer: 0 },
@@ -640,9 +673,10 @@ import Layout from '../layouts/Layout.astro';
       document.getElementById('file-upload-input').click();
     });
 
-    document.getElementById('file-upload-input')?.addEventListener('change', (e) => {
+    document.getElementById('file-upload-input')?.addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
+      uploadedFileName = file.name;
       const maxSize = 10 * 1024 * 1024; // 10MB
       if (file.size > maxSize) {
         document.getElementById('file-upload-status').classList.remove('hidden');
@@ -654,30 +688,53 @@ import Layout from '../layouts/Layout.astro';
       document.getElementById('file-upload-status').classList.remove('hidden');
       document.getElementById('file-upload-status').innerText = '📖 Reading file...';
 
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const text = ev.target.result;
-        uploadedFileContent = text.substring(0, 8000); // limit to 8k chars
+      const isPDF = file.name.toLowerCase().endsWith('.pdf');
+
+      if (isPDF) {
+        // ── PDF file: use PDF.js for proper text extraction ──
+        try {
+          const arrayBuffer = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(new Error('Could not read PDF file'));
+            reader.readAsArrayBuffer(file);
+          });
+          const extractedText = await extractPDFText(arrayBuffer);
+          uploadedFileContent = extractedText.substring(0, 8000);
+          const charCount = uploadedFileContent.length;
+          document.getElementById('file-upload-text').innerText = `📄 ${file.name} (${Math.round(file.size/1024)}KB)`;
+          document.getElementById('file-upload-status').innerText = `✅ PDF text extracted — ${charCount} characters`;
+          document.getElementById('file-clear-btn').classList.remove('hidden');
+        } catch (err) {
+          document.getElementById('file-upload-status').innerText = `❌ PDF text extraction failed: ${err.message}`;
+          document.getElementById('file-upload-status').className = 'mt-1 text-[10px] font-mono text-error';
+          return;
+        }
+      } else {
+        // ── Non-PDF file: read as text ──
+        const reader = new FileReader();
+        const text = await new Promise((resolve, reject) => {
+          reader.onload = (ev) => resolve(ev.target.result);
+          reader.onerror = () => reject(new Error('Could not read file'));
+          reader.readAsText(file);
+        });
+        uploadedFileContent = text.substring(0, 8000);
         document.getElementById('file-upload-text').innerText = `📄 ${file.name} (${Math.round(file.size/1024)}KB)`;
         document.getElementById('file-upload-status').innerText = `✅ File loaded — ${uploadedFileContent.length} characters extracted`;
         document.getElementById('file-clear-btn').classList.remove('hidden');
-        // Auto-fill topic
-        const currentTopic = document.getElementById('yt-url-input').value;
-        if (!currentTopic || currentTopic === 'https://youtu.be/E_4gRy4O03w') {
-          document.getElementById('yt-url-input').value = `Study material: ${file.name.replace(/\.[^/.]+$/, '')}`;
-          document.getElementById('yt-url-input').dispatchEvent(new Event('input'));
-        }
-      };
-      reader.onerror = () => {
-        document.getElementById('file-upload-status').innerText = '❌ Could not read file. Try a different format.';
-        document.getElementById('file-upload-status').className = 'mt-1 text-[10px] font-mono text-error';
-      };
-      // Read as text for .txt/.md/.pdf (PDF will be garbled but some text may extract)
-      reader.readAsText(file);
+      }
+
+      // Auto-fill topic
+      const currentTopic = document.getElementById('yt-url-input').value;
+      if (!currentTopic || currentTopic === 'https://youtu.be/E_4gRy4O03w') {
+        document.getElementById('yt-url-input').value = `Study material: ${file.name.replace(/\.[^/.]+$/, '')}`;
+        document.getElementById('yt-url-input').dispatchEvent(new Event('input'));
+      }
     });
 
     document.getElementById('file-clear-btn')?.addEventListener('click', () => {
       uploadedFileContent = '';
+      uploadedFileName = '';
       document.getElementById('file-upload-input').value = '';
       document.getElementById('file-upload-text').innerText = 'Choose PDF, text file, or image';
       document.getElementById('file-upload-status').classList.add('hidden');
@@ -783,6 +840,12 @@ import Layout from '../layouts/Layout.astro';
 
       const toneLabel = tone === 'nursery' ? 'Nursery/KG Kids (simple words, emojis)' : tone === 'high' ? 'Class 9-12 (Board exam concepts, formulas)' : 'Class 1-8 (Clear structured bullets)';
 
+      // Reset default preview to original state (in case a previous error changed it)
+      const defaultPreviewH4 = document.querySelector('#default-preview h4');
+      const defaultPreviewP = document.querySelector('#default-preview p');
+      if (defaultPreviewH4) defaultPreviewH4.innerText = 'Ready to convert YouTube to Notes!';
+      if (defaultPreviewP) defaultPreviewP.innerText = 'Enter your YouTube URL or lesson topic, choose your grade level, and click "Generate KiddieNotes AI Pack".';
+
       // Hide views, show loader
       ['default-preview','notes-view','quiz-view','flashcard-view','game-view','worksheet-view'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
       const loadingView = document.getElementById('loading-view');
@@ -796,9 +859,19 @@ import Layout from '../layouts/Layout.astro';
         document.getElementById('loading-sub-msg').innerText = 'Kripya pratiksha karein — video ka content padha ja raha hai';
         const result = await fetchYouTubeTranscript(topicInput);
         if (result.error) {
-          // Transcript failed—fall back to using URL as topic with a note
-          actualTopic = topicInput + ' (transcript unavailable)';
-          document.getElementById('loading-sub-msg').innerText = 'Transcript available nahi hai — AI video topic ke basis par study pack bana raha hai';
+          // Transcript unavailable — show clear error and STOP
+          loadingView.classList.add('hidden');
+          document.getElementById('default-preview').classList.remove('hidden');
+          // Update the default preview to show error message
+          document.querySelector('#default-preview h4').innerText = '❌ Transcript / Captions Available Nahi Hain';
+          document.querySelector('#default-preview p').innerHTML = `<strong>${result.error}</strong><br><br>${result.errorEn || 'YouTube ne is video ke liye captions disable kar diye hain. Kripya koi doosra video try karein jisme captions hon, ya topic/text directly type karein.'}<br><br>💡 <em>Tip: Video ka topic text field mein directly type karke bhi notes bana sakte hain.</em>`;
+          // Also try to show the API error detail
+          const errorDetail = result.error || 'No captions available for this video';
+          const statusEl = document.getElementById('file-upload-status');
+          statusEl.classList.remove('hidden');
+          statusEl.className = 'mt-1 text-[10px] font-mono text-error';
+          statusEl.innerText = `⚠️ ${errorDetail}`;
+          return; // Stop generation — don't fall back to generic answers
         } else {
           // Transcript available — use the actual video content
           actualTopic = result.title || topicInput;
@@ -809,8 +882,11 @@ import Layout from '../layouts/Layout.astro';
         await new Promise(r => setTimeout(r, 600));
       }
 
-      // Build transcript context if available (for YouTube videos with transcript)
-      const transcriptContext = transcriptText ? `\n\nHere is the actual transcript/content of the video. Base your response on THIS content, not on general knowledge:\n\n"""\n${transcriptText.substring(0, 8000)}\n"""` : '';
+      // ── Build transcript context (YouTube video captions) ──
+      const transcriptContext = transcriptText ? `\n\n=== YAHAN SE ACTUAL VIDEO TRANSCRIPT SHURU HOTA HAI ===\nBase ALL answers on the content below. Do NOT use general knowledge.\n"""\n${transcriptText.substring(0, 8000)}\n"""\n=== YAHAN TAK ACTUAL VIDEO TRANSCRIPT ===` : '';
+
+      // ── Build file upload context (PDF, TXT, MD content) ──
+      const fileContext = uploadedFileContent ? `\n\n=== YAHAN SE UPLOADED FILE KA CONTENT SHURU HOTA HAI ===\nBase ALL answers on the content below. Do NOT use general knowledge.\n"""\n${uploadedFileContent.substring(0, 8000)}\n"""\n=== YAHAN TAK UPLOADED FILE KA CONTENT ===` : '';
 
       document.getElementById('loading-msg').innerText = `🧠 AI aapke ${toneLabel} ke liye study pack bana raha hai...`;
       document.getElementById('loading-sub-msg').innerText = 'SHESHAAI Engine content generate kar raha hai';
@@ -820,12 +896,17 @@ import Layout from '../layouts/Layout.astro';
           titleBadge.innerText = "Generated Easy Notes";
           iconBadge.innerText = "📋";
 
-          const prompt = `Create comprehensive educational study notes on this topic: "${actualTopic}". Target Grade Level: ${toneLabel}.${transcriptContext}\n\nProvide:\n1. A summary overview paragraph (5-6 sentences).\n2. 8-12 key bullet points explaining core concepts.\n3. 5-7 key vocabulary terms with short definitions.\n4. 3-4 important formulas or facts to remember.`;
+          const prompt = `Create comprehensive educational study notes. CRITICAL: Base the notes ENTIRELY on the actual content below, NOT on general knowledge about the topic name. If actual transcript/content is provided below (between """ markers), use ONLY that content — ignore the topic name if it conflicts.
 
-          // For file upload context, append it
-          const fileContext = uploadedFileContent ? `\n\nAdditional context from uploaded file:\n${uploadedFileContent.substring(0, 4000)}` : '';
-          const finalPrompt = fileContext ? prompt + fileContext : prompt;
-          const responseText = await callKiddieAI(finalPrompt);
+Topic reference: "${actualTopic}"
+Target Grade Level: ${toneLabel}.${transcriptContext}${fileContext}
+
+Provide (based ONLY on actual content provided above):
+1. A summary overview paragraph (5-6 sentences).
+2. 8-12 key bullet points explaining core concepts.
+3. 5-7 key vocabulary terms with short definitions.
+4. 3-4 important formulas or facts to remember.`;
+          const responseText = await callKiddieAI(prompt);
 
           document.getElementById('notes-topic-heading').innerText = `📌 ${topicInput.substring(0, 45)}`;
           document.getElementById('notes-summary-text').innerText = responseText;
@@ -853,7 +934,12 @@ import Layout from '../layouts/Layout.astro';
           titleBadge.innerText = "Interactive Revision Quiz";
           iconBadge.innerText = "📝";
 
-          const prompt = `Generate EXACTLY 20 multiple-choice quiz questions based on this topic: "${actualTopic}". Target Grade: ${toneLabel}.${transcriptContext}\n\nReturn ONLY a valid JSON array of EXACTLY 20 objects with keys: "q" (question string), "options" (array of 4 string options), "answer" (index number 0-3 of correct option). No extra text outside the JSON array. Make questions progressively harder — first 5 easy, next 10 medium, last 5 advanced.`;
+          const prompt = `Generate EXACTLY 20 multiple-choice quiz questions. CRITICAL: Base ALL questions ENTIRELY on the actual content below (between """ markers), NOT on general knowledge or the topic name. Each question must test understanding of specific details from the actual transcript/content provided.
+
+Topic reference: "${actualTopic}"
+Target Grade: ${toneLabel}.${transcriptContext}${fileContext}
+
+Return ONLY a valid JSON array of EXACTLY 20 objects with keys: "q" (question string), "options" (array of 4 string options), "answer" (index number 0-3 of correct option). No extra text outside the JSON array. Make questions progressively harder — first 5 easy, next 10 medium, last 5 advanced.`;
           const raw = await callKiddieAI(prompt);
           const parsed = extractJSONArray(raw);
 
@@ -876,7 +962,12 @@ import Layout from '../layouts/Layout.astro';
           titleBadge.innerText = "3D Study Flashcards";
           iconBadge.innerText = "🃏";
 
-          const prompt = `Generate EXACTLY 20 study flashcards based on this topic: "${actualTopic}". Target Grade: ${toneLabel}.${transcriptContext}\n\nReturn ONLY a valid JSON array of EXACTLY 20 objects with keys: "front" (question or term) and "back" (answer or concise explanation). Cover the topic comprehensively from basics to advanced concepts. No extra text outside the JSON array.`;
+          const prompt = `Generate EXACTLY 20 study flashcards. CRITICAL: Base ALL flashcards ENTIRELY on the actual content below (between """ markers), NOT on general knowledge or assumptions about the topic. Every flashcard must derive from specific facts/statements in the content provided.
+
+Topic reference: "${actualTopic}"
+Target Grade: ${toneLabel}.${transcriptContext}${fileContext}
+
+Return ONLY a valid JSON array of EXACTLY 20 objects with keys: "front" (question or term) and "back" (answer or concise explanation from the content). Cover the topic comprehensively from basics to advanced concepts. No extra text outside the JSON array.`;
           const raw = await callKiddieAI(prompt);
           const parsed = extractJSONArray(raw);
 
@@ -894,7 +985,12 @@ import Layout from '../layouts/Layout.astro';
           titleBadge.innerText = "Study Run Game";
           iconBadge.innerText = "🏃";
 
-          const prompt = `Generate EXACTLY 20 fun true/false or quick-choice game questions for kids based on this topic: "${actualTopic}". Target Grade: ${toneLabel}.${transcriptContext}\n\nReturn ONLY a valid JSON array of EXACTLY 20 objects with keys: "q" (question string), "options" (array of 2 string options e.g. ["YES ✅ (Jump)", "NO ❌ (Duck)"]), "answer" (0 or 1 index), "explanation" (short learning point string). Make questions progressively harder. No extra text outside the JSON array.`;
+          const prompt = `Generate EXACTLY 20 fun true/false or quick-choice game questions for kids. CRITICAL: Base ALL questions ENTIRELY on the actual content below (between """ markers), NOT on general knowledge. The questions must test recall of specific facts from the provided content.
+
+Topic reference: "${actualTopic}"
+Target Grade: ${toneLabel}.${transcriptContext}${fileContext}
+
+Return ONLY a valid JSON array of EXACTLY 20 objects with keys: "q" (question string from content), "options" (array of 2 string options e.g. ["YES ✅ (Jump)", "NO ❌ (Duck)"]), "answer" (0 or 1 index), "explanation" (short learning point string from the content). Make questions progressively harder. No extra text outside the JSON array.`;
           const raw = await callKiddieAI(prompt);
           const parsed = extractJSONArray(raw);
 
@@ -911,12 +1007,14 @@ import Layout from '../layouts/Layout.astro';
           titleBadge.innerText = "Practice Worksheet";
           iconBadge.innerText = "📝";
 
-          const fileContext = uploadedFileContent ? `\n\nAdditional material from uploaded file:\n${uploadedFileContent.substring(0, 3000)}` : '';
-          const prompt = `Create a comprehensive practice worksheet for students on this topic: "${actualTopic}". Target Grade: ${toneLabel}.${transcriptContext}${fileContext}
+          const prompt = `Create a comprehensive practice worksheet for students. CRITICAL: Base ALL questions ENTIRELY on the actual content below (between """ markers), NOT on general knowledge or assumptions. Every question must derive from specific information in the provided transcript/content.
+
+Topic reference: "${actualTopic}"
+Target Grade: ${toneLabel}.${transcriptContext}${fileContext}
 
 The worksheet MUST include:
 1. A title and clear instructions
-2. EXACTLY 20 questions of mixed types: 5 fill-in-the-blanks, 5 short-answer, 5 matching/true-false, 5 word problems or application questions
+2. EXACTLY 20 questions of mixed types based on the content: 5 fill-in-the-blanks, 5 short-answer, 5 matching/true-false, 5 word problems or application questions
 3. A separate "--- ANSWER KEY ---" section at the bottom with correct answers
 
 Format with markdown headings. Make questions age-appropriate and progressively harder.`;
