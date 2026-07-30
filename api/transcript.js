@@ -1,4 +1,5 @@
-import { YoutubeTranscript } from 'youtube-transcript';
+// NOTE: Set SUPADATA_API_KEY in Vercel env vars for production transcript fetching.
+// Get a free key at: https://supadata.ai
 
 export const config = {
   api: {
@@ -75,59 +76,82 @@ export default async function handler(req, res) {
     console.warn('[TRANSCRIPT] oEmbed failed:', e.message);
   }
 
-  // ── PRIMARY: Use youtube-transcript library (handles InnerTube API internally, no HTML scraping) ──
+  // ── PRIMARY: Supadata API (reliable cloud/service, bypasses YouTube datacenter IP blocks) ──
+  const SUPADATA_KEY = process.env.SUPADATA_API_KEY;
+
   let transcriptData = null;
   let transcriptSource = '';
   let transcriptLanguage = '';
   let availableLanguages = [];
 
   try {
-    // Try #1: fetchTranscript without language restriction (let library decide)
-    try {
-      console.log(`[TRANSCRIPT] Trying youtube-transcript library for videoId=${videoId} (no lang specified)`);
-      const result = await YoutubeTranscript.fetchTranscript(videoId);
-      if (Array.isArray(result) && result.length > 0) {
-        transcriptData = result.map(item => ({
-          text: item.text,
-          duration: item.duration || 0,
-          offset: item.offset || 0
-        }));
-        transcriptSource = 'youtube-transcript-lib';
-        transcriptLanguage = 'auto';
-        console.log(`[TRANSCRIPT] youtube-transcript library OK: ${transcriptData.length} segments`);
+    // Only attempt Supadata if an API key is configured
+    if (SUPADATA_KEY) {
+      async function fetchSupadata(lang) {
+        const url = lang
+          ? `https://api.supadata.ai/v1/youtube/transcript?videoId=${videoId}&lang=${lang}`
+          : `https://api.supadata.ai/v1/youtube/transcript?videoId=${videoId}`;
+        const res = await fetchWithTimeout(url, {
+          headers: { 'x-api-key': SUPADATA_KEY }
+        }, 10000);
+        if (!res.ok) {
+          const body = await res.text().catch(() => '');
+          throw new Error(`Supadata HTTP ${res.status}: ${body.substring(0, 200)}`);
+        }
+        return res.json();
       }
-    } catch (e) {
-      console.warn(`[TRANSCRIPT-DEBUG] youtube-transcript (no lang) failed: ${e.name}: ${e.message}`);
-    }
 
-    // Try #2: Try with specific languages (English first, then Hindi, then priority list)
-    if (!transcriptData) {
-      for (const lang of PRIORITY_LANGS) {
-        if (transcriptData) break;
-        try {
-          console.log(`[TRANSCRIPT-DEBUG] Trying youtube-transcript with lang=${lang}`);
-          const result = await YoutubeTranscript.fetchTranscript(videoId, { lang });
-          if (Array.isArray(result) && result.length > 0) {
-            transcriptData = result.map(item => ({
-              text: item.text,
-              duration: item.duration || 0,
-              offset: item.offset || 0
-            }));
-            transcriptSource = 'youtube-transcript-lib';
-            transcriptLanguage = lang;
-            availableLanguages.push(lang);
-            console.log(`[TRANSCRIPT] youtube-transcript OK lang=${lang}: ${transcriptData.length} segments`);
+      // Try #1: no language restriction
+      try {
+        console.log(`[TRANSCRIPT] Trying Supadata API for videoId=${videoId} (auto lang)`);
+        const json = await fetchSupadata(null);
+        // Supadata returns { transcript: [...] } or { data: { transcript: [...] } }
+        const items = json.transcript || json.data?.transcript || json.content || [];
+        if (Array.isArray(items) && items.length > 0) {
+          transcriptData = items.map(seg => ({
+            text: seg.text,
+            duration: seg.duration || 0,
+            offset: seg.offset || 0
+          }));
+          transcriptSource = 'supadata';
+          transcriptLanguage = 'auto';
+          console.log(`[TRANSCRIPT] Supadata API OK: ${transcriptData.length} segments`);
+        }
+      } catch (e) {
+        console.warn(`[TRANSCRIPT-DEBUG] Supadata (auto lang) failed: ${e.message.substring(0, 120)}`);
+      }
+
+      // Try #2: with specific languages
+      if (!transcriptData) {
+        for (const lang of PRIORITY_LANGS) {
+          if (transcriptData) break;
+          try {
+            console.log(`[TRANSCRIPT] Trying Supadata API lang=${lang}`);
+            const json = await fetchSupadata(lang);
+            const items = json.transcript || json.data?.transcript || json.content || [];
+            if (Array.isArray(items) && items.length > 0) {
+              transcriptData = items.map(seg => ({
+                text: seg.text,
+                duration: seg.duration || 0,
+                offset: seg.offset || 0
+              }));
+              transcriptSource = 'supadata';
+              transcriptLanguage = lang;
+              availableLanguages.push(lang);
+              console.log(`[TRANSCRIPT] Supadata API OK lang=${lang}: ${transcriptData.length} segments`);
+            }
+          } catch (e) {
+            console.log(`[TRANSCRIPT-DEBUG] Supadata lang=${lang} failed: ${e.message.substring(0, 100)}`);
           }
-        } catch (e) {
-          // Library throws when lang is not available — this is expected
-          console.log(`[TRANSCRIPT-DEBUG] youtube-transcript lang=${lang} not available: ${e.message.substring(0, 100)}`);
         }
       }
+    } else {
+      console.warn(`[TRANSCRIPT] SUPADATA_API_KEY not set — skipping Supadata, trying fallback`);
     }
 
-    // Try #3: Fall back to youtubetranscript.com (alternative third-party service)
+    // Try #3: Fall back to youtubetranscript.com (free alternative, no API key needed)
     if (!transcriptData) {
-      console.log(`[TRANSCRIPT] youtube-transcript failed for all languages, falling back to youtubetranscript.com`);
+      console.log(`[TRANSCRIPT] Falling back to youtubetranscript.com for videoId=${videoId}`);
       for (const lang of ['', 'en', 'hi', ...PRIORITY_LANGS]) {
         if (transcriptData) break;
         const langParam = lang ? `&lang=${lang}` : '';
@@ -157,7 +181,8 @@ export default async function handler(req, res) {
 
     // All sources exhausted
     if (!transcriptData) {
-      console.error(`[TRANSCRIPT-FAIL] videoId=${videoId} — ALL transcript methods failed (youtube-transcript library + youtubetranscript.com). Video likely has no captions at all.`);
+      const missingKeyHint = !SUPADATA_KEY ? ' SUPADATA_API_KEY env var missing.' : '';
+      console.error(`[TRANSCRIPT-FAIL] videoId=${videoId} — ALL transcript methods failed.${missingKeyHint} Video likely has no captions.`);
       return res.status(404).json({
         error: 'Is video me captions available nahi hain. YouTube ne is video ke liye captions disable kar diye hain. Kripya koi doosra video try karein jisme captions hon, ya topic/text directly type karein.',
         errorEn: 'No transcript available for this video. It may have auto-captions disabled. Please try a different video that has captions, or type your topic/text directly.',
