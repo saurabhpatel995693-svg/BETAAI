@@ -92,14 +92,22 @@ export default async function handler(req, res) {
         const data = JSON.parse(playerMatch[1]);
         const tracks = data?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
         if (tracks?.length) {
-          return tracks.map(t => ({
+          const result = tracks.map(t => ({
             languageCode: t.languageCode,
             languageName: t.name?.simpleText || t.languageCode,
             baseUrl: t.baseUrl,
             isTranslatable: t.isTranslatable || false
           }));
+          console.log(`[TRANSCRIPT-DEBUG] extractAvailableTracks: found ${result.length} track(s) via ytInitialPlayerResponse: ${result.map(t => t.languageCode).join(', ')}`);
+          return result;
+        } else {
+          console.warn(`[TRANSCRIPT-DEBUG] extractAvailableTracks: ytInitialPlayerResponse found but has 0 captionTracks. playerCaptionsTracklistRenderer keys: ${Object.keys(data?.captions?.playerCaptionsTracklistRenderer || {}).join(', ')}`);
         }
-      } catch (e) { /* fall through */ }
+      } catch (e) {
+        console.warn(`[TRANSCRIPT-DEBUG] extractAvailableTracks: ytInitialPlayerResponse JSON parse failed: ${e.message}`);
+      }
+    } else {
+      console.warn(`[TRANSCRIPT-DEBUG] extractAvailableTracks: ytInitialPlayerResponse regex not found in page HTML`);
     }
 
     // Fallback: try ytInitialData JSON
@@ -110,14 +118,22 @@ export default async function handler(req, res) {
         const tracks = data?.playerOverlays?.playerOverlayRenderer?.captionsPlayerOverlayRenderer?.captionTracks ||
                        data?.engagementPanels?.[0]?.engagementPanelSectionListRenderer?.content?.structuredDescriptionContentRenderer?.items?.[1]?.videoDescriptionHeaderRenderer?.captionTracks;
         if (tracks?.length) {
-          return tracks.map(t => ({
+          const result = tracks.map(t => ({
             languageCode: t.languageCode,
             languageName: t.name?.simpleText || t.languageCode,
             baseUrl: t.baseUrl,
             isTranslatable: t.isTranslatable || false
           }));
+          console.log(`[TRANSCRIPT-DEBUG] extractAvailableTracks: found ${result.length} track(s) via ytInitialData: ${result.map(t => t.languageCode).join(', ')}`);
+          return result;
+        } else {
+          console.warn(`[TRANSCRIPT-DEBUG] extractAvailableTracks: ytInitialData found but captionTracks path is empty`);
         }
-      } catch (e) { /* fall through */ }
+      } catch (e) {
+        console.warn(`[TRANSCRIPT-DEBUG] extractAvailableTracks: ytInitialData JSON parse failed: ${e.message}`);
+      }
+    } else {
+      console.warn(`[TRANSCRIPT-DEBUG] extractAvailableTracks: ytInitialData regex also not found — YouTube page structure may have changed`);
     }
 
     return null;
@@ -126,7 +142,10 @@ export default async function handler(req, res) {
   // ── Helper: fetch YouTube captions directly via timedtext API ──
   // Accepts a track object so we can try ANY language.
   async function fetchTranscriptFromTrack(track) {
-    if (!track?.baseUrl) return null;
+    if (!track?.baseUrl) {
+      console.warn(`[TRANSCRIPT-DEBUG] timedtext: track has no baseUrl, lang=${track?.languageCode || 'unknown'}`);
+      return null;
+    }
 
     // Strip any existing `lang` or `tlang` param so we use the track's native language
     let url = track.baseUrl;
@@ -134,11 +153,19 @@ export default async function handler(req, res) {
     url += (url.includes('?') ? '&' : '?') + 'format=json';
 
     const captionRes = await fetchWithTimeout(url, {}, 8000);
-    if (!captionRes.ok) return null;
+    if (!captionRes.ok) {
+      console.warn(`[TRANSCRIPT-DEBUG] timedtext FAILED lang=${track.languageCode}: HTTP ${captionRes.status} ${captionRes.statusText}`);
+      const errBody = (await captionRes.text().catch(() => '')).substring(0, 300);
+      if (errBody) console.warn(`[TRANSCRIPT-DEBUG] timedtext error body: ${errBody}`);
+      return null;
+    }
 
     const captionJson = await captionRes.json();
     const events = captionJson?.events || [];
-    if (!events.length) return null;
+    if (!events.length) {
+      console.warn(`[TRANSCRIPT-DEBUG] timedtext OK lang=${track.languageCode} but events array is empty — no transcript content`);
+      return null;
+    }
 
     const segments = [];
     for (const ev of events) {
@@ -154,18 +181,26 @@ export default async function handler(req, res) {
         });
       }
     }
+    console.log(`[TRANSCRIPT-DEBUG] timedtext OK lang=${track.languageCode}: ${segments.length} segments from ${events.length} events`);
     return segments.length > 0 ? segments : null;
   }
 
   // ── Helper: fetch available tracks from YouTube page, then try each ──
   async function fetchYouTubeTracks(videoId) {
+    const url = `https://www.youtube.com/watch?v=${videoId}`;
     const pageRes = await fetchWithTimeout(
-      `https://www.youtube.com/watch?v=${videoId}`,
+      url,
       { headers: { 'Accept-Language': 'en,hi;q=0.9', 'User-Agent': 'Mozilla/5.0 (compatible; SHESHAAI/1.0)' } },
       8000
     );
-    if (!pageRes.ok) return null;
+    if (!pageRes.ok) {
+      console.error(`[TRANSCRIPT-DEBUG] YouTube page fetch FAILED: ${url} → HTTP ${pageRes.status} ${pageRes.statusText}`);
+      const bodySnippet = (await pageRes.text().catch(() => '')).substring(0, 500);
+      console.error(`[TRANSCRIPT-DEBUG] YouTube page response body (truncated): ${bodySnippet}`);
+      return null;
+    }
     const pageHtml = await pageRes.text();
+    console.log(`[TRANSCRIPT-DEBUG] YouTube page fetched OK: ${url} (${(pageHtml.length / 1024).toFixed(1)}KB)`);
     return extractAvailableTracks(pageHtml);
   }
 
@@ -174,25 +209,39 @@ export default async function handler(req, res) {
 
   // ── Helper: try youtubetranscript.com with a specific language ──
   async function fetchYTTranscriptWithLang(videoId, lang) {
+    const label = lang || 'default';
+
     // JSON endpoint
-    const jsonRes = await fetchWithTimeout(
-      `https://youtubetranscript.com/?v=${videoId}&format=json${lang ? `&lang=${lang}` : ''}`,
-      {}, 8000
-    );
+    const jsonUrl = `https://youtubetranscript.com/?v=${videoId}&format=json${lang ? `&lang=${lang}` : ''}`;
+    const jsonRes = await fetchWithTimeout(jsonUrl, {}, 8000);
     if (jsonRes.ok) {
       const data = await jsonRes.json();
-      if (Array.isArray(data) && data.length > 0) return data;
+      if (Array.isArray(data) && data.length > 0) {
+        console.log(`[TRANSCRIPT-DEBUG] youtubetranscript JSON OK lang=${label}: ${data.length} segments`);
+        return data;
+      } else {
+        console.warn(`[TRANSCRIPT-DEBUG] youtubetranscript JSON lang=${label}: response is empty array or non-array (${typeof data})`);
+      }
+    } else {
+      console.warn(`[TRANSCRIPT-DEBUG] youtubetranscript JSON FAILED lang=${label}: HTTP ${jsonRes.status} ${jsonRes.statusText}`);
+      const errBody = (await jsonRes.text().catch(() => '')).substring(0, 300);
+      if (errBody) console.warn(`[TRANSCRIPT-DEBUG] youtubetranscript JSON error body: ${errBody}`);
     }
 
     // HTML endpoint as fallback
-    const htmlRes = await fetchWithTimeout(
-      `https://youtubetranscript.com/?v=${videoId}${lang ? `&lang=${lang}` : ''}`,
-      {}, 8000
-    );
+    const htmlUrl = `https://youtubetranscript.com/?v=${videoId}${lang ? `&lang=${lang}` : ''}`;
+    const htmlRes = await fetchWithTimeout(htmlUrl, {}, 8000);
     if (htmlRes.ok) {
       const html = await htmlRes.text();
       const parsed = parseYoutubeTranscriptHTML(html);
-      if (parsed) return parsed;
+      if (parsed) {
+        console.log(`[TRANSCRIPT-DEBUG] youtubetranscript HTML OK lang=${label}: ${parsed.length} segments`);
+        return parsed;
+      } else {
+        console.warn(`[TRANSCRIPT-DEBUG] youtubetranscript HTML lang=${label}: HTML received but no <text> segments found (HTML length=${html.length})`);
+      }
+    } else {
+      console.warn(`[TRANSCRIPT-DEBUG] youtubetranscript HTML FAILED lang=${label}: HTTP ${htmlRes.status} ${htmlRes.statusText}`);
     }
 
     return null;
@@ -233,6 +282,8 @@ export default async function handler(req, res) {
 
   // Also try without any language param (let youtubetranscript.com decide)
   languageCandidates.unshift('');
+
+  console.log(`[TRANSCRIPT-DEBUG] Language candidates for videoId=${videoId}: [${languageCandidates.filter(Boolean).join(', ')}] (${languageCandidates.length} total, ${availableLanguages.length} from YouTube page)`);
 
   // ── STEP 2: Try each language via youtubetranscript.com ──
   let transcriptData = null;
@@ -279,6 +330,14 @@ export default async function handler(req, res) {
       const availableMsg = availableLanguages.length
         ? `Available languages: ${availableLanguages.join(', ')}`
         : 'Could not detect available languages.';
+
+      // ── LOG: Detailed failure summary for debugging ──
+      if (availableLanguages.length) {
+        console.error(`[TRANSCRIPT-FAIL] videoId=${videoId} — ${availableLanguages.length} language(s) detected (${availableLanguages.join(', ')}) but ALL fetch attempts failed. This means youtubetranscript.com AND YouTube timedtext both returned errors for every language. Likely causes: 429 (rate-limited) or 403 (blocked by YouTube).`);
+      } else {
+        console.error(`[TRANSCRIPT-FAIL] videoId=${videoId} — No caption tracks found in YouTube page HTML. This is a genuine 'no captions' case OR YouTube changed their page structure and the JSON regex no longer parses correctly.`);
+      }
+
       return res.status(404).json({
         error: `Is video me captions available nahi hain. ${availableLanguages.length ? `Yeh languages available hain: ${availableLanguages.join(', ')} — lekin inme se kisi ka transcript nahi mil paaya.` : 'YouTube ne is video ke liye captions disable kar diye hain.'} Kripya koi doosra video try karein jisme captions hon, ya topic/text directly type karein.`,
         errorEn: `No transcript could be fetched for this video. ${availableMsg} Please try a different video that has captions, or type your topic/text directly.`,
@@ -311,6 +370,8 @@ export default async function handler(req, res) {
 
   } catch (err) {
     // Unexpected error in the entire transcript flow
+    console.error(`[TRANSCRIPT-FAIL] UNEXPECTED ERROR in transcript flow for videoId=${videoId}: ${err.name}: ${err.message}`);
+    console.error(`[TRANSCRIPT-FAIL] Stack: ${(err.stack || '').substring(0, 500)}`);
     return res.status(500).json({
       error: 'Transcript lene mein error aaya. Kripya dobara try karein ya topic text directly type karein.',
       errorEn: `Failed to fetch transcript: ${err.message}. Please try again or type your topic directly.`,
