@@ -986,12 +986,12 @@ Rules & Behavior:
 - Format: Use standard markdown with clean headers, bullet points, and code highlights.
 - Coding Tasks: Provide 100% production-ready, complete code blocks with no missing lines or placeholders.`;
 
-  // ── 1b. Frontend / Coding Quality System Prompt (always injected for coding tasks) ──
-  const FRONTEND_ENGINEER_SYSTEM_PROMPT = `You are a Principal-Level Frontend Engineer. When a coding/app request is made, ALWAYS follow these rules:
-
-DESIGN: Modern premium UI with soft shadows, rounded corners, consistent theme (dark bg = always set light/white text explicitly, never rely on browser-default text color), clean typography, hover/focus states, smooth transitions (200-300ms), mobile-responsive, use icons where appropriate.
-
-FUNCTIONALITY: Implement the FULL feature (no TODO/incomplete code), handle empty-states with friendly messages, provide basic error/validation handling, include counter/status display for list-based apps, load ONLY ONE CSS framework (never both a link-tag AND a CDN-script for the same framework), ensure code is fully self-contained and working.`;
+  // ── 1b. Default Coding System Prompt (injected FIRST for mode === 'code') ──
+  const DEFAULT_CODING_SYSTEM_PROMPT = `
+Tum ek Principal-level Frontend Engineer ho. Hamesha yeh follow karo:
+DESIGN: Modern premium UI, soft shadows, rounded corners, consistent theme (dark bg = hamesha explicit light/white text, kabhi browser-default color pe depend na karo), clean typography, hover/focus states, smooth transitions (200-300ms), mobile-responsive.
+FUNCTIONALITY: Feature poora implement karo (koi TODO/incomplete na ho), empty-states friendly-message ke saath handle karo, error/validation handling do, list-apps me counter/status do, sirf EK CSS framework load karo (kabhi dono link-tag aur CDN-script ek saath nahi), code fully self-contained aur working ho.
+`;
 
   // ── 2. Message Normalization (OpenAI-standard internal schema) ──────
   let normalizedMessages = messages.map(m => ({
@@ -999,9 +999,26 @@ FUNCTIONALITY: Implement the FULL feature (no TODO/incomplete code), handle empt
     content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content)
   }));
 
-  // Ensure system prompt is attached to top if not present
-  if (!normalizedMessages.some(m => m.role === 'system')) {
-    normalizedMessages.unshift({ role: 'system', content: SHESHAAI_SYSTEM_PROMPT });
+  // Coding mode: DEFAULT_CODING_SYSTEM_PROMPT hamesha FIRST system message
+  if (payload.mode === 'code') {
+    normalizedMessages.unshift({ role: 'system', content: DEFAULT_CODING_SYSTEM_PROMPT });
+  }
+
+  // Ensure SHESHAAI system prompt exists (check by content, not just role)
+  // Coding mode me DEFAULT_CODING_SYSTEM_PROMPT ke BAAD insert karo
+  if (!normalizedMessages.some(m => m.role === 'system' && m.content.includes('SHESHAAI'))) {
+    if (payload.mode === 'code') {
+      const codingIdx = normalizedMessages.findIndex(
+        m => m.role === 'system' && m.content.trim() === DEFAULT_CODING_SYSTEM_PROMPT.trim()
+      );
+      if (codingIdx >= 0) {
+        normalizedMessages.splice(codingIdx + 1, 0, { role: 'system', content: SHESHAAI_SYSTEM_PROMPT });
+      } else {
+        normalizedMessages.unshift({ role: 'system', content: SHESHAAI_SYSTEM_PROMPT });
+      }
+    } else {
+      normalizedMessages.unshift({ role: 'system', content: SHESHAAI_SYSTEM_PROMPT });
+    }
   }
 
   // Detect query capability requirement
@@ -1097,11 +1114,6 @@ FUNCTIONALITY: Implement the FULL feature (no TODO/incomplete code), handle empt
   
   if (complexityInstruction) {
     normalizedMessages.push({ role: 'system', content: complexityInstruction });
-  }
-
-  // Inject Frontend Engineer quality prompt for coding tasks
-  if (isCodingTask) {
-    normalizedMessages.push({ role: 'system', content: FRONTEND_ENGINEER_SYSTEM_PROMPT });
   }
 
   const logPrefix = isCodingTask ? '[CODING FAILOVER]' : '[BETAAI]';
