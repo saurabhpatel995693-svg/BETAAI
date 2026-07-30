@@ -854,6 +854,8 @@ import Layout from '../layouts/Layout.astro';
       // Step 1: If it's a YouTube URL, fetch transcript first
       let actualTopic = topicInput;
       let transcriptText = '';
+      let transcriptLanguage = 'unknown';
+      let availableLangs = [];
       if (isYouTubeUrl(topicInput)) {
         document.getElementById('loading-msg').innerText = '⬇️ YouTube video se transcript fetch ho raha hai...';
         document.getElementById('loading-sub-msg').innerText = 'Kripya pratiksha karein — video ka content padha ja raha hai';
@@ -876,14 +878,17 @@ import Layout from '../layouts/Layout.astro';
           // Transcript available — use the actual video content
           actualTopic = result.title || topicInput;
           transcriptText = result.transcript || '';
-          document.getElementById('loading-sub-msg').innerText = `Video "${actualTopic}" se ${(transcriptText.length / 1000).toFixed(0)}K characters ka transcript mila`;
+          transcriptLanguage = result.language || 'unknown';
+          availableLangs = result.availableLanguages || [];
+          const langDisplay = availableLangs.length ? availableLangs.join(', ') : transcriptLanguage;
+          document.getElementById('loading-sub-msg').innerText = `Video "${actualTopic}" se ${(transcriptText.length / 1000).toFixed(0)}K characters ka transcript mila (language: ${langDisplay})`;
         }
         // Small delay so user can read the message
         await new Promise(r => setTimeout(r, 600));
       }
 
       // ── Build transcript context (YouTube video captions) ──
-      const transcriptContext = transcriptText ? `\n\n=== YAHAN SE ACTUAL VIDEO TRANSCRIPT SHURU HOTA HAI ===\nBase ALL answers on the content below. Do NOT use general knowledge.\n"""\n${transcriptText.substring(0, 8000)}\n"""\n=== YAHAN TAK ACTUAL VIDEO TRANSCRIPT ===` : '';
+      const transcriptContext = transcriptText ? `\n\n=== YAHAN SE ACTUAL VIDEO TRANSCRIPT SHURU HOTA HAI ===\nTranscript language: ${transcriptLanguage}.\nBase ALL answers on the content below. Do NOT use general knowledge.\n"""\n${transcriptText.substring(0, 8000)}\n"""\n=== YAHAN TAK ACTUAL VIDEO TRANSCRIPT ===` : '';
 
       // ── Build file upload context (PDF, TXT, MD content) ──
       const fileContext = uploadedFileContent ? `\n\n=== YAHAN SE UPLOADED FILE KA CONTENT SHURU HOTA HAI ===\nBase ALL answers on the content below. Do NOT use general knowledge.\n"""\n${uploadedFileContent.substring(0, 8000)}\n"""\n=== YAHAN TAK UPLOADED FILE KA CONTENT ===` : '';
