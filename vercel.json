@@ -10,8 +10,10 @@
       "maxDuration": 30
     }
   },
+  "redirects": [
+    { "source": "/coconote", "destination": "/kiddienotes", "statusCode": 301 }
+  ],
   "rewrites": [
-    { "source": "/coconote", "destination": "/kiddienotes" },
     { "source": "/api/chat", "destination": "/api/chat" },
     { "source": "/api/search", "destination": "/api/search" }
   ],

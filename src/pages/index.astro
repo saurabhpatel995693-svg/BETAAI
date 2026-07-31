@@ -635,8 +635,20 @@ import '../styles/global.css';
       <div class="text-[10px] font-semibold text-themed-ink mb-2 uppercase tracking-wider">⚡ Active AI Multi-Engine Architecture</div>
       <div class="grid gap-1.5">
         <div class="flex items-center justify-between">
-          <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan pulse-dot"></span> ♊ Gemini API Pool (6 Keys Active)</span>
-          <span class="text-cyan text-[10px]">Chat, Coding & Notebook Engine</span>
+          <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan pulse-dot"></span> ♊ Gemini API Pool (6 Keys)</span>
+          <span class="text-cyan text-[10px]">Chat & Notebook Engine</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-violet pulse-dot"></span> 🔀 Coding Failover Chain</span>
+          <span class="text-cyan text-[10px]">NVIDIA → Groq → OpenRouter → GitHub Models</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan pulse-dot"></span> 🔎 Tavily API</span>
+          <span class="text-cyan text-[10px]">Web Search Engine</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan pulse-dot"></span> 📼 Supadata API</span>
+          <span class="text-cyan text-[10px]">YouTube Transcripts (incl. Hindi/non-English)</span>
         </div>
         <div class="flex items-center justify-between">
           <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-cyan pulse-dot"></span> 🎨 Pollinations AI</span>
@@ -831,6 +843,18 @@ async function fetchChatCompletion(config, bodyParams, signal = null) {
     mode: config.mode === 'code' ? 'code' : 'general',
     ...bodyParams
   };
+
+  // Log sanitized outgoing body (no API keys) so complexity/temperature/max_tokens
+  // can be verified in DevTools — proves UI controls actually reach the backend.
+  console.log('[OUTGOING /api/chat]', JSON.stringify({
+    mode: payload.mode,
+    complexity: payload.complexity || null,
+    temperature: payload.temperature ?? null,
+    max_tokens: payload.max_tokens ?? null,
+    stream: payload.stream ?? false,
+    messages: (payload.messages || []).map(m => m.role),
+    lastUserMsg: String(payload.messages?.[payload.messages.length - 1]?.content || '').slice(0, 80)
+  }));
 
   const res = await fetch(endpoint, {
     method: 'POST',
@@ -1652,6 +1676,8 @@ document.getElementById('export-btn').onclick = () => {
 
 async function fetchRealAiImage(promptText, seed, w, h) {
   const encPrompt = encodeURIComponent(promptText);
+  // C1 audit: image.pollinations.ai/prompt is the only reliably-working source.
+  // pollinations.ai/p returns an HTML page (breaks <img>), gen.pollinations.ai 401s.
   try {
     const res = await fetch(`https://lexica.art/api/v1/search?q=${encPrompt}`);
     if (res.ok) {
@@ -1665,7 +1691,7 @@ async function fetchRealAiImage(promptText, seed, w, h) {
   } catch (e) {
     console.warn('[Lexica fetch] failed:', e);
   }
-  return `https://pollinations.ai/p/${encPrompt}?width=${w}&height=${h}&seed=${seed}&nologo=true`;
+  return `https://image.pollinations.ai/prompt/${encPrompt}?width=${w}&height=${h}&seed=${seed}&nologo=true`;
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1695,6 +1721,7 @@ document.getElementById('generate-img-btn').onclick = async () => {
 
     const seed = Math.floor(Math.random() * 2000000000) + 1;
     const initialAiUrl = await fetchRealAiImage(fullPrompt, seed, w, h);
+    console.log(`[IMAGE GEN] card ${i + 1}/${count} | style: ${style || 'none'} | size: ${w}x${h} | seed: ${seed} | url: ${initialAiUrl}`);
     const fallbackUrl1 = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed}&nologo=true`;
     const fallbackUrl2 = `https://gen.pollinations.ai/image/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed}`;
 
@@ -1704,7 +1731,12 @@ document.getElementById('generate-img-btn').onclick = async () => {
              alt="${esc(prompt)}"
              class="w-full cursor-pointer block rounded-t-lg shadow-level-2"
              onclick="document.getElementById('lightbox-img').src=this.src;document.getElementById('lightbox').classList.remove('hidden')"
-             onerror="if (!this.dataset.tried1) { this.dataset.tried1 = 'true'; this.src = '${fallbackUrl1}'; } else if (!this.dataset.tried2) { this.dataset.tried2 = 'true'; this.src = '${fallbackUrl2}'; }"/>
+             onerror="if (!this.dataset.tried1) { this.dataset.tried1 = 'true'; this.src = '${fallbackUrl1}'; } else if (!this.dataset.tried2) { this.dataset.tried2 = 'true'; this.src = '${fallbackUrl2}'; } else { this.dataset.failed = 'true'; this.style.display='none'; this.nextElementSibling?.classList.remove('hidden'); }"/>
+        <div class="hidden p-6 text-center text-xs text-themed-mute">
+          <div class="text-2xl mb-2">🖼️</div>
+          Image generation failed — Pollinations free tier is rate-limited. Try again in a minute.<br/>
+          <span class="font-mono text-[10px] mt-1 block">seed ${seed} · ${esc(style || 'default')} · ${w}x${h}</span>
+        </div>
       </div>
       <div class="p-3 surface-card border-t border-themed">
         <p class="text-[11px] text-themed-mute font-mono mb-2 truncate">${esc(prompt)}</p>
@@ -1936,12 +1968,57 @@ const nbFileInput = document.getElementById('nb-file-input');
 if (nbUploadBtn && nbFileInput) {
   nbUploadBtn.onclick = () => nbFileInput.click();
 }
+
+// ── PDF text extraction (pdf.js from CDN, same pattern as KiddieNotes) ──
+function loadPDFJS() {
+  return new Promise((resolve, reject) => {
+    if (window.pdfjsLib) { resolve(window.pdfjsLib); return; }
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    script.onload = () => {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      resolve(window.pdfjsLib);
+    };
+    script.onerror = () => reject(new Error('PDF.js library could not be loaded. Check internet connection.'));
+    document.head.appendChild(script);
+  });
+}
+
+async function extractPDFText(arrayBuffer) {
+  const pdfjsLib = await loadPDFJS();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let fullText = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    fullText += `[Page ${i}]\n${content.items.map(item => item.str).join(' ')}\n\n`;
+  }
+  return fullText.trim();
+}
+
+async function readNbFile(file) {
+  // C2 audit fix: PDF must be parsed (readAsText returns mojibake for binary PDFs)
+  if (file.name.toLowerCase().endsWith('.pdf')) {
+    const buf = await file.arrayBuffer();
+    const text = await extractPDFText(buf);
+    console.log(`[NOTEBOOKS] PDF "${file.name}" → ${text.length} chars extracted`);
+    if (text.length < 30) throw new Error('No selectable text found in PDF (scanned/image PDFs are not supported)');
+    return text;
+  }
+  const text = await file.text();
+  console.log(`[NOTEBOOKS] File "${file.name}" → ${text.length} chars (${file.type || 'text'})`);
+  return text;
+}
+
 if (nbFileInput) {
   nbFileInput.onchange = e => {
-    Array.from(e.target.files).forEach(file => {
-      const reader = new FileReader();
-      reader.onload = ev => addNbSource(file.name, ev.target.result);
-      reader.readAsText(file);
+    Array.from(e.target.files).forEach(async file => {
+      try {
+        const content = await readNbFile(file);
+        addNbSource(file.name, content);
+      } catch (err) {
+        toast(`Could not read ${file.name}: ${err.message}`, 'error');
+      }
     });
   };
 }
@@ -1953,10 +2030,13 @@ if (nbDrop) {
   nbDrop.ondragleave = () => { nbDrop.style.borderColor=''; };
   nbDrop.ondrop = e => {
     e.preventDefault(); nbDrop.style.borderColor='';
-    Array.from(e.dataTransfer.files).forEach(file => {
-      const reader = new FileReader();
-      reader.onload = ev => addNbSource(file.name, ev.target.result);
-      reader.readAsText(file);
+    Array.from(e.dataTransfer.files).forEach(async file => {
+      try {
+        const content = await readNbFile(file);
+        addNbSource(file.name, content);
+      } catch (err) {
+        toast(`Could not read ${file.name}: ${err.message}`, 'error');
+      }
     });
   };
 }
@@ -1971,18 +2051,30 @@ document.getElementById('nb-link-btn').onclick = async () => {
   const isYouTube = url.includes('youtube.com') || url.includes('youtu.be');
 
   if (isYouTube) {
+    // C2 audit fix: fetch the REAL transcript via /api/transcript (Supadata),
+    // never a generic blurb from the video title.
     try {
-      const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
-      const res = await fetch(oembedUrl);
-      if (res.ok) {
-        const data = await res.json();
+      const res = await fetch('/api/transcript', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.transcript && data.transcript.length > 30) {
         extractedTitle = '📺 ' + (data.title || 'YouTube Video');
-        extractedContent = `YouTube Video Title: ${data.title}\nAuthor / Channel: ${data.author_name}\nURL: ${url}\n\nKey Topic / Overview: ${data.title}\n\nThis imported media content covers ${data.title} by ${data.author_name}. Analyze this topic in detail according to user requests.`;
+        extractedContent = `=== VIDEO TRANSCRIPT START (${data.title || 'YouTube Video'}) ===\nTranscript language: ${data.language || 'unknown'}.\nBase ALL answers on the content below. Do NOT use general knowledge.\n"""\n${data.transcript}\n"""\n=== VIDEO TRANSCRIPT END ===`;
+        console.log(`[NOTEBOOKS] YouTube transcript fetched: ${data.transcript.length} chars, language ${data.language || 'unknown'}`);
+      } else {
+        throw new Error(data.error || 'No captions/transcript available for this video');
       }
-    } catch(e) {}
+    } catch (e) {
+      toast(`YouTube transcript failed: ${e.message}`, 'error');
+      return;
+    }
   }
 
   if (!extractedContent) {
+    // Non-YouTube page: fetch real page text via r.jina.ai reader
     try {
       const jinaUrl = `https://r.jina.ai/${url}`;
       const res = await fetch(jinaUrl);
@@ -1990,14 +2082,18 @@ document.getElementById('nb-link-btn').onclick = async () => {
         const text = await res.text();
         if (text && text.length > 50 && !text.includes('CAPTCHA')) {
           extractedContent = text.substring(0, 15000);
+          console.log(`[NOTEBOOKS] Web link content fetched: ${extractedContent.length} chars from r.jina.ai`);
+        } else {
+          throw new Error('Page content could not be extracted (blocked or empty)');
         }
+      } else {
+        throw new Error(`Page fetch failed (HTTP ${res.status})`);
       }
-    } catch(e) {}
-  }
-
-  if (!extractedContent) {
-    extractedContent = `URL Source: ${url}\n\nTopic: Content from Web / Video URL\n` +
-      `Summary: Educational content imported from ${url}.`;
+    } catch (e) {
+      // C2 audit fix: clear error, NOT generic filler content
+      toast(`Web link import failed: ${e.message}`, 'error');
+      return;
+    }
   }
 
   addNbSource(extractedTitle, extractedContent);
@@ -2014,6 +2110,10 @@ document.getElementById('nb-github-btn').onclick = async () => {
   const settings = JSON.parse(localStorage.getItem('betaai_settings') || '{}');
   const token = document.getElementById('s-github-token').value.trim() || settings.githubToken;
   if (token) headers['Authorization'] = `token ${token}`;
+  // C5 audit: PAT is used for the API call AND for raw file downloads
+  // (private repos 401 without it).
+  const downloadHeaders = token ? { 'Authorization': `token ${token}` } : {};
+  console.log(`[NOTEBOOKS] GitHub import: ${repo}/${path} | PAT present: ${!!token}`);
 
   try {
     const url = `https://api.github.com/repos/${repo}/contents/${path}`;
@@ -2026,7 +2126,7 @@ document.getElementById('nb-github-btn').onclick = async () => {
       let filesFetched = 0;
       for (const item of data) {
         if (item.type === 'file' && filesFetched < 10) {
-          const fileRes = await fetch(item.download_url);
+          const fileRes = await fetch(item.download_url, { headers: downloadHeaders });
           if (fileRes.ok) {
             const text = await fileRes.text();
             addNbSource('🐙 ' + item.name, text);
@@ -2041,7 +2141,7 @@ document.getElementById('nb-github-btn').onclick = async () => {
       }
     } else if (data.type === 'file') {
       // It's a single file
-      const fileRes = await fetch(data.download_url);
+      const fileRes = await fetch(data.download_url, { headers: downloadHeaders });
       if (!fileRes.ok) throw new Error('Failed to download raw file content');
       const text = await fileRes.text();
       addNbSource('🐙 ' + data.name, text);
@@ -2079,7 +2179,10 @@ document.querySelectorAll('.nb-action-btn').forEach(btn => {
   btn.onclick = async () => {
     if (!notebookSources.length) return toast('Add a source first','error');
     const action = btn.dataset.action;
-    const combinedText = notebookSources.map(s=>s.content).join('\n\n---\n\n');
+    // C2 audit: wrap source content in """ blocks so the backend's content-aware
+    // fallback extracts REAL content (never generic filler).
+    const combinedText = notebookSources.map(s => `"""\n${s.content}\n"""`).join('\n\n---\n\n');
+    console.log(`[NOTEBOOKS] Action "${action}" | sources: ${notebookSources.length} | content chars: ${combinedText.length}`);
     const out = document.getElementById('nb-output');
     const card = document.createElement('div');
     card.className = 'surface-card rounded-lg border border-themed shadow-level-3 p-6 animate-fade-up';

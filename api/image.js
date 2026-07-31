@@ -71,6 +71,8 @@ export default async function handler(req, res) {
   const rawSeed = Math.abs(parseInt(query.seed) || 0);
   const seed = (rawSeed > 0 && rawSeed <= 2147483647) ? rawSeed : (Math.floor(Math.random() * 2000000000) + 1);
 
+  console.log('[IMAGE GEN] prompt:', prompt.slice(0, 60), '| size:', width + 'x' + height, '| seed:', seed);
+
   const cleanPrompt = encodeURIComponent(prompt);
   const hfToken = query.hf_token || process.env.HF_TOKEN || process.env.HUGGINGFACE_KEY;
 
@@ -126,11 +128,15 @@ export default async function handler(req, res) {
   for (const targetUrl of targets) {
     try {
       const { buffer, contentType } = await fetchImageWithTimeout(targetUrl, 12000);
-      if (buffer && buffer.byteLength > 1000) {
+      // CRITICAL: only accept real image content — pollinations.ai/p returns an
+      // HTML page that would otherwise be served as a broken "image".
+      if (buffer && buffer.byteLength > 1000 && contentType.startsWith('image/')) {
+        console.log(`[IMAGE GEN] OK ${targetUrl.split('/')[2]} => ${contentType} ${buffer.byteLength}B`);
         res.setHeader('Content-Type', contentType);
         res.setHeader('Cache-Control', 'public, max-age=86400');
         return res.status(200).send(Buffer.from(buffer));
       }
+      console.warn(`[IMAGE GEN] Skipped non-image response from ${targetUrl.split('/')[2]} (${contentType})`);
     } catch (e) {
       console.warn(`[Image Proxy] Failed ${targetUrl}:`, e.message);
     }

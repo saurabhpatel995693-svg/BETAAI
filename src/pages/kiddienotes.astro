@@ -407,7 +407,6 @@ import Layout from '../layouts/Layout.astro';
   <!-- Interactive JavaScript Engine -->
   <script is:inline>
     let currentMode = 'notes';
-    let isRecording = false;
     let quizScore = 0;
     let currentQuizIdx = 0;
     let flashcardIdx = 0;
@@ -741,94 +740,26 @@ import Layout from '../layouts/Layout.astro';
       document.getElementById('file-clear-btn').classList.add('hidden');
     });
 
-    // Voice Recording — uses MediaRecorder API (actual recording supported in modern browsers)
-    let mediaRecorder = null;
-    let audioChunks = [];
-    let recordingTimer = null;
-    let recordingSeconds = 0;
-
+    // Voice Recording — B4 audit: recording itself works, but no transcription
+    // endpoint exists, so recorded audio can never become a study pack.
+    // Honest behavior: clear "Coming soon" message instead of silently
+    // treating "Classroom audio recording (Ns)" as the topic.
     document.getElementById('record-mic-btn')?.addEventListener('click', async () => {
       const micText = document.getElementById('mic-text');
       const micIcon = document.getElementById('mic-icon');
-
-      if (isRecording) {
-        // Stop recording
-        if (mediaRecorder && mediaRecorder.state === 'recording') {
-          mediaRecorder.stop();
-        }
-        if (recordingTimer) clearInterval(recordingTimer);
-        isRecording = false;
-        micText.innerText = `Recording saved (${recordingSeconds}s) — tap to re-record`;
-        micIcon.innerText = "✅";
-        // Auto-fill the topic with recording context
-        const currentVal = document.getElementById('yt-url-input').value;
-        if (!currentVal || currentVal === 'https://youtu.be/E_4gRy4O03w') {
-          document.getElementById('yt-url-input').value = `Classroom audio recording (${recordingSeconds} seconds)`;
-          document.getElementById('yt-url-input').dispatchEvent(new Event('input'));
-        }
-      } else {
-        // Check browser support first
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-          micText.innerText = "Recording not supported in this browser — use Chrome/Edge";
-          micIcon.innerText = "⚠️";
-          setTimeout(() => {
-            micText.innerText = "Start Classroom Voice Recording";
-            micIcon.innerText = "🎙️";
-          }, 3000);
-          return;
-        }
-        // Start recording — request microphone permission
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          audioChunks = [];
-          recordingSeconds = 0;
-          mediaRecorder = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4' });
-
-          mediaRecorder.ondataavailable = (e) => {
-            if (e.data.size > 0) audioChunks.push(e.data);
-          };
-
-          mediaRecorder.onstop = () => {
-            // Stop all tracks to release microphone
-            stream.getTracks().forEach(track => track.stop());
-            // Store recording info for generate flow
-            recordingSeconds = recordingSeconds || 1;
-          };
-
-          mediaRecorder.onerror = () => {
-            micText.innerText = "Recording error — try again";
-            micIcon.innerText = "⚠️";
-            isRecording = false;
-            stream.getTracks().forEach(track => track.stop());
-          };
-
-          mediaRecorder.start(1000); // collect data every second
-          isRecording = true;
-          micText.innerText = "Recording lecture... Click to Stop 🔴";
-          micIcon.innerText = "🔴";
-
-          // Update timer every second
-          recordingTimer = setInterval(() => {
-            recordingSeconds++;
-          }, 1000);
-
-        } catch (err) {
-          // Microphone permission denied or unavailable
-          if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-            micText.innerText = "Microphone access denied — allow in browser settings";
-          } else if (err.name === 'NotFoundError') {
-            micText.innerText = "No microphone found — connect one and try again";
-          } else {
-            micText.innerText = "Voice recording unavailable in this browser";
-          }
-          micIcon.innerText = "⚠️";
-          isRecording = false;
-          setTimeout(() => {
-            micText.innerText = "Start Classroom Voice Recording";
-            micIcon.innerText = "🎙️";
-          }, 3000);
-        }
+      const statusEl = document.getElementById('file-upload-status');
+      console.log('[VOICE RECORDING] Clicked — transcription NOT implemented, showing coming-soon message');
+      micText.innerText = 'Voice transcription — Coming Soon ⏳';
+      micIcon.innerText = "⏳";
+      if (statusEl) {
+        statusEl.classList.remove('hidden');
+        statusEl.className = 'mt-1 text-[10px] font-mono text-error';
+        statusEl.innerText = '⚠️ Voice transcription is coming soon — recorded audio cannot be converted to a study pack yet. Use a YouTube link or upload a PDF/TXT file instead.';
       }
+      setTimeout(() => {
+        micText.innerText = 'Start Classroom Voice Recording';
+        micIcon.innerText = "🎙️";
+      }, 6000);
     });
 
     // Main Generate Button Click

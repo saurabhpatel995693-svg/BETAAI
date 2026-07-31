@@ -942,8 +942,13 @@ export default async function handler(req, res) {
   let lastErr = '';
 
   // Check In-Memory Cache for identical prompt queries (non-stream)
+  // KEY MUST include mode/complexity/temperature/max_tokens — otherwise the
+  // same user prompt with different settings returns a stale cached reply.
   const lastMsg = messages[messages.length - 1]?.content || '';
-  const cacheKey = typeof lastMsg === 'string' ? lastMsg.trim().toLowerCase() : '';
+  const baseKey = typeof lastMsg === 'string' ? lastMsg.trim().toLowerCase() : '';
+  const cacheKey = baseKey
+    ? `${baseKey}|m:${payload.mode || ''}|c:${payload.complexity || ''}|t:${payload.temperature ?? ''}|mt:${payload.max_tokens ?? ''}`
+    : '';
   if (!wantsStream && cacheKey && responseCache.has(cacheKey)) {
     const cached = responseCache.get(cacheKey);
     if (now - cached.timestamp < CACHE_TTL_MS) {
@@ -1090,22 +1095,23 @@ FUNCTIONALITY: Feature poora implement karo (koi TODO/incomplete na ho), empty-s
 
   // ── 4. Attempt each target (per-provider timeout: 8s via AbortController) ──
   const complexity = payload.complexity || 'Simple snippet';
+  console.log('RECEIVED COMPLEXITY:', payload.complexity, '| FALLBACK:', complexity, '| MODE:', payload.mode, '| IS_CODING_TASK:', isCodingTask);
   let maxTokens, complexityInstruction = '';
   
   if (isCodingTask) {
     switch (complexity) {
       case 'Full application':
         maxTokens = payload.max_tokens || 8000;
-        complexityInstruction = 'INSTRUCTION: This is a FULL APPLICATION request. CRITICAL: Generate a VERY LARGE, feature-rich application (150+ lines minimum). Include: multiple views/sections with navigation, search/filter/sort functionality, animations and transitions, error states and empty states with friendly messages, input validation, responsive mobile-first design, dark/light theme toggle or persistent data (localStorage). Add extra polish features beyond the basic requirement. Structure as a complete, deployable production app. DO NOT generate a minimal snippet or a medium-sized module — this must be a full, comprehensive application.';
+        complexityInstruction = 'INSTRUCTION: Generate a FULL production application with extra features: filters, sorting, animations, empty-states, loading-states, persistence, counters/stats. MINIMUM 200 lines — must be noticeably larger than the basic version. Include multiple views/sections with navigation, input validation, responsive mobile-first design, dark/light theme toggle or persistent data (localStorage). Structure as a complete, deployable production app. DO NOT generate a minimal snippet or a medium-sized module — this must be a full, comprehensive application.';
         break;
       case 'Complete module':
-        maxTokens = payload.max_tokens || 5000;
-        complexityInstruction = 'INSTRUCTION: This is a COMPLETE MODULE request. Generate a well-structured module with: all core features working end-to-end, proper error handling and input validation, multiple UI states (loading, empty, error, success, edge cases), documentation-style comments for public functions, and clean separation of concerns. Medium length — fully functional but focused on core requirements without extra peripheral features.';
+        maxTokens = payload.max_tokens || 4000;
+        complexityInstruction = 'INSTRUCTION: Generate a COMPLETE module with error handling and edge cases, 80-150 lines. All core features working end-to-end, multiple UI states (loading, empty, error, success), documentation-style comments for public functions, and clean separation of concerns. Fully functional but focused on core requirements without extra peripheral features.';
         break;
       case 'Simple snippet':
       default:
-        maxTokens = payload.max_tokens || 2048;
-        complexityInstruction = 'INSTRUCTION: This is a SIMPLE SNIPPET request. Generate a concise, minimal snippet (under 80 lines preferred) demonstrating ONE specific concept or technique. Focus on clarity and brevity — minimal boilerplate, no extra features, no peripheral functionality. Just the essential working code for a single purpose.';
+        maxTokens = payload.max_tokens || 2000;
+        complexityInstruction = 'INSTRUCTION: Generate a MINIMAL single-file snippet, under 50 lines, only core functionality. Demonstrate ONE specific concept or technique clearly. Minimal boilerplate, no extra features, no peripheral functionality. Just the essential working code for a single purpose.';
         break;
     }
   } else {
