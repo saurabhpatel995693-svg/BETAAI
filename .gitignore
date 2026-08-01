@@ -18,3 +18,5 @@ dist/
 supoclip/
 OpenManus/
 CL4R1T4S/
+.vercel
+.env*

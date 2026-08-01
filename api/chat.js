@@ -1026,9 +1026,23 @@ FUNCTIONALITY: Feature poora implement karo (koi TODO/incomplete na ho), empty-s
     }
   }
 
-  // Detect query capability requirement
-  const fullTextContext = normalizedMessages.map(m => m.content).join('\n').toLowerCase();
-  const isCodingTask = payload.mode === 'code' || fullTextContext.includes('code') || fullTextContext.includes('function') || fullTextContext.includes('javascript') || fullTextContext.includes('html') || fullTextContext.includes('css') || fullTextContext.includes('build') || fullTextContext.includes('create app') || fullTextContext.includes('game');
+  // Detect query capability requirement — from USER messages ONLY, never from
+  // system prompts. The SHESHAAI design directive always mentions words like
+  // 'css'/'html'/'code', so scanning the full context misclassified EVERY plain
+  // chat message (e.g. "hi") as a coding task and injected a
+  // "Generate a MINIMAL single-file snippet" instruction into chat replies.
+  const userTextContext = normalizedMessages.filter(m => m.role === 'user').map(m => m.content).join('\n').toLowerCase();
+  const isCodingTask = payload.mode === 'code'
+    || userTextContext.includes('code')
+    || userTextContext.includes('function')
+    || userTextContext.includes('javascript')
+    || userTextContext.includes('python')
+    || userTextContext.includes('html')
+    || userTextContext.includes('css')
+    || userTextContext.includes('script')
+    || userTextContext.includes('build')
+    || userTextContext.includes('create app')
+    || userTextContext.includes('game');
 
   const codingProviders = [];
 

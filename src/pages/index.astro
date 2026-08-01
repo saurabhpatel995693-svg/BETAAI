@@ -272,37 +272,7 @@ import '../styles/global.css';
           <div class="max-w-lg text-center animate-fade-up">
             <div class="w-20 h-20 rounded-xl mesh-gradient mx-auto mb-6 flex items-center justify-center text-white text-3xl font-semibold shadow-level-4">Š</div>
             <h2 class="text-display-lg text-themed-ink mb-2">What can I help with?</h2>
-            <p class="text-themed-body text-sm mb-8">Intelligent AI workspace — chat, generate images, code, and analyze documents.</p>
-            <!-- Suggestion Grid -->
-            <div class="grid grid-cols-2 gap-3 text-left">
-              <button class="suggest-btn p-4 rounded-md surface-card border border-themed shadow-level-2 hover:shadow-level-3 transition text-left animate-fade-up" style="animation-delay:0s">
-                <div class="text-xs font-medium mb-1 text-themed-ink">💻 Build a SaaS App</div>
-                <div class="text-[11px] text-themed-mute">Live VibeCoding canvas preview</div>
-              </button>
-              <button class="suggest-btn p-4 rounded-md surface-card border border-themed shadow-level-2 hover:shadow-level-3 transition text-left animate-fade-up" style="animation-delay:.05s">
-                <div class="text-xs font-medium mb-1 text-themed-ink">📚 Notebook Quiz & Flashcards</div>
-                <div class="text-[11px] text-themed-mute">Import URL or study documents</div>
-              </button>
-              <button class="suggest-btn p-4 rounded-md surface-card border border-themed shadow-level-2 hover:shadow-level-3 transition text-left animate-fade-up" style="animation-delay:.1s">
-                <div class="text-xs font-medium mb-1 text-themed-ink">🎨 Generate 8K AI Art</div>
-                <div class="text-[11px] text-themed-mute">Futuristic glassmorphic world</div>
-              </button>
-              <button class="suggest-btn p-4 rounded-md surface-card border border-themed shadow-level-2 hover:shadow-level-3 transition text-left animate-fade-up" style="animation-delay:.15s">
-                <div class="text-xs font-medium mb-1 text-themed-ink">⚡ DeepSeek & Quantum AI</div>
-                <div class="text-[11px] text-themed-mute">Explore 2026 AI developments</div>
-              </button>
-            </div>
-            <!-- Persona selector -->
-            <div class="mt-6">
-              <div class="text-[11px] font-mono text-themed-mute uppercase mb-2 tracking-wide">Select persona mode</div>
-              <div class="flex flex-wrap justify-center gap-2">
-                <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="default">🤖 Default Assistant</button>
-                <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="coder">💻 Principal Coder</button>
-                <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="teacher">📚 Master Educator</button>
-                <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="creative">🎭 Creative Director</button>
-                <button class="persona-btn px-3 h-7 rounded-full border border-themed text-[11px] font-medium text-themed-body hover-card2 transition" data-persona="analyst">📊 Data Analyst</button>
-              </div>
-            </div>
+            <p class="text-themed-body text-sm">Chat, code, analyze documents — or try one of the modes from the sidebar.</p>
           </div>
         </div>
         <!-- Messages -->
@@ -741,7 +711,7 @@ const VERCEL_DESIGN_KNOWLEDGE = `
 `;
 
 const PERSONAS = {
-  default: 'You are SHESHAAI by SAURABH, a world-class AI assistant trained on Vercel Design System, Tailwind CSS v4, Web Interface Guidelines, and Bespoke Composition.\n' + VERCEL_DESIGN_KNOWLEDGE + '\nBreak down complex requests step-by-step with clean Markdown structures, headers, lists, code highlighting, and structured tables.',
+  default: 'You are SHESHAAI by SAURABH, a friendly, knowledgeable AI assistant. Reply conversationally and naturally in clean Markdown. Use code blocks ONLY when the user explicitly asks for code; for casual chat and questions, give a clear text answer — never invent code output.',
   coder: `You are SHESHAAI Master Code Architect by SAURABH.
 ` + VERCEL_DESIGN_KNOWLEDGE + `
 MANDATORY DIRECTIVES FOR CODING REQUESTS:
@@ -902,7 +872,15 @@ async function fetchWithFailover(apiCallFn, mode = 'general') {
 
 
 function getSystemPrompt(userText = '') {
-  let basePrompt = document.getElementById('s-system-prompt').value || PERSONAS[currentPersona];
+  const customPrompt = document.getElementById('s-system-prompt').value;
+  const textLower = (userText || '').toLowerCase();
+
+  // Heavy coding/design directives MUST only apply when the message actually
+  // asks for code or UI. Previously they were appended to EVERY chat message,
+  // which made the model answer "hi" with an HTML/CSS/JS snippet.
+  const isCodingRequest = /\b(code|html|css|javascript|python|typescript|react|node|function|snippet|script|program|app|website|web page|web app|component|game|dashboard|landing|build|create|generate|design|ui|frontend)\b/i.test(textLower);
+
+  let basePrompt = customPrompt || PERSONAS[isCodingRequest ? currentPersona : 'default'];
   
   const vercelDesignPrompt = `\n\nCRITICAL DESIGN DIRECTIVE FOR ALL CODING & WEB GENERATION:
 When creating or generating HTML/CSS/JS code, web apps, components, or UI designs, YOU MUST STRICTLY USE THE VERCEL DESIGN SYSTEM AESTHETICS:
@@ -911,24 +889,18 @@ When creating or generating HTML/CSS/JS code, web apps, components, or UI design
 3. Component Style: Glassmorphism (backdrop-blur-md), pill buttons, subtle inset shadows, smooth hover micro-animations.
 4. Tailwind CSS v4: Always include Tailwind CDN (<script src="https://cdn.tailwindcss.com"><\/script>) in standalone HTML output so the user gets a stunning 2026 production-grade web application immediately! NEVER produce outdated 1990s HTML/CSS.`;
 
-  let docContext = vercelDesignPrompt;
+  let docContext = isCodingRequest ? vercelDesignPrompt : '';
   
   if (userText && typeof repoKnowledge === 'object') {
-    const textLower = userText.toLowerCase();
-    if (textLower.includes('awesome-llm-apps') || textLower.includes('awesome llm')) {
-      if (repoKnowledge['awesome-llm-apps']) {
-        docContext += `\n\n[Background Knowledge: Awesome LLM Apps Repository]\n${repoKnowledge['awesome-llm-apps'].documentation}`;
-      }
+    const t = textLower;
+    if ((t.includes('awesome-llm-apps') || t.includes('awesome llm')) && repoKnowledge['awesome-llm-apps']) {
+      docContext += `\n\n[Background Knowledge: Awesome LLM Apps Repository]\n${repoKnowledge['awesome-llm-apps'].documentation}`;
     }
-    if (textLower.includes('browser-use') || textLower.includes('browser use')) {
-      if (repoKnowledge['browser-use']) {
-        docContext += `\n\n[Background Knowledge: Browser Use Framework]\n${repoKnowledge['browser-use'].documentation}`;
-      }
+    if ((t.includes('browser-use') || t.includes('browser use')) && repoKnowledge['browser-use']) {
+      docContext += `\n\n[Background Knowledge: Browser Use Framework]\n${repoKnowledge['browser-use'].documentation}`;
     }
-    if (textLower.includes('maxun')) {
-      if (repoKnowledge['maxun']) {
-        docContext += `\n\n[Background Knowledge: Maxun Web Scraper]\n${repoKnowledge['maxun'].documentation}`;
-      }
+    if (t.includes('maxun') && repoKnowledge['maxun']) {
+      docContext += `\n\n[Background Knowledge: Maxun Web Scraper]\n${repoKnowledge['maxun'].documentation}`;
     }
   }
   return basePrompt + docContext;
@@ -1213,6 +1185,10 @@ document.querySelectorAll('.mode-btn').forEach(btn => {
     
     if (currentMode === 'code') {
       currentPersona = 'coder';
+    } else if (currentMode === 'chat') {
+      // Never let the coder persona leak into normal chat — otherwise chat
+      // replies are forced to output HTML files even for "hi".
+      currentPersona = 'default';
     }
 
     ['chat','image','code','notebook','search'].forEach(v => document.getElementById('view-'+v)?.classList.add('hidden'));
@@ -1241,24 +1217,8 @@ document.querySelectorAll('.mode-btn').forEach(btn => {
 });
 
 /* ═══════════════════════════════════════════════════
-   Persona Selection
-   ═══════════════════════════════════════════════════ */
-document.querySelectorAll('.persona-btn').forEach(btn => {
-  btn.onclick = () => {
-    document.querySelectorAll('.persona-btn').forEach(b => { b.classList.remove('btn-ink'); b.classList.add('text-themed-body'); b.style.background=''; });
-    btn.classList.add('btn-ink'); btn.classList.remove('text-themed-body');
-    currentPersona = btn.dataset.persona;
-    toast('Persona: ' + btn.textContent.trim());
-  };
-});
-
-/* ═══════════════════════════════════════════════════
    Chat System
    ═══════════════════════════════════════════════════ */
-// Suggestions
-document.querySelectorAll('.suggest-btn').forEach(btn => {
-  btn.onclick = () => { document.getElementById('chat-input').value = btn.querySelector('.font-medium').textContent.replace(/^[^\s]+\s/,''); sendChat(); };
-});
 
 // Send
 document.getElementById('send-btn').onclick = sendChat;
@@ -2388,21 +2348,6 @@ document.getElementById('drawer-refine-btn')?.addEventListener('click', () => {
   input.value = '';
   document.getElementById('chat-input').value = `Refine VibeCoding Canvas app: ${query}`;
   sendChat();
-});
-
-document.querySelectorAll('.suggest-btn').forEach(btn => {
-  btn.onclick = () => {
-    const text = btn.querySelector('.text-xs')?.textContent || btn.textContent;
-    if (text.includes('Build a Web App')) {
-      newChat();
-      currentPersona = 'coder';
-      document.getElementById('topbar-title').textContent = '💻 Coding Session';
-      document.getElementById('chat-input').value = 'Build a responsive SaaS dashboard web app with sidebar navigation, live KPI counters, dark mode toggle, and interactive data table using HTML, Tailwind CSS, and JavaScript.';
-    } else {
-      document.getElementById('chat-input').value = text;
-    }
-    sendChat();
-  };
 });
 
 const codingChatBtn = document.getElementById('coding-chat-toggle');
