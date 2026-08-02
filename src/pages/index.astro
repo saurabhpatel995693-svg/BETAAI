@@ -254,10 +254,6 @@ import '../styles/global.css';
         </div>
       </div>
       <div class="flex items-center gap-1.5">
-        <div id="active-status-pill" class="flex items-center gap-1.5 px-2.5 h-7 rounded-full surface-card2 border border-themed text-[11px] font-mono text-themed-ink" title="Multi-Tier Failover Engine (Gemini Pool -> Groq -> OpenRouter -> Pollinations)">
-          <span class="w-2 h-2 rounded-full bg-cyan pulse-dot"></span>
-          <span>⚡ Multi-Provider Engine</span>
-        </div>
         <button id="settings-btn" class="w-8 h-8 rounded-sm border border-themed flex items-center justify-center text-themed-body hover:text-themed-ink transition">⚙</button>
         <button id="export-btn" class="w-8 h-8 rounded-sm border border-themed flex items-center justify-center text-themed-body hover:text-themed-ink transition" title="Export chat">↓</button>
       </div>
@@ -294,8 +290,6 @@ import '../styles/global.css';
                     📎 <input type="file" id="chat-file-input" class="hidden" accept=".txt,.md,.json,.csv,.py,.js,.html,.css"/>
                   </label>
                   <button id="voice-btn" class="h-7 px-2 rounded-sm text-[11px] font-mono text-themed-mute border border-themed hover-card2 transition" title="Voice input (V)">🎤</button>
-                  <button id="img-mode-toggle" class="h-7 px-2 rounded-sm text-[11px] font-mono text-themed-mute border border-themed hover-card2 transition">🎨 Image</button>
-                  <button id="coding-chat-toggle" class="h-7 px-2 rounded-sm text-[11px] font-mono text-themed-mute border border-themed hover-card2 transition" title="Coding Mode">💻 Coding</button>
                 </div>
                 <div class="flex items-center gap-2">
                   <span id="char-count" class="text-[10px] font-mono text-themed-mute">0</span>
@@ -852,7 +846,8 @@ async function fetchWithFailover(apiCallFn, mode = 'general') {
   const attempts = [{
     label: 'BETAAI Server Proxy',
     base: '/api',
-    model: selectedModel
+    model: selectedModel,
+    mode: mode
   }];
 
   let lastError = null;
@@ -1720,7 +1715,7 @@ document.getElementById('generate-img-btn').onclick = async () => {
   btn.textContent = origBtnText;
 };
 
-document.getElementById('img-mode-toggle').onclick = () => { document.querySelectorAll('.mode-btn')[1].click(); };
+
 
 /* ═══════════════════════════════════════════════════
    VibeCoding
@@ -1772,7 +1767,7 @@ IMPORTANT — GENERATE A **CONCISE SNIPPET**:
     }
 
     const systemPrompt = `You are VibeCoding AI — an elite Senior Principal Software Architect & UI/UX Designer by SAURABH.
-User asked to build: "${prompt}" (Complexity: ${complexity}).
+User asked to build: "${prompt}" in ${lang} (Complexity: ${complexity}).
 
 ${complexityInstruction}
 
@@ -1780,7 +1775,8 @@ ${complexityInstruction}
 Explain step-by-step how you design the component/app, UI layout, dependencies used, and key JavaScript interactivity.
 
 ### ⚡ Complete Production Implementation
-Provide the FULL, working code in a single code block tagged with the appropriate language (e.g. \`\`\`html or \`\`\`python).
+Provide the FULL, working code in a single code block tagged with the selected language (e.g. \`\`\`${lang.toLowerCase()} or \`\`\`html).
+- The output code block must be written in the selected language: "${lang}". If the selected language is "HTML/CSS/JS" or "React JSX", build a visual web interface. Otherwise, write pure code in "${lang}" (like python, java, go, rust, etc.).
 - For HTML/JS/CSS: Include Tailwind CDN (<script src="https://cdn.tailwindcss.com"><\/script>), Google Fonts (Inter/JetBrains Mono), responsive Vercel-style aesthetics (#09090b / glassmorphic), working buttons, modals, sliders, and interactive event handlers.
 - Output MUST be 100% complete with NO missing lines, NO placeholders, and NO truncated loops.`;
 
@@ -2350,15 +2346,7 @@ document.getElementById('drawer-refine-btn')?.addEventListener('click', () => {
   sendChat();
 });
 
-const codingChatBtn = document.getElementById('coding-chat-toggle');
-if (codingChatBtn) {
-  codingChatBtn.onclick = () => {
-    newChat();
-    currentPersona = 'coder';
-    document.getElementById('chat-input').placeholder = 'Describe what you want to code... (Gemini AI active)';
-    toast('💻 Coding Mode Activated! Gemini Code engine active.', 'success');
-  };
-}
+
 
 // Discover Chips and Live Cards
 document.querySelectorAll('.discover-chip').forEach(btn => {

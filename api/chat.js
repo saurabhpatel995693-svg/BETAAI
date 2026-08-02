@@ -1031,18 +1031,19 @@ FUNCTIONALITY: Feature poora implement karo (koi TODO/incomplete na ho), empty-s
   // 'css'/'html'/'code', so scanning the full context misclassified EVERY plain
   // chat message (e.g. "hi") as a coding task and injected a
   // "Generate a MINIMAL single-file snippet" instruction into chat replies.
-  const userTextContext = normalizedMessages.filter(m => m.role === 'user').map(m => m.content).join('\n').toLowerCase();
+  const lastUserMsg = normalizedMessages.filter(m => m.role === 'user').pop()?.content || '';
+  const lastUserText = lastUserMsg.toLowerCase();
   const isCodingTask = payload.mode === 'code'
-    || userTextContext.includes('code')
-    || userTextContext.includes('function')
-    || userTextContext.includes('javascript')
-    || userTextContext.includes('python')
-    || userTextContext.includes('html')
-    || userTextContext.includes('css')
-    || userTextContext.includes('script')
-    || userTextContext.includes('build')
-    || userTextContext.includes('create app')
-    || userTextContext.includes('game');
+    || lastUserText.includes('code')
+    || lastUserText.includes('function')
+    || lastUserText.includes('javascript')
+    || lastUserText.includes('python')
+    || lastUserText.includes('html')
+    || lastUserText.includes('css')
+    || lastUserText.includes('script')
+    || lastUserText.includes('build')
+    || lastUserText.includes('create app')
+    || lastUserText.includes('game');
 
   const codingProviders = [];
 
