@@ -140,8 +140,15 @@ import Layout from '../layouts/Layout.astro';
             </div>
 
             <!-- Audio Recording -->
-            <div class="pt-2 border-t border-hairline">
-              <label class="block text-caption-mono text-ink font-semibold mb-1">Live Classroom Microphone</label>
+            <div class="pt-2 border-t border-hairline space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="block text-caption-mono text-ink font-semibold mb-1">Live Classroom Microphone</label>
+                <select id="mic-lang-select" class="px-2 py-0.5 bg-canvas-soft border border-hairline rounded-sm text-[10px] font-mono text-ink focus:outline-none cursor-pointer">
+                  <option value="hi-IN" selected>Hindi / Hinglish (hi-IN)</option>
+                  <option value="en-IN">Indian English (en-IN)</option>
+                  <option value="en-US">US English (en-US)</option>
+                </select>
+              </div>
               <button id="record-mic-btn" class="w-full py-2.5 px-3 bg-rose-600 text-white rounded-sm text-xs font-mono font-medium flex items-center justify-center gap-2 hover:bg-rose-700 transition shadow-level-2 cursor-pointer">
                 <span id="mic-icon">🎙️</span>
                 <span id="mic-text">Start Classroom Voice Recording</span>
@@ -740,27 +747,255 @@ import Layout from '../layouts/Layout.astro';
       document.getElementById('file-clear-btn').classList.add('hidden');
     });
 
-    // Voice Recording — B4 audit: recording itself works, but no transcription
-    // endpoint exists, so recorded audio can never become a study pack.
-    // Honest behavior: clear "Coming soon" message instead of silently
-    // treating "Classroom audio recording (Ns)" as the topic.
+    // Voice Recording Variables
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let recognition = null;
+    let isRecording = false;
+    let recordingTimer = null;
+    let recordingSeconds = 0;
+    let speechResultAccumulated = '';
+    let micStream = null;
+
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60).toString().padStart(2, '0');
+      const s = (sec % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
     document.getElementById('record-mic-btn')?.addEventListener('click', async () => {
+      if (isRecording) {
+        await stopRecording();
+      } else {
+        await startRecording();
+      }
+    });
+
+    async function startRecording() {
       const micText = document.getElementById('mic-text');
       const micIcon = document.getElementById('mic-icon');
       const statusEl = document.getElementById('file-upload-status');
-      console.log('[VOICE RECORDING] Clicked — transcription NOT implemented, showing coming-soon message');
-      micText.innerText = 'Voice transcription — Coming Soon ⏳';
-      micIcon.innerText = "⏳";
+      const micBtn = document.getElementById('record-mic-btn');
+
+      audioChunks = [];
+      recordingSeconds = 0;
+      speechResultAccumulated = '';
+
+      try {
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (err) {
+        console.error('[MIC ACCESS DENIED/ERROR]:', err);
+        if (statusEl) {
+          statusEl.classList.remove('hidden');
+          statusEl.className = 'mt-1 text-[10px] font-mono text-error';
+          statusEl.innerText = '⚠️ Microphone access denied / not found. Please enable mic permissions or type your topic directly. (माइक्रोफ़ोन एक्सेस नहीं मिला, कृपया अनुमति दें या सीधे टॉपिक लिखें)';
+        }
+        toast('Microphone access denied / not found', 'error');
+        return;
+      }
+
+      isRecording = true;
+      micBtn.classList.remove('bg-rose-600', 'hover:bg-rose-700');
+      micBtn.classList.add('bg-rose-800', 'animate-pulse');
+      micText.innerText = 'Stop Recording (00:00)';
+      micIcon.innerText = '🔴';
+
       if (statusEl) {
         statusEl.classList.remove('hidden');
-        statusEl.className = 'mt-1 text-[10px] font-mono text-error';
-        statusEl.innerText = '⚠️ Voice transcription is coming soon — recorded audio cannot be converted to a study pack yet. Use a YouTube link or upload a PDF/TXT file instead.';
+        statusEl.className = 'mt-1 text-[10px] font-mono text-rose-600 animate-pulse';
+        statusEl.innerText = '🎙️ Recording live classroom audio... Speak now.';
       }
-      setTimeout(() => {
-        micText.innerText = 'Start Classroom Voice Recording';
-        micIcon.innerText = "🎙️";
-      }, 6000);
-    });
+
+      // Initialize MediaRecorder (background audio backup)
+      mediaRecorder = new MediaRecorder(micStream, { mimeType: 'audio/webm' });
+      mediaRecorder.ondataavailable = e => {
+        if (e.data && e.data.size > 0) {
+          audioChunks.push(e.data);
+        }
+      };
+      mediaRecorder.start(1000);
+
+      // Start timer
+      recordingTimer = setInterval(() => {
+        recordingSeconds++;
+        micText.innerText = `Stop Recording (${formatTime(recordingSeconds)})`;
+        if (recordingSeconds >= 600) { // 10 minutes limit
+          stopRecording();
+        }
+      }, 1000);
+
+      // Layer 1: Browser Web Speech API
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        try {
+          recognition = new SpeechRecognition();
+          recognition.continuous = true;
+          recognition.interimResults = true;
+          recognition.lang = document.getElementById('mic-lang-select').value;
+
+          recognition.onresult = e => {
+            let interimTranscript = '';
+            let finalTranscript = '';
+            for (let i = e.resultIndex; i < e.results.length; ++i) {
+              if (e.results[i].isFinal) {
+                finalTranscript += e.results[i][0].transcript;
+              } else {
+                interimTranscript += e.results[i][0].transcript;
+              }
+            }
+            if (finalTranscript) {
+              speechResultAccumulated += finalTranscript + ' ';
+            }
+            if (statusEl && isRecording) {
+              statusEl.innerText = `🎙️ [Layer 1 Live]: ${speechResultAccumulated}${interimTranscript}`;
+            }
+          };
+
+          recognition.onerror = err => {
+            console.warn('[SPEECH RECOGNITION ERROR] Handled, fallback to cloud if needed:', err);
+          };
+
+          recognition.start();
+        } catch (e) {
+          console.warn('[SPEECH RECOGNITION START FAILED] Handled:', e.message);
+        }
+      } else {
+        console.log('[SPEECH RECOGNITION] Not supported in this browser. Will fallback to Groq Whisper/Gemini.');
+      }
+    }
+
+    async function stopRecording() {
+      const micText = document.getElementById('mic-text');
+      const micIcon = document.getElementById('mic-icon');
+      const statusEl = document.getElementById('file-upload-status');
+      const micBtn = document.getElementById('record-mic-btn');
+
+      if (!isRecording) return;
+      isRecording = false;
+
+      // Reset button UI
+      micBtn.classList.remove('bg-rose-800', 'animate-pulse');
+      micBtn.classList.add('bg-rose-600', 'hover:bg-rose-700');
+      micText.innerText = 'Start Classroom Voice Recording';
+      micIcon.innerText = '🎙️';
+
+      // Clear timer
+      if (recordingTimer) {
+        clearInterval(recordingTimer);
+        recordingTimer = null;
+      }
+
+      // Stop SpeechRecognition
+      if (recognition) {
+        try {
+          recognition.stop();
+        } catch (e) {}
+        recognition = null;
+      }
+
+      // Stop MediaRecorder
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
+
+      // Release hardware mic lock
+      if (micStream) {
+        micStream.getTracks().forEach(track => track.stop());
+        micStream = null;
+      }
+
+      // Wait a moment for MediaRecorder to collect remaining chunks
+      await new Promise(r => setTimeout(r, 200));
+
+      const finalSpeechResult = speechResultAccumulated.trim();
+      
+      // ── Layer 1 Result Verification ──
+      if (finalSpeechResult && finalSpeechResult.length > 15) {
+        console.log(`[TRANSCRIBE] Layer 1 (Browser Speech API) succeeded: ${finalSpeechResult}`);
+        if (statusEl) {
+          statusEl.classList.remove('hidden');
+          statusEl.className = 'mt-1 text-[10px] font-mono text-emerald-600';
+          statusEl.innerText = `✅ Transcript successful! (Layer: Browser Web Speech API)`;
+        }
+        document.getElementById('yt-url-input').value = finalSpeechResult;
+        toast('Live transcript added successfully!', 'success');
+        
+        // Auto trigger notes generation
+        document.getElementById('generate-btn').click();
+        return;
+      }
+
+      // ── Fallback to Serverless API (Layer 2: Groq Whisper -> Layer 3: Gemini Audio) ──
+      if (audioChunks.length === 0) {
+        if (statusEl) {
+          statusEl.className = 'mt-1 text-[10px] font-mono text-error';
+          statusEl.innerText = '⚠️ Recording audio empty. Please speak closer to the mic.';
+        }
+        return;
+      }
+
+      if (statusEl) {
+        statusEl.className = 'mt-1 text-[10px] font-mono text-cyan-600 animate-pulse';
+        statusEl.innerText = '⏳ Processing recording with Cloud AI (Layers 2 & 3)...';
+      }
+
+      const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+      
+      // Convert to Base64 and send
+      const reader = new FileReader();
+      reader.readAsDataURL(audioBlob);
+      reader.onloadend = async () => {
+        const base64Data = reader.result.split(',')[1];
+        try {
+          const userKey = localStorage.getItem('GEMINI_API_KEY') || localStorage.getItem('sheshaai_user_key') || localStorage.getItem('sheshaai_gemini_key') || '';
+          const userGroqKey = localStorage.getItem('sheshaai_groq_key') || '';
+
+          const response = await fetch('/api/transcribe-audio', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-gemini-key': userKey,
+              'x-groq-key': userGroqKey
+            },
+            body: JSON.stringify({
+              audio: base64Data,
+              mimeType: 'audio/webm',
+              lang: document.getElementById('mic-lang-select').value
+            })
+          });
+
+          if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.error || 'Server processing error');
+          }
+
+          const resData = await response.json();
+          if (resData.transcript && resData.transcript.trim().length > 0) {
+            const layerUsed = resData.layer || 'Cloud AI';
+            if (statusEl) {
+              statusEl.classList.remove('hidden');
+              statusEl.className = 'mt-1 text-[10px] font-mono text-emerald-600';
+              statusEl.innerText = `✅ Transcript successful! (Layer: ${layerUsed})`;
+            }
+            toast(`Processed successfully with ${layerUsed}!`, 'success');
+            document.getElementById('yt-url-input').value = resData.transcript.trim();
+            
+            // Auto trigger notes generation
+            document.getElementById('generate-btn').click();
+          } else {
+            throw new Error('Transcript empty');
+          }
+        } catch (err) {
+          console.error('[CLOUD AI TRANSCRIBE ERROR]:', err);
+          if (statusEl) {
+            statusEl.classList.remove('hidden');
+            statusEl.className = 'mt-1 text-[10px] font-mono text-error';
+            statusEl.innerText = '⚠️ Recording process nahi ho payi. Please try again or type directly.';
+          }
+          toast('Cloud transcription failed', 'error');
+        }
+      };
+    }
 
     // Main Generate Button Click
     document.getElementById('generate-btn')?.addEventListener('click', async () => {

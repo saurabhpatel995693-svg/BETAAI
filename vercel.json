@@ -8,6 +8,9 @@
     },
     "api/search.js": {
       "maxDuration": 30
+    },
+    "api/transcribe-audio.js": {
+      "maxDuration": 60
     }
   },
   "redirects": [
@@ -15,7 +18,8 @@
   ],
   "rewrites": [
     { "source": "/api/chat", "destination": "/api/chat" },
-    { "source": "/api/search", "destination": "/api/search" }
+    { "source": "/api/search", "destination": "/api/search" },
+    { "source": "/api/transcribe-audio", "destination": "/api/transcribe-audio" }
   ],
   "headers": [
     {
