@@ -60,14 +60,19 @@ import Layout from '../layouts/Layout.astro';
       </div>
     </div>
     
-    <!-- TOP API KEY BAR (Unified — single source of truth for KiddieNotes) -->
-    <div class="mb-8 p-4 bg-canvas border border-hairline rounded-lg shadow-level-2 flex flex-col md:flex-row items-center justify-between gap-4">
+    <!-- ========================================================================================================================= -->
+    <!-- ⚠️ CRITICAL ARCHITECTURAL GUARANTEE: SINGLE UNIFIED GEMINI API KEY SECTION (DO NOT REVERT OR DUPLICATE IN FUTURE COMMITS!)  -->
+    <!-- This section is the SINGLE UNIFIED SOURCE OF TRUTH for Gemini API Key configuration on the KiddieNotes page.              -->
+    <!-- All API Key operations on KiddieNotes pass through this unified bar and synchronize with GEMINI_API_KEY & Layout modal.   -->
+    <!-- DO NOT ADD ANY SECOND/DUPLICATE API KEY SECTION, CARD, OR BANNER ON THIS PAGE IN FUTURE COMMITS.                        -->
+    <!-- ========================================================================================================================= -->
+    <div class="mb-8 p-4 bg-canvas border border-hairline rounded-lg shadow-level-2 flex flex-col md:flex-row items-center justify-between gap-4" id="unified-kiddie-api-key-section">
       <div class="flex items-center gap-3 w-full md:w-auto">
         <div class="w-8 h-8 rounded-md bg-cyan/10 text-cyan-deep flex items-center justify-center font-mono font-bold text-sm">
           🔑
         </div>
         <div>
-          <h4 class="text-caption-mono font-semibold text-ink">Gemini API Key (Unlocks Unlimited Generation)</h4>
+          <h4 class="text-caption-mono font-semibold text-ink">Gemini API Key (Single Unified Key)</h4>
           <p class="text-[11px] text-mute font-mono">Enter your Gemini API Key to unlock unlimited KiddieNotes generation for your child's study packs</p>
         </div>
       </div>
@@ -78,6 +83,7 @@ import Layout from '../layouts/Layout.astro';
           id="kiddie-api-key-input" 
           placeholder="Paste key (e.g. AIzaSy...)" 
           class="flex-1 px-3 py-2 text-xs font-mono bg-canvas-soft border border-hairline rounded-sm text-ink focus:outline-none focus:border-link transition"
+          autocomplete="off"
         />
         <button 
           id="save-key-btn" 
@@ -232,7 +238,13 @@ import Layout from '../layouts/Layout.astro';
               <span id="output-badge-icon" class="text-lg">📋</span>
               <h3 id="output-title" class="text-display-sm text-ink text-base">Generated Study Notes</h3>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
+              <button id="share-wa-btn" class="px-3 py-1.5 bg-emerald-500/10 text-emerald-600 rounded-sm text-xs font-mono font-semibold hover:bg-emerald-500/20 transition cursor-pointer flex items-center gap-1">
+                📱 WhatsApp Share
+              </button>
+              <button id="share-link-btn" class="px-3 py-1.5 bg-violet/10 text-violet rounded-sm text-xs font-mono font-semibold hover:bg-violet/20 transition cursor-pointer flex items-center gap-1">
+                🔗 Copy Link
+              </button>
               <button id="read-aloud-btn" class="px-3 py-1.5 bg-blue-500/10 text-blue-600 rounded-sm text-xs font-mono font-semibold hover:bg-blue-500/20 transition cursor-pointer flex items-center gap-1">
                 🔊 Read Aloud
               </button>
@@ -469,17 +481,57 @@ import Layout from '../layouts/Layout.astro';
       { q: "Is active review testing effective for school exams?", options: ["YES ✅ (Jump)", "NO ❌ (Duck)"], answer: 0, explanation: "Active testing boosts retention!" }
     ];
 
-    // Load saved API Key from localStorage on page load (unified key)
-    window.addEventListener('DOMContentLoaded', () => {
-      const savedKey = localStorage.getItem('GEMINI_API_KEY') || localStorage.getItem('sheshaai_user_key') || localStorage.getItem('sheshaai_gemini_key') || '';
-      if (savedKey) {
-        document.getElementById('kiddie-api-key-input').value = savedKey;
-        document.getElementById('key-status-badge').innerText = '⚡ Custom Key Active';
+    // ── UNIFIED SINGLE API KEY SYNCHRONIZATION FOR KIDDIENOTES ──
+    // Ensures that the inline section input and status badge stay 100% in sync with GEMINI_API_KEY
+    function syncKiddieApiKeyUI() {
+      const savedKey = localStorage.getItem('GEMINI_API_KEY') || localStorage.getItem('sheshaai_user_key') || localStorage.getItem('sheshaai_gemini_key') || localStorage.getItem('betaai_custom_key') || '';
+      const inputEl = document.getElementById('kiddie-api-key-input');
+      const badgeEl = document.getElementById('key-status-badge');
+      
+      if (inputEl) {
+        inputEl.value = savedKey;
       }
-      // Initial generate button state — enable since topic has default value and notes format is active
+      if (badgeEl) {
+        if (savedKey && savedKey.trim().length > 0) {
+          badgeEl.innerText = '⚡ Custom Key Active';
+          badgeEl.className = 'text-[11px] font-mono px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 font-medium';
+        } else {
+          badgeEl.innerText = '⚡ Server Engine Ready';
+          badgeEl.className = 'text-[11px] font-mono px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-600 border border-cyan-500/20 font-medium';
+        }
+      }
+    }
+
+    // Synchronize on DOMContentLoaded, api-key-updated, and browser storage events
+    window.addEventListener('DOMContentLoaded', () => {
+      syncKiddieApiKeyUI();
       updateGenerateBtnState();
       updateStepIndicator(1);
+
+      // Read URL params for shareable study links
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlTopic = urlParams.get('topic');
+      const urlGrade = urlParams.get('grade');
+      const urlMode = urlParams.get('mode');
+
+      if (urlTopic) {
+        const topicInput = document.getElementById('yt-url-input');
+        if (topicInput) {
+          topicInput.value = urlTopic;
+          topicInput.dispatchEvent(new Event('input'));
+        }
+      }
+      if (urlGrade) {
+        const select = document.getElementById('tone-select');
+        if (select) select.value = urlGrade;
+      }
+      if (urlMode) {
+        const modeBtn = document.querySelector(`.mode-select-btn[data-type="${urlMode}"]`);
+        if (modeBtn) (modeBtn as HTMLElement).click();
+      }
     });
+    window.addEventListener('api-key-updated', syncKiddieApiKeyUI);
+    window.addEventListener('storage', syncKiddieApiKeyUI);
 
     // ── Step indicator update helper ──
     function updateStepIndicator(step) {
@@ -525,23 +577,23 @@ import Layout from '../layouts/Layout.astro';
       }
     });
 
-    // Save API Key button click — uses unified GEMINI_API_KEY
+    // Save/Clear API Key button click — uses unified GEMINI_API_KEY
     document.getElementById('save-key-btn')?.addEventListener('click', () => {
       const val = document.getElementById('kiddie-api-key-input').value.trim();
       if (val) {
         localStorage.setItem('GEMINI_API_KEY', val);
         localStorage.setItem('sheshaai_user_key', val);
         localStorage.setItem('sheshaai_gemini_key', val);
-        document.getElementById('key-status-badge').innerText = '⚡ Custom Key Saved & Active';
-        // Dispatch event so Layout.astro status pill updates too
+        localStorage.setItem('betaai_custom_key', val);
         window.dispatchEvent(new Event('api-key-updated'));
         alert('API Key saved successfully! KiddieNotes will now use your custom key for all requests.');
-} else {
+      } else {
         localStorage.removeItem('GEMINI_API_KEY');
         localStorage.removeItem('sheshaai_user_key');
         localStorage.removeItem('sheshaai_gemini_key');
-        document.getElementById('key-status-badge').innerText = '? Server Engine Ready';
+        localStorage.removeItem('betaai_custom_key');
         window.dispatchEvent(new Event('api-key-updated'));
+        alert('Custom API Key cleared. KiddieNotes will use the server engine pool.');
       }
     });
 
@@ -999,6 +1051,25 @@ import Layout from '../layouts/Layout.astro';
 
     // Main Generate Button Click
     document.getElementById('generate-btn')?.addEventListener('click', async () => {
+      // Check daily guest limit
+      const hasCustomKey = (localStorage.getItem('GEMINI_API_KEY') || localStorage.getItem('sheshaai_user_key') || localStorage.getItem('sheshaai_gemini_key') || '').trim().length > 0;
+      if (!hasCustomKey) {
+        const today = new Date().toISOString().slice(0, 10);
+        let usage = { date: today, count: 0 };
+        try {
+          const raw = localStorage.getItem('sheshaai_daily_usage');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed.date === today) usage = parsed;
+          }
+        } catch {}
+
+        if (usage.count >= 10) {
+          alert('📊 Daily Guest Quota Reached!\n\nAaj ke 10 free guest generations poore ho chuke hain.\n\nUnlimited generations ke liye apna free Google Gemini API key enter karein (Upar 🔑 section me).');
+          return;
+        }
+      }
+
       const topicInput = document.getElementById('yt-url-input').value.trim() || 'General Science & Study Basics';
       const tone = document.getElementById('tone-select').value;
       const titleBadge = document.getElementById('output-title');
@@ -1196,25 +1267,53 @@ Format with markdown headings. Make questions age-appropriate and progressively 
 
           loadingView.classList.add('hidden');
           document.getElementById('worksheet-view').classList.remove('hidden');
-          recordProgress(topicInput, 'Worksheet');
+          // Increment guest quota on success
+          if (!hasCustomKey) {
+            const today = new Date().toISOString().slice(0, 10);
+            let usage = { date: today, count: 0 };
+            try {
+              const raw = localStorage.getItem('sheshaai_daily_usage');
+              if (raw) {
+                const parsed = JSON.parse(raw);
+                if (parsed.date === today) usage = parsed;
+              }
+            } catch {}
+            usage.count += 1;
+            localStorage.setItem('sheshaai_daily_usage', JSON.stringify(usage));
+            window.dispatchEvent(new Event('quota-updated'));
+          }
+
         }
 
       } catch (err) {
         loadingView.classList.add('hidden');
         document.getElementById('default-preview').classList.remove('hidden');
-        // User-friendly error messages
-        const errMsg = err.message || '';
-        let friendlyMsg = '❌ Kuch gadbad hui, dobara try karein.';
-        if (errMsg.includes('API key') || errMsg.includes('api key') || errMsg.includes('API_KEY') || errMsg.includes('401') || errMsg.includes('403')) {
-          friendlyMsg = '🔑 API key me problem hai. Upar "API Key" section me apna sahi Gemini API key daalein ya server pool use karne ke liye key khaali chhod dein.';
-        } else if (errMsg.includes('429') || errMsg.includes('rate') || errMsg.includes('limit') || errMsg.includes('Too Many Requests')) {
-          friendlyMsg = '⏳ Bahut saare requests ho gaye. Thodi der rukkar dobara try karein (2-3 minute).';
-        } else if (errMsg.includes('500') || errMsg.includes('503') || errMsg.includes('server') || errMsg.includes('timeout') || errMsg.includes('Timed out') || errMsg.includes('Timeout') || errMsg.includes('fetch') || errMsg.includes('NetworkError') || errMsg.includes('Failed to fetch')) {
-          friendlyMsg = '🛠️ Server temporarily unavailable. Please try again in a few moments.';
-        } else if (errMsg.includes('400') || errMsg.includes('Invalid') || errMsg.includes('bad request')) {
-          friendlyMsg = '📝 Please check your topic/input and try again. The AI could not process this request.';
+        
+        // Standardized user-friendly error formatting
+        const rawMsg = err.message || '';
+        let icon = '💡';
+        let title = 'Processing Issue';
+        let friendlyMsg = 'Request complete karne me dikkat aayi.';
+        let actionTip = 'Kripya topic check karke dobara try karein.';
+
+        if (rawMsg.includes('API key') || rawMsg.includes('api key') || rawMsg.includes('401') || rawMsg.includes('403')) {
+          icon = '🔑';
+          title = 'API Key Problem';
+          friendlyMsg = 'Gemini API Key me problem hai.';
+          actionTip = 'Upar "API Key" section me apna sahi key daalein ya server pool use karein.';
+        } else if (rawMsg.includes('429') || rawMsg.includes('rate') || rawMsg.includes('limit')) {
+          icon = '⏳';
+          title = 'Rate Limit Exceeded';
+          friendlyMsg = 'Bahut saare requests aaye hain.';
+          actionTip = '2-3 minute ruk kar dobara try karein, ya custom API Key enter karein.';
+        } else if (rawMsg.includes('500') || rawMsg.includes('503') || rawMsg.includes('fetch')) {
+          icon = '🛠️';
+          title = 'Server Temporarily Busy';
+          friendlyMsg = 'AI backend response nahi de pa raha hai.';
+          actionTip = 'Kripya thodi der baad dobara try karein.';
         }
-        alert(friendlyMsg);
+
+        alert(`${icon} ${title}\n\n${friendlyMsg}\n\n💡 Tip: ${actionTip}`);
       }
     });
 
@@ -1357,6 +1456,29 @@ Format with markdown headings. Make questions age-appropriate and progressively 
         btn.innerText = 'Copied! ✓';
         setTimeout(() => btn.innerText = '📋 Copy', 2000);
       }
+    });
+
+    // Share WhatsApp Button
+    document.getElementById('share-wa-btn')?.addEventListener('click', () => {
+      const topic = document.getElementById('yt-url-input').value.trim() || 'Study Pack';
+      const mode = currentMode || 'notes';
+      const grade = document.getElementById('tone-select').value || 'middle';
+      
+      const shareUrl = `${window.location.origin}/kiddienotes?topic=${encodeURIComponent(topic)}&grade=${encodeURIComponent(grade)}&mode=${encodeURIComponent(mode)}`;
+      const waText = `🎒 *KiddieNotes AI Study Pack*\n\n📌 Topic: ${topic}\n📚 Grade Level: ${grade.toUpperCase()}\n✨ Open Interactive Study Pack: ${shareUrl}`;
+      
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}`, '_blank');
+    });
+
+    // Share Link Button
+    document.getElementById('share-link-btn')?.addEventListener('click', () => {
+      const topic = document.getElementById('yt-url-input').value.trim() || 'Study Pack';
+      const mode = currentMode || 'notes';
+      const grade = document.getElementById('tone-select').value || 'middle';
+      
+      const shareUrl = `${window.location.origin}/kiddienotes?topic=${encodeURIComponent(topic)}&grade=${encodeURIComponent(grade)}&mode=${encodeURIComponent(mode)}`;
+      navigator.clipboard.writeText(shareUrl);
+      toast('Shareable study link copied to clipboard!', 'success');
     });
 
     // Export Button

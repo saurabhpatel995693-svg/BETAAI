@@ -60,6 +60,32 @@ const {
 
         <!-- Right Side Nav Actions -->
         <div class="flex items-center gap-2.5">
+          <!-- Daily Quota Badge -->
+          <div id="nav-quota-badge" class="hidden sm:flex items-center gap-1.5 h-8 px-2.5 rounded-pill-sm border border-hairline bg-canvas text-[11px] font-mono text-body cursor-help" title="Daily Guest Quota — Add your Gemini API Key for Unlimited">
+            <span id="quota-badge-icon">⚡</span>
+            <span id="quota-badge-text" class="font-semibold text-emerald-600">10/10 Free</span>
+          </div>
+
+          <!-- Theme Toggle Button -->
+          <button 
+            type="button" 
+            id="theme-toggle-btn"
+            title="Toggle Light / Dark Theme"
+            class="flex items-center justify-center w-8 h-8 rounded-full border border-hairline bg-canvas hover:border-hairline-strong transition-all cursor-pointer text-sm"
+          >
+            <span id="theme-toggle-icon">🌙</span>
+          </button>
+
+          <!-- Interactive Onboarding Tour Button -->
+          <button 
+            type="button" 
+            id="start-tour-btn"
+            title="Interactive Platform Tour"
+            class="flex items-center justify-center w-8 h-8 rounded-full border border-hairline bg-canvas hover:border-hairline-strong transition-all cursor-pointer text-xs font-mono font-bold text-violet hover:bg-violet-soft/20"
+          >
+            ❓
+          </button>
+
           <!-- API Key Status Pill -->
           <button 
             type="button" 
@@ -214,7 +240,7 @@ const {
         </div>
         
         <p class="text-body-sm text-body leading-relaxed">
-          Enter your <strong class="text-ink">Google Gemini API Key</strong> to unlock unlimited KiddieNotes generation for your child's study packs.
+          Enter your <strong class="text-ink">Google Gemini API Key</strong> to unlock unlimited KiddieNotes study packs, AI responses, and generation across SHESHAAI.
         </p>
         
         <div class="flex flex-col gap-2">
@@ -254,6 +280,43 @@ const {
           >
             Save Changes
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- INTERACTIVE ONBOARDING TOUR MODAL -->
+    <div 
+      id="onboarding-tour-modal" 
+      class="fixed inset-0 z-50 bg-primary/50 backdrop-blur-sm hidden items-center justify-center p-4 transition-all duration-300"
+    >
+      <div 
+        class="bg-canvas border border-hairline w-full max-w-lg rounded-xl shadow-level-5 p-6 flex flex-col gap-5 transform scale-95 transition-all"
+      >
+        <div class="flex items-center justify-between border-b border-hairline pb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xl" id="tour-step-icon">🌟</span>
+            <h3 class="text-display-sm text-ink font-semibold" id="tour-step-title">Welcome to SHESHAAI!</h3>
+          </div>
+          <button type="button" id="tour-close-btn" class="text-mute hover:text-ink text-xl font-bold">&times;</button>
+        </div>
+
+        <div class="space-y-3" id="tour-step-content">
+          <p class="text-body-sm text-body leading-relaxed" id="tour-step-desc">
+            SHESHAAI is your all-in-one AI platform for developer discussions, code assistance, and interactive K-12 study packs. Let's take a quick 30-second tour!
+          </p>
+          <div class="p-3 bg-canvas-soft border border-hairline rounded-md text-xs font-mono text-ink" id="tour-step-tip">
+            💡 Tip: Click the 🔑 AI Engine button in the navbar anytime to add your own Gemini key for unlimited generation!
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-3 border-t border-hairline">
+          <span class="text-caption-mono text-mute" id="tour-step-indicator">Step 1 of 3</span>
+          <div class="flex items-center gap-2">
+            <button type="button" id="tour-skip-btn" class="px-3 py-1.5 text-xs font-mono text-mute hover:text-ink">Skip</button>
+            <button type="button" id="tour-next-btn" class="px-4 py-2 bg-primary text-on-primary rounded-sm text-xs font-mono font-semibold hover:bg-black transition">
+              Next →
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -406,8 +469,139 @@ const {
         });
       }
 
+      // ── Dark / Light Theme Toggle Manager ──
+      function initTheme() {
+        const savedTheme = localStorage.getItem('sheshaai_theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        const iconEl = document.getElementById('theme-toggle-icon');
+        if (iconEl) {
+          iconEl.textContent = savedTheme === 'dark' ? '🌞' : '🌙';
+        }
+      }
+
+      document.getElementById('theme-toggle-btn')?.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('sheshaai_theme', newTheme);
+        const iconEl = document.getElementById('theme-toggle-icon');
+        if (iconEl) {
+          iconEl.textContent = newTheme === 'dark' ? '🌞' : '🌙';
+        }
+      });
+
+      // ── Daily Quota & Key Sync ──
+      function updateQuotaDisplay() {
+        const key = localStorage.getItem('GEMINI_API_KEY') || localStorage.getItem('sheshaai_user_key') || localStorage.getItem('sheshaai_gemini_key') || '';
+        const badgeText = document.getElementById('quota-badge-text');
+        if (!badgeText) return;
+
+        if (key && key.trim().length > 0) {
+          badgeText.textContent = '⚡ Unlimited';
+          badgeText.className = 'font-semibold text-emerald-600';
+        } else {
+          try {
+            const raw = localStorage.getItem('sheshaai_daily_usage');
+            const today = new Date().toISOString().slice(0, 10);
+            let count = 0;
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (parsed.date === today) count = parsed.count;
+            }
+            const remaining = Math.max(0, 10 - count);
+            badgeText.textContent = `⚡ ${remaining}/10 Free`;
+            badgeText.className = remaining > 3 ? 'font-semibold text-emerald-600' : 'font-semibold text-amber-600';
+          } catch {
+            badgeText.textContent = '⚡ 10/10 Free';
+          }
+        }
+      }
+
+      window.addEventListener('api-key-updated', updateQuotaDisplay);
+      window.addEventListener('quota-updated', updateQuotaDisplay);
+      window.addEventListener('storage', updateQuotaDisplay);
+
+      // ── Interactive Onboarding Tour Manager ──
+      const tourSteps = [
+        {
+          title: "Welcome to SHESHAAI!",
+          icon: "🌟",
+          desc: "SHESHAAI is your developer hub for technical Q&A, translation, coding tools, and KiddieNotes K-12 study engine.",
+          tip: "💡 Tip: Click the 🔑 AI Engine status button in the header anytime to configure your Gemini API Key."
+        },
+        {
+          title: "🎒 KiddieNotes AI Studio",
+          icon: "🎒",
+          desc: "Convert YouTube videos, classroom audio, or PDF notes into active recall quizzes, 3D flashcards, and arcade revision games.",
+          tip: "💡 Tip: Use the grade level filter chips (Nursery to 12th) to adjust note complexity instantly!"
+        },
+        {
+          title: "🔑 Unlimited Generations & Theme",
+          icon: "⚡",
+          desc: "Guests receive 10 free generations per day. Enter your own free Google Gemini API key to unlock 100% unlimited access across the platform.",
+          tip: "💡 Tip: Click the 🌞/🌙 toggle in the top right to switch between Dark and Light mode!"
+        }
+      ];
+
+      let tourCurrentStep = 0;
+
+      function renderTourStep(stepIdx) {
+        const step = tourSteps[stepIdx];
+        if (!step) return;
+        document.getElementById('tour-step-icon').textContent = step.icon;
+        document.getElementById('tour-step-title').textContent = step.title;
+        document.getElementById('tour-step-desc').textContent = step.desc;
+        document.getElementById('tour-step-tip').textContent = step.tip;
+        document.getElementById('tour-step-indicator').textContent = `Step ${stepIdx + 1} of ${tourSteps.length}`;
+        document.getElementById('tour-next-btn').textContent = stepIdx === tourSteps.length - 1 ? 'Get Started! 🎉' : 'Next →';
+      }
+
+      function openTour() {
+        tourCurrentStep = 0;
+        renderTourStep(0);
+        const modal = document.getElementById('onboarding-tour-modal');
+        if (modal) {
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+        }
+      }
+
+      function closeTour() {
+        const modal = document.getElementById('onboarding-tour-modal');
+        if (modal) {
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+        }
+        localStorage.setItem('sheshaai_onboarded', 'true');
+      }
+
+      document.getElementById('start-tour-btn')?.addEventListener('click', openTour);
+      document.getElementById('tour-close-btn')?.addEventListener('click', closeTour);
+      document.getElementById('tour-skip-btn')?.addEventListener('click', closeTour);
+      document.getElementById('tour-next-btn')?.addEventListener('click', () => {
+        if (tourCurrentStep < tourSteps.length - 1) {
+          tourCurrentStep++;
+          renderTourStep(tourCurrentStep);
+        } else {
+          closeTour();
+        }
+      });
+
+      // Auto-trigger tour for first-time visitors after 1.5 seconds
+      window.addEventListener('DOMContentLoaded', () => {
+        initTheme();
+        updateQuotaDisplay();
+        if (!localStorage.getItem('sheshaai_onboarded')) {
+          setTimeout(openTour, 1500);
+        }
+      });
+
       (async () => { await initApiKeyStatus(); })();
-      document.addEventListener('astro:after-swap', async () => { await initApiKeyStatus(); });
+      document.addEventListener('astro:after-swap', async () => { 
+        initTheme();
+        updateQuotaDisplay();
+        await initApiKeyStatus(); 
+      });
     </script>
   </body>
 </html>

@@ -271,6 +271,18 @@ import '../styles/global.css';
             <p class="text-themed-body text-sm">Chat, code, analyze documents — or try one of the modes from the sidebar.</p>
           </div>
         </div>
+        <!-- Chat Header Actions Bar -->
+        <div id="chat-header-actions" class="hidden px-4 py-2 border-b border-themed flex items-center justify-between surface-card2 text-xs font-mono">
+          <span class="text-themed-mute font-semibold">💬 Conversation Active</span>
+          <div class="flex items-center gap-2">
+            <button id="export-chat-md-btn" class="px-2.5 py-1 surface-card border border-themed rounded text-[11px] hover-card2 transition cursor-pointer">
+              📥 Export Markdown (.md)
+            </button>
+            <button id="export-chat-txt-btn" class="px-2.5 py-1 surface-card border border-themed rounded text-[11px] hover-card2 transition cursor-pointer">
+              📄 Export Text (.txt)
+            </button>
+          </div>
+        </div>
         <!-- Messages -->
         <div id="chat-messages" class="flex-1 overflow-y-auto px-4 py-6 hidden">
           <div id="messages-list" class="max-w-[760px] mx-auto space-y-5"></div>
@@ -1276,6 +1288,7 @@ async function sendChat() {
 
   document.getElementById('chat-welcome').classList.add('hidden');
   document.getElementById('chat-messages').classList.remove('hidden');
+  document.getElementById('chat-header-actions')?.classList.remove('hidden');
   const list = document.getElementById('messages-list');
 
   if (!currentConvId) {
@@ -2455,6 +2468,49 @@ document.addEventListener('keydown', e => {
    Init model pill & Load Background Knowledge
    ═══════════════════════════════════════════════════ */
 document.getElementById('model-pill-text').textContent = getModel().split('/').pop();
+
+// ── Export Chat Conversation Handlers ──
+document.getElementById('export-chat-md-btn')?.addEventListener('click', () => {
+  const messagesList = document.getElementById('messages-list');
+  if (!messagesList || messagesList.children.length === 0) {
+    toast('No chat messages to export', 'warning');
+    return;
+  }
+  const text = Array.from(messagesList.children).map((el) => {
+    const isUser = el.querySelector('.bg-primary, .text-link');
+    const role = isUser ? 'User' : 'Assistant';
+    const content = el.textContent || '';
+    return `### ${role}:\n${content.trim()}\n`;
+  }).join('\n---\n\n');
+
+  const blob = new Blob([text], { type: 'text/markdown' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `SHESHAAI_Chat_${new Date().toISOString().slice(0,10)}.md`;
+  a.click();
+  toast('Chat exported to Markdown!','success');
+});
+
+document.getElementById('export-chat-txt-btn')?.addEventListener('click', () => {
+  const messagesList = document.getElementById('messages-list');
+  if (!messagesList || messagesList.children.length === 0) {
+    toast('No chat messages to export', 'warning');
+    return;
+  }
+  const text = Array.from(messagesList.children).map((el) => {
+    const isUser = el.querySelector('.bg-primary, .text-link');
+    const role = isUser ? 'User' : 'Assistant';
+    const content = el.textContent || '';
+    return `[${role}]:\n${content.trim()}\n`;
+  }).join('\n========================================\n\n');
+
+  const blob = new Blob([text], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `SHESHAAI_Chat_${new Date().toISOString().slice(0,10)}.txt`;
+  a.click();
+  toast('Chat exported to Text!','success');
+});
 
 fetch('/repo-knowledge.json')
   .then(r => r.json())
